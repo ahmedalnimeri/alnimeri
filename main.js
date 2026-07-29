@@ -281,6 +281,28 @@
     document.addEventListener('mouseenter', function () { dot.classList.add('is-awake'); });
   }
 
+  /* ---- masthead contracts on scroll --------------------------------- */
+
+  (function () {
+    var bar = document.querySelector('.masthead');
+    if (!bar) return;
+    var pending = false;
+    var apply = function () {
+      // Hysteresis: separate thresholds for shrinking and growing, so a
+      // cursor resting near the boundary doesn't make the bar flicker.
+      var y = window.scrollY;
+      var on = bar.classList.contains('is-compact');
+      if (!on && y > 140) bar.classList.add('is-compact');
+      else if (on && y < 90) bar.classList.remove('is-compact');
+    };
+    window.addEventListener('scroll', function () {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(function () { apply(); pending = false; });
+    }, { passive: true });
+    apply();
+  })();
+
   /* ---- timeline HUD -------------------------------------------------
      Scroll position drives a playhead across a track of clips, one per
      section, with running timecode. Doubles as navigation: click a clip to
@@ -347,6 +369,32 @@
       return pad(m) + ':' + pad(s) + ':' + pad(f);
     }
 
+    // The HUD surfaces while you scroll and retreats once you stop, so it
+    // never sits on top of the work. Hovering it holds it open, otherwise
+    // reaching for a clip would dismiss the thing you were reaching for.
+    var idle = null, hovering = false;
+
+    function wake() {
+      bar.classList.add('is-up');
+      clearTimeout(idle);
+      idle = setTimeout(function () {
+        if (!hovering) bar.classList.remove('is-up');
+      }, 1500);
+    }
+    function hide() {
+      clearTimeout(idle);
+      if (!hovering) bar.classList.remove('is-up');
+    }
+
+    bar.addEventListener('mouseenter', function () {
+      hovering = true;
+      clearTimeout(idle);
+      bar.classList.add('is-up');
+    });
+    bar.addEventListener('mouseleave', function () { hovering = false; wake(); });
+    bar.addEventListener('focusin',  function () { hovering = true; bar.classList.add('is-up'); });
+    bar.addEventListener('focusout', function () { hovering = false; wake(); });
+
     var tick = false;
     function draw() {
       var max = document.documentElement.scrollHeight - window.innerHeight;
@@ -355,7 +403,8 @@
       now.textContent = stamp(p);
       pct.textContent = Math.round(p * 100) + '%';
       headEl.style.left = (p * 100) + '%';
-      bar.classList.toggle('is-up', window.scrollY > window.innerHeight * 0.35);
+      if (window.scrollY > window.innerHeight * 0.35) wake();
+      else hide();
 
       // Mark the clip whose section currently owns the middle of the viewport.
       var mid = window.scrollY + window.innerHeight / 2;
