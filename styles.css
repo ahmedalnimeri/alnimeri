@@ -510,6 +510,24 @@ a { color: inherit; }
 .marquee:hover .marquee__row { animation-play-state: paused; }
 .marquee__track { display: flex; align-items: center; flex: none; }
 
+/* Every logo arrives in its own brand colour. brightness(0) flattens each to
+   black regardless of fills or gradients, invert(1) lifts it to white — one
+   rule that works for single-colour marks, two-colour wordmarks and the
+   fill-less Landell Mills paths alike. */
+.logo {
+  flex: none;
+  width: auto;
+  margin: 0 clamp(1.5rem, 3.5vw, 3.25rem);
+  filter: brightness(0) invert(1);
+  opacity: 0.42;
+  transition: opacity 0.45s var(--ease), transform 0.45s var(--ease);
+}
+.logo:hover { opacity: 1; transform: translateY(-2px); }
+
+/* Square marks need more height than wordmarks to read at equal weight. */
+.logo--mark { height: clamp(26px, 3.4vw, 40px); }
+.logo--word { height: clamp(17px, 2.3vw, 27px); }
+
 .marquee__item {
   flex: none;
   padding: 0 clamp(1.5rem, 3.5vw, 3.25rem);
