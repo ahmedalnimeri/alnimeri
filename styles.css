@@ -707,6 +707,44 @@ a { color: inherit; }
 .card__org { margin: 0 0 0.8rem; font-size: 0.82rem; color: var(--fg-faint); }
 .card__body { margin: 0; font-size: 0.92rem; color: var(--fg-dim); line-height: 1.6; }
 
+/* further credits */
+
+.credits__note {
+  max-width: 1320px; margin: -1rem auto clamp(1.75rem, 4vh, 2.75rem);
+  color: var(--fg-dim); font-size: 0.95rem; max-width: 60ch;
+}
+.credits { list-style: none; margin: 0 auto; padding: 0; max-width: 1320px; }
+
+.credit {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  align-items: center; gap: clamp(0.75rem, 2vw, 2rem);
+  padding: clamp(0.9rem, 2vh, 1.25rem) 0;
+  border-top: 1px solid var(--line-soft);
+}
+.credit:last-child { border-bottom: 1px solid var(--line-soft); }
+@media (max-width: 780px) {
+  .credit { grid-template-columns: 1fr; gap: 0.35rem; align-items: start; }
+}
+
+.credit__who { display: grid; gap: 0.15rem; min-width: 0; }
+.credit__client { font-size: 0.98rem; font-weight: 600; letter-spacing: -0.015em; }
+.credit__title  { font-size: 0.85rem; color: var(--fg-faint); }
+.credit__role   { font-size: 0.85rem; color: var(--fg-dim); }
+
+.credit__stat {
+  justify-self: start;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.78rem; font-weight: 500; white-space: nowrap;
+  color: var(--fg-dim); text-decoration: none;
+  border: 1px solid var(--line-soft); border-radius: var(--pill);
+  padding: 0.28rem 0.75rem;
+  transition: border-color 0.35s var(--ease), color 0.35s var(--ease);
+}
+@media (min-width: 781px) { .credit__stat { justify-self: end; } }
+.credit__stat:hover { border-color: var(--line); color: var(--fg); }
+.credit__stat span { font-size: 0.72em; }
+
 /* craft */
 .skills {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
