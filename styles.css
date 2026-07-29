@@ -565,7 +565,8 @@ a { color: inherit; }
    box weighted by ink density — so the sparse EU stars sit larger than the
    solid TED wordmark and both read at the same strength.
    Expressed in em against the row's font-size so one clamp scales the set. */
-.marquee__row { font-size: clamp(11px, 1.15vw, 16px); }
+/* One knob scales the whole set — each logo's height is in em against this. */
+.marquee__row { font-size: clamp(15px, 1.7vw, 23px); }
 
 .logo[src*="european-union"] { height: 2.61em; }
 .logo[src*="ted"]            { height: 2.51em; }
