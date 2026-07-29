@@ -318,6 +318,19 @@ a { color: inherit; }
 .tile__name { margin: 0; font-size: clamp(0.95rem, 1.25vw, 1.1rem); font-weight: 600; letter-spacing: -0.015em; line-height: 1.35; }
 .tile__kind { margin: 0.1rem 0 0; font-size: 0.8rem; color: var(--fg-faint); }
 
+/* Verified engagement on the original post — the number a visitor can check. */
+.tile__stat {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  margin-top: 0.5rem;
+  font-size: 0.76rem; font-weight: 500;
+  color: var(--fg-dim); text-decoration: none;
+  border: 1px solid var(--line-soft); border-radius: var(--pill);
+  padding: 0.24rem 0.7rem;
+  transition: border-color 0.35s var(--ease), color 0.35s var(--ease);
+}
+.tile__stat:hover { border-color: var(--line); color: var(--fg); }
+.tile__stat span { font-size: 0.7em; }
+
 /* ---------- about ---------- */
 
 .about__grid {
