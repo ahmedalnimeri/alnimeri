@@ -7,7 +7,8 @@
 <meta name="description" content="Director and video producer based in Dubai. Eleven years of films for Solana, the European Union, Al Jazeera, TED and the ICC.">
 <meta name="theme-color" content="#0a0a0c">
 <link rel="canonical" href="https://alnimeri.com/">
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/mark.png">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://alnimeri.com/">
@@ -49,7 +50,7 @@
 <div class="glow" aria-hidden="true"></div>
 
 <header class="masthead">
-  <a class="masthead__mark" href="#top">Ahmed El-Nimeri</a>
+  <a class="masthead__mark" href="#top"><img class="mark" src="assets/logo.png" alt="" width="900" height="833" aria-hidden="true"><span>Ahmed El-Nimeri</span></a>
   <nav class="masthead__nav" aria-label="Primary">
     <a href="#work">Work</a>
     <a href="about.html">About</a>
@@ -71,7 +72,12 @@
       <a class="btn btn--solid" href="#work">View selected work</a>
       <a class="btn btn--ghost" href="https://vimeo.com/nimeri" target="_blank" rel="noopener">Full archive on Vimeo</a>
     </div>
-    <p class="hero__note">Solana · International Criminal Court · European Union · Al Jazeera · TED</p>
+    <div class="strip lift">
+      <div><span class="strip__n">#01</span><span class="strip__t">Direction</span></div>
+      <div><span class="strip__n">#02</span><span class="strip__t">Cinematography</span></div>
+      <div><span class="strip__n">#03</span><span class="strip__t">Editorial</span></div>
+      <div><span class="strip__n">#04</span><span class="strip__t">Colour &amp; Sound</span></div>
+    </div>
   </section>
 
   <section class="section" id="work">
@@ -287,9 +293,73 @@
     </div>
   </section>
 
-  <section class="section" id="about">
+
+  <section class="section" id="numbers">
     <div class="section__head">
       <span class="section__num">02</span>
+      <h2 class="section__title">By the Numbers</h2>
+    </div>
+    <div class="stats stats--lg">
+      <div class="reveal"><b data-to="20" data-suffix="M+">20M+</b><span>Views across the Solana body of work</span></div>
+      <div class="reveal" data-delay="80"><b data-to="60" data-suffix="+">60+</b><span>Branded films delivered</span></div>
+      <div class="reveal" data-delay="160"><b data-to="1.4" data-decimals="1" data-suffix="M">1.4M</b><span>Views on the most-watched single film</span></div>
+      <div class="reveal" data-delay="240"><b data-to="11">11</b><span>Years in production</span></div>
+    </div>
+  </section>
+
+  <section class="marquee" aria-label="Selected clients">
+    <p class="marquee__label">Trusted by</p>
+    <div class="marquee__row">
+      <div class="marquee__track">
+        <span class="marquee__item">Solana</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">Nas Company</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">International Criminal Court</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">European Union</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">Al Jazeera</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">TED</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">DP World</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">CTC Group</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">Landell Mills</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">Bianca Films</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+      </div>
+      <div class="marquee__track" aria-hidden="true">
+        <span class="marquee__item">Solana</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">Nas Company</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">International Criminal Court</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">European Union</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">Al Jazeera</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">TED</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">DP World</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">CTC Group</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">Landell Mills</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+        <span class="marquee__item">Bianca Films</span>
+        <span class="marquee__dot" aria-hidden="true"></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="about">
+    <div class="section__head">
+      <span class="section__num">03</span>
       <h2 class="section__title">About</h2>
     </div>
     <div class="about__grid">
@@ -315,9 +385,11 @@
   <section class="contact" id="contact">
     <div class="contact__inner">
       <div class="section__head">
-        <span class="section__num">03</span>
+        <span class="section__num">04</span>
         <h2 class="section__title">Contact</h2>
       </div>
+      <img class="lockup reveal" src="assets/lockup.png" alt="Ahmed Nimeri Production"
+           width="1100" height="1295" loading="lazy" decoding="async">
       <a class="contact__mail" href="mailto:ahmed@alnimeri.com">ahmed@alnimeri.com</a>
       <nav class="contact__links" aria-label="Elsewhere">
         <a class="btn btn--ghost" href="https://vimeo.com/nimeri" rel="me noopener" target="_blank">Vimeo</a>

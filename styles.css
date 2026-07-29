@@ -85,6 +85,13 @@ a { color: inherit; }
 .masthead__mark {
   text-decoration: none; font-weight: 600;
   font-size: 0.92rem; letter-spacing: -0.01em; white-space: nowrap;
+  display: flex; align-items: center; gap: 0.65rem;
+}
+/* Calligraphy mark, white-on-transparent, so it needs no colour handling. */
+.mark { width: auto; height: 30px; flex: none; }
+@media (max-width: 560px) {
+  .mark { height: 26px; }
+  .masthead__mark > span { display: none; }
 }
 .masthead__nav { display: flex; align-items: center; gap: 1.6rem; }
 .masthead__nav a {
@@ -345,6 +352,13 @@ a { color: inherit; }
 .contact { position: relative; z-index: 1; padding: clamp(4rem, 11vh, 8.5rem) var(--gut) clamp(2rem, 5vh, 3.5rem); }
 .contact__inner { max-width: 1320px; margin: 0 auto; text-align: center; }
 
+.lockup {
+  width: auto;
+  height: clamp(110px, 15vw, 190px);
+  margin: 0 auto clamp(2rem, 5vh, 3.25rem);
+  opacity: 0.95;
+}
+
 .contact__mail {
   display: inline-block; text-decoration: none;
   font-size: clamp(1.4rem, 5vw, 3.75rem);
@@ -364,6 +378,159 @@ a { color: inherit; }
   padding-top: 1.4rem; border-top: 1px solid var(--line-soft);
   display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
   font-size: 0.75rem; color: var(--fg-faint);
+}
+
+/* ---------- timeline HUD ----------
+   The page read as an NLE sequence: scroll position is the playhead, each
+   section is a clip on the track, and the readout is running timecode. */
+
+.tl {
+  position: fixed; z-index: 45;
+  left: 50%; transform: translateX(-50%) translateY(0);
+  bottom: clamp(0.75rem, 2vw, 1.4rem);
+  width: min(calc(100% - 2rem), 1120px);
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: clamp(0.75rem, 2vw, 1.5rem);
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--pill);
+  border: 1px solid var(--line);
+  background: rgba(18, 18, 22, 0.72);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.tl.is-up { opacity: 1; pointer-events: auto; }
+
+.tl__tc {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em;
+  color: var(--fg); white-space: nowrap;
+  display: flex; align-items: center; gap: 0.55rem;
+}
+.tl__rec {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--fg); flex: none;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+/* the track */
+.tl__track {
+  position: relative;
+  display: flex; gap: 3px; height: 26px; align-items: stretch;
+}
+.tl__clip {
+  position: relative; flex: 1 1 auto;
+  border-radius: 5px; border: 0;
+  background: rgba(255, 255, 255, 0.07);
+  cursor: pointer; overflow: hidden;
+  font: inherit; padding: 0;
+  transition: background 0.35s var(--ease);
+}
+.tl__clip:hover { background: rgba(255, 255, 255, 0.15); }
+/* Sprocket ticks — reads as film stock rather than a progress bar. */
+.tl__clip::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(
+    to right, rgba(255,255,255,0.13) 0 1px, transparent 1px 9px);
+  opacity: 0.8;
+}
+.tl__clip > span {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--fg-dim);
+  white-space: nowrap; padding: 0 0.4rem;
+}
+.tl__clip.is-live > span { color: var(--fg); }
+.tl__clip.is-live { background: rgba(255, 255, 255, 0.13); }
+
+.tl__head {
+  position: absolute; top: -4px; bottom: -4px; left: 0;
+  width: 2px; background: var(--fg);
+  border-radius: 2px; pointer-events: none;
+  box-shadow: 0 0 12px rgba(255,255,255,0.55);
+}
+.tl__head::before {
+  content: ""; position: absolute; top: -3px; left: 50%;
+  width: 9px; height: 9px; border-radius: 2px;
+  background: var(--fg); transform: translateX(-50%) rotate(45deg);
+}
+
+.tl__pct {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem; color: var(--fg-faint); white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .tl { grid-template-columns: auto 1fr; padding: 0.5rem 0.75rem; }
+  .tl__pct { display: none; }
+  .tl__clip > span { display: none; }
+  .tl__track { height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { .tl__rec { animation: none; } }
+
+/* ---------- hero discipline strip ---------- */
+
+.strip {
+  margin-top: clamp(2.5rem, 6vh, 4rem);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; width: min(100%, 900px);
+  border-top: 1px solid var(--line-soft);
+  padding-top: 1.1rem;
+}
+@media (max-width: 620px) { .strip { grid-template-columns: repeat(2, 1fr); gap: 1.25rem 1px; } }
+.strip__n {
+  display: block; font-size: 0.68rem; font-weight: 600;
+  letter-spacing: 0.12em; color: var(--fg-faint); margin-bottom: 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+.strip__t { display: block; font-size: 0.88rem; font-weight: 500; color: var(--fg-dim); }
+
+/* ---------- client marquee ----------
+   Two identical tracks side by side, the pair translated by exactly -50%.
+   When the first track leaves, the second sits precisely where it began, so
+   the loop has no seam. */
+
+.marquee {
+  position: relative; z-index: 1;
+  padding: clamp(3rem, 8vh, 5.5rem) 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+          mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+.marquee__label {
+  text-align: center; margin: 0 0 clamp(1.5rem, 4vh, 2.5rem);
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--fg-faint);
+}
+.marquee__row { display: flex; width: max-content; animation: slide 42s linear infinite; }
+.marquee:hover .marquee__row { animation-play-state: paused; }
+.marquee__track { display: flex; align-items: center; flex: none; }
+
+.marquee__item {
+  flex: none;
+  padding: 0 clamp(1.5rem, 3.5vw, 3.25rem);
+  font-size: clamp(1.05rem, 2.1vw, 1.85rem);
+  font-weight: 600; letter-spacing: -0.025em; white-space: nowrap;
+  color: var(--fg-faint);
+  transition: color 0.4s var(--ease);
+}
+.marquee__item:hover { color: var(--fg); }
+.marquee__dot {
+  flex: none; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--line); align-self: center;
+}
+
+@keyframes slide { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .marquee__row { animation: none; }
+  .marquee { -webkit-mask-image: none; mask-image: none; }
+  .marquee__row { flex-wrap: wrap; justify-content: center; width: 100%; }
+  .marquee__track:last-child { display: none; }
+  .marquee__track { flex-wrap: wrap; justify-content: center; }
 }
 
 /* ---------- about page ---------- */
@@ -395,7 +562,16 @@ a { color: inherit; }
 .stats b {
   display: block; font-size: clamp(1.6rem, 3.4vw, 2.6rem);
   font-weight: 600; letter-spacing: -0.03em; line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
+/* Larger treatment for the standalone figures band on the home page. */
+.stats--lg {
+  max-width: 1320px; margin: 0 auto;
+  border-top: 0; padding-top: 0;
+}
+.stats--lg b { font-size: clamp(2.4rem, 6.5vw, 5rem); }
+.stats--lg span { max-width: 22ch; margin-inline: auto; }
+.stats--lg > div { text-align: center; }
 .stats span {
   display: block; margin-top: 0.5rem;
   font-size: 0.78rem; color: var(--fg-faint); line-height: 1.4;

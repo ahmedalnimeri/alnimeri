@@ -215,9 +215,18 @@
       el.style.setProperty('--d', (i * 55 + 120 + n * 90) + 'ms');
     });
 
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () { hero.classList.add('is-lit'); });
-    });
+    // Two paths to the same switch. rAF gives a clean first frame, but it is
+    // suspended in background tabs — and a link opened in a background tab is
+    // exactly how people arrive. Without the timeout, the headline could stay
+    // masked indefinitely. Text must never depend on an animation frame.
+    var lit = false;
+    var light = function () {
+      if (lit) return;
+      lit = true;
+      hero.classList.add('is-lit');
+    };
+    requestAnimationFrame(function () { requestAnimationFrame(light); });
+    setTimeout(light, 500);
   } else if (hero) {
     hero.classList.add('is-lit');
   }
@@ -271,6 +280,159 @@
     document.addEventListener('mouseleave', function () { dot.classList.remove('is-awake'); });
     document.addEventListener('mouseenter', function () { dot.classList.add('is-awake'); });
   }
+
+  /* ---- timeline HUD -------------------------------------------------
+     Scroll position drives a playhead across a track of clips, one per
+     section, with running timecode. Doubles as navigation: click a clip to
+     cut to that section. */
+
+  (function () {
+    var secs = [].slice.call(document.querySelectorAll('main > section[id]'))
+                 .filter(function (s) { return s.id !== 'top'; });
+    if (secs.length < 2) return;
+
+    // Read the label off the section's own heading rather than a hardcoded
+    // map, so adding a section never leaves a raw id in the HUD.
+    var labelFor = function (s) {
+      var h = s.querySelector('.section__title, h2');
+      return (h && h.textContent.trim()) || s.id;
+    };
+
+    var bar = document.createElement('div');
+    bar.className = 'tl';
+    bar.setAttribute('role', 'navigation');
+    bar.setAttribute('aria-label', 'Sequence');
+
+    var tc = document.createElement('div');
+    tc.className = 'tl__tc';
+    tc.innerHTML = '<span class="tl__rec" aria-hidden="true"></span><span class="tl__now">00:00:00</span>';
+
+    var track = document.createElement('div');
+    track.className = 'tl__track';
+
+    var clips = secs.map(function (s) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tl__clip';
+      var name = labelFor(s);
+      b.innerHTML = '<span>' + name + '</span>';
+      b.setAttribute('aria-label', 'Go to ' + name);
+      b.addEventListener('click', function () {
+        s.scrollIntoView({ behavior: motionOK ? 'smooth' : 'auto', block: 'start' });
+      });
+      track.appendChild(b);
+      return b;
+    });
+
+    var headEl = document.createElement('div');
+    headEl.className = 'tl__head';
+    track.appendChild(headEl);
+
+    var pct = document.createElement('div');
+    pct.className = 'tl__pct';
+
+    bar.appendChild(tc); bar.appendChild(track); bar.appendChild(pct);
+    document.body.appendChild(bar);
+
+    var now = tc.querySelector('.tl__now');
+    var RUNTIME = 154; // seconds of notional sequence length
+    var FPS = 24;
+
+    function stamp(p) {
+      var t = RUNTIME * p;
+      var m = Math.floor(t / 60);
+      var s = Math.floor(t % 60);
+      var f = Math.floor((t * FPS) % FPS);
+      var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+      return pad(m) + ':' + pad(s) + ':' + pad(f);
+    }
+
+    var tick = false;
+    function draw() {
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      var p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+
+      now.textContent = stamp(p);
+      pct.textContent = Math.round(p * 100) + '%';
+      headEl.style.left = (p * 100) + '%';
+      bar.classList.toggle('is-up', window.scrollY > window.innerHeight * 0.35);
+
+      // Mark the clip whose section currently owns the middle of the viewport.
+      var mid = window.scrollY + window.innerHeight / 2;
+      var live = 0;
+      secs.forEach(function (s, n) {
+        if (s.offsetTop <= mid) live = n;
+      });
+      clips.forEach(function (c, n) { c.classList.toggle('is-live', n === live); });
+    }
+
+    window.addEventListener('scroll', function () {
+      if (tick) return;
+      tick = true;
+      requestAnimationFrame(function () { draw(); tick = false; });
+    }, { passive: true });
+    window.addEventListener('resize', draw, { passive: true });
+    draw();
+  })();
+
+  /* ---- counters -----------------------------------------------------
+     Counts up once, when the figure first enters view. */
+
+  (function () {
+    var nums = [].slice.call(document.querySelectorAll('[data-to]'));
+    if (!nums.length) return;
+
+    var fmt = function (v, dec) {
+      return dec ? v.toFixed(dec) : Math.round(v).toLocaleString('en-US');
+    };
+
+    var run = function (el) {
+      var to  = parseFloat(el.dataset.to);
+      var dec = parseInt(el.dataset.decimals || '0', 10);
+      var suf = el.dataset.suffix || '';
+      var pre = el.dataset.prefix || '';
+
+      if (!motionOK) { el.textContent = pre + fmt(to, dec) + suf; return; }
+
+      var dur = 1600, t0 = null, done = false;
+      var settle = function () {
+        if (done) return;
+        done = true;
+        el.textContent = pre + fmt(to, dec) + suf;
+      };
+      var step = function (ts) {
+        if (done) return;
+        if (t0 === null) t0 = ts;
+        var p = Math.min(1, (ts - t0) / dur);
+        // easeOutExpo — fast start, long settle, like a counter coming to rest
+        var e = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+        el.textContent = pre + fmt(to * e, dec) + suf;
+        if (p < 1) requestAnimationFrame(step); else settle();
+      };
+      requestAnimationFrame(step);
+      // rAF is suspended in background tabs. Without this, a figure that
+      // started counting but never got a frame would sit at "0M+" — a wrong
+      // number on screen is worse than no animation.
+      setTimeout(settle, dur + 600);
+    };
+
+    // The markup already contains the real figure. Never blank it up front:
+    // if the observer never fires — hidden tab, no IO support, anything — the
+    // visitor must still read the true number, not a zero we left behind.
+    if (!('IntersectionObserver' in window) || !motionOK) return;
+
+    var cio = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        cio.unobserve(e.target);
+        // Reserve the settled width so the row doesn't reflow while counting.
+        e.target.style.minWidth = e.target.getBoundingClientRect().width + 'px';
+        run(e.target);
+      });
+    }, { threshold: 0.4 });
+
+    nums.forEach(function (el) { cio.observe(el); });
+  })();
 
   /* ---- scroll reveal ----------------------------------------------- */
 
