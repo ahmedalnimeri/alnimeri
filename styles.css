@@ -729,8 +729,17 @@ body.is-locked { overflow: hidden; }
 .reveal { opacity: 0; transform: translateY(22px); }
 .reveal.is-in { opacity: 1; transform: none; transition: opacity 0.9s var(--ease), transform 0.9s var(--ease); }
 
-/* Masked word reveal — words rise from behind their own baseline. */
-.word { display: inline-block; overflow: hidden; vertical-align: top; }
+/* Masked word reveal — words rise from behind their own baseline.
+   The mask box must extend past the baseline or it shears the descenders off
+   letters like g, y and p. Padding grows the clip area; the matching negative
+   margin keeps the line box exactly where it was. */
+.word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.22em;
+  margin-bottom: -0.22em;
+}
 .word > i {
   display: inline-block; font-style: inherit; color: inherit;
   transform: translateY(115%);
