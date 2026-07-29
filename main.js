@@ -175,6 +175,103 @@
     });
   }
 
+  /* ---- hero headline: masked word reveal --------------------------- */
+
+  var hero = document.querySelector('.hero');
+  var head = document.querySelector('.hero__name');
+
+  if (head && motionOK) {
+    var i = 0;
+    // Walk child nodes so the <em> keeps its own colour while its words
+    // still get wrapped and staggered like the rest.
+    var out = [];
+    [].slice.call(head.childNodes).forEach(function (node) {
+      var isEm = node.nodeType === 1 && node.tagName === 'EM';
+      var text = node.textContent || '';
+      text.split(/\s+/).filter(Boolean).forEach(function (w) {
+        var span = document.createElement('span');
+        span.className = 'word';
+        var inner = document.createElement('i');
+        inner.textContent = w;
+        inner.style.setProperty('--d', (i * 55) + 'ms');
+        if (isEm) { span.style.color = 'var(--fg-dim)'; }
+        span.appendChild(inner);
+        out.push(span, document.createTextNode(' '));
+        i++;
+      });
+    });
+    head.innerHTML = '';
+    out.forEach(function (n) { head.appendChild(n); });
+
+    // Stagger the surrounding furniture in after the headline lands.
+    var lifts = [
+      document.querySelector('.hero__eyebrow'),
+      document.querySelector('.hero__lede'),
+      document.querySelector('.hero__cta'),
+      document.querySelector('.hero__note')
+    ].filter(Boolean);
+    lifts.forEach(function (el, n) {
+      el.classList.add('lift');
+      el.style.setProperty('--d', (i * 55 + 120 + n * 90) + 'ms');
+    });
+
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { hero.classList.add('is-lit'); });
+    });
+  } else if (hero) {
+    hero.classList.add('is-lit');
+  }
+
+  /* ---- hero parallax ------------------------------------------------ */
+
+  var heroLayer = document.querySelector('.hero__bg');
+  if (heroLayer && motionOK) {
+    var ticking = false;
+    window.addEventListener('scroll', function () {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () {
+        var y = window.scrollY;
+        if (y < window.innerHeight * 1.2) {
+          heroLayer.style.transform = 'translate3d(0,' + (y * 0.28) + 'px,0) scale(' + (1 + y * 0.00012) + ')';
+        }
+        ticking = false;
+      });
+    }, { passive: true });
+  }
+
+  /* ---- cursor ------------------------------------------------------- */
+
+  if (finePointer && motionOK) {
+    var dot = document.createElement('div');
+    dot.className = 'cursor';
+    dot.innerHTML = '<span class="cursor__label">PLAY</span>';
+    document.body.appendChild(dot);
+
+    var tx = 0, ty = 0, cx = 0, cy = 0, awake = false;
+
+    window.addEventListener('mousemove', function (e) {
+      tx = e.clientX; ty = e.clientY;
+      if (!awake) { cx = tx; cy = ty; awake = true; dot.classList.add('is-awake'); }
+    }, { passive: true });
+
+    // Lerp toward the pointer so the dot trails slightly — instant tracking
+    // reads as a UI element, a little lag reads as considered.
+    (function loop() {
+      cx += (tx - cx) * 0.18;
+      cy += (ty - cy) * 0.18;
+      dot.style.transform = 'translate3d(' + cx + 'px,' + cy + 'px,0) translate(-50%,-50%)';
+      requestAnimationFrame(loop);
+    })();
+
+    document.querySelectorAll('.tile__link').forEach(function (el) {
+      el.addEventListener('mouseenter', function () { dot.classList.add('is-play'); });
+      el.addEventListener('mouseleave', function () { dot.classList.remove('is-play'); });
+    });
+    document.addEventListener('mouseleave', function () { dot.classList.remove('is-awake'); });
+    document.addEventListener('mouseenter', function () { dot.classList.add('is-awake'); });
+  }
+
   /* ---- scroll reveal ----------------------------------------------- */
 
   var targets = document.querySelectorAll('.reveal');
@@ -188,7 +285,9 @@
     entries.forEach(function (entry) {
       if (!entry.isIntersecting) return;
       var el = entry.target;
-      el.style.transitionDelay = (el.dataset.delay || 0) + 'ms';
+      // --d drives the delay on descendants (clip wipe, meta lift), so set the
+      // variable rather than transitionDelay on the element itself.
+      el.style.setProperty('--d', (el.dataset.delay || 0) + 'ms');
       el.classList.add('is-in');
       io.unobserve(el);
     });
