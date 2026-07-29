@@ -249,60 +249,6 @@
     }, { passive: true });
   }
 
-  /* ---- cursor ------------------------------------------------------- */
-
-  if (finePointer && motionOK) {
-    var dot = document.createElement('div');
-    dot.className = 'cursor';
-    dot.innerHTML = '<span class="cursor__label">PLAY</span>';
-    document.body.appendChild(dot);
-
-    var tx = 0, ty = 0, cx = 0, cy = 0, awake = false;
-
-    window.addEventListener('mousemove', function (e) {
-      tx = e.clientX; ty = e.clientY;
-      if (!awake) { cx = tx; cy = ty; awake = true; dot.classList.add('is-awake'); }
-    }, { passive: true });
-
-    // Lerp toward the pointer so the dot trails slightly — instant tracking
-    // reads as a UI element, a little lag reads as considered.
-    (function loop() {
-      cx += (tx - cx) * 0.18;
-      cy += (ty - cy) * 0.18;
-      dot.style.transform = 'translate3d(' + cx + 'px,' + cy + 'px,0) translate(-50%,-50%)';
-      requestAnimationFrame(loop);
-    })();
-
-    document.querySelectorAll('.tile__link').forEach(function (el) {
-      el.addEventListener('mouseenter', function () { dot.classList.add('is-play'); });
-      el.addEventListener('mouseleave', function () { dot.classList.remove('is-play'); });
-    });
-    document.addEventListener('mouseleave', function () { dot.classList.remove('is-awake'); });
-    document.addEventListener('mouseenter', function () { dot.classList.add('is-awake'); });
-  }
-
-  /* ---- masthead contracts on scroll --------------------------------- */
-
-  (function () {
-    var bar = document.querySelector('.masthead');
-    if (!bar) return;
-    var pending = false;
-    var apply = function () {
-      // Hysteresis: separate thresholds for shrinking and growing, so a
-      // cursor resting near the boundary doesn't make the bar flicker.
-      var y = window.scrollY;
-      var on = bar.classList.contains('is-compact');
-      if (!on && y > 140) bar.classList.add('is-compact');
-      else if (on && y < 90) bar.classList.remove('is-compact');
-    };
-    window.addEventListener('scroll', function () {
-      if (pending) return;
-      pending = true;
-      requestAnimationFrame(function () { apply(); pending = false; });
-    }, { passive: true });
-    apply();
-  })();
-
   /* ---- timeline HUD -------------------------------------------------
      Scroll position drives a playhead across a track of clips, one per
      section, with running timecode. Doubles as navigation: click a clip to

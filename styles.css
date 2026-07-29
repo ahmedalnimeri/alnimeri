@@ -820,34 +820,6 @@ body.is-locked { overflow: hidden; }
 }
 .tile.reveal.is-in .tile__meta { opacity: 1; transform: none; }
 
-/* ---------- cursor ----------
-   Replaces the pointer over playable work with an explicit PLAY affordance.
-   Pointer devices only; the real cursor stays for everything else. */
-
-.cursor {
-  position: fixed; top: 0; left: 0; z-index: 80;
-  width: 12px; height: 12px; border-radius: 50%;
-  background: var(--fg);
-  pointer-events: none;
-  mix-blend-mode: difference;
-  transform: translate3d(-50%, -50%, 0);
-  transition: width 0.45s var(--film), height 0.45s var(--film),
-              background 0.45s var(--film), opacity 0.3s linear;
-  opacity: 0;
-  display: grid; place-items: center;
-}
-.cursor.is-awake { opacity: 1; }
-.cursor__label {
-  font-size: 0.66rem; font-weight: 600; letter-spacing: 0.16em;
-  color: #0a0a0c; opacity: 0; transform: scale(0.7);
-  transition: opacity 0.35s var(--film), transform 0.45s var(--film);
-  white-space: nowrap;
-}
-.cursor.is-play { width: 86px; height: 86px; }
-.cursor.is-play .cursor__label { opacity: 1; transform: none; }
-
-@media (hover: none), (pointer: coarse) { .cursor { display: none; } }
-
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
