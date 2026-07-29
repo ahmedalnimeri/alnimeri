@@ -63,6 +63,118 @@
     closeBtn.focus();
   });
 
+  /* ---- silent video ------------------------------------------------
+     Vimeo background mode: no chrome, muted, looping. Requires a Plus
+     account, which this one is. */
+
+  var conn = navigator.connection || {};
+  var motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var dataOK   = !conn.saveData;
+  var finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  function bgSrc(id) {
+    return 'https://player.vimeo.com/video/' + id +
+           '?background=1&autoplay=1&loop=1&muted=1&dnt=1';
+  }
+
+  // Only reveal a loop once the player reports it is actually playing.
+  // `load` fires even when Vimeo is blocked or the video never starts, so
+  // fading in on `load` would drop a black rectangle over the poster —
+  // precisely what a locked-down corporate network would see.
+  function mountLoop(host, id) {
+    var f = document.createElement('iframe');
+    f.src = bgSrc(id);
+    f.allow = 'autoplay';
+    f.setAttribute('tabindex', '-1');
+    f.setAttribute('aria-hidden', 'true');
+
+    var settled = false;
+    function reveal() {
+      if (settled || !f.isConnected) return;
+      settled = true;
+      window.removeEventListener('message', onMsg);
+      host.classList.add('is-playing');
+    }
+
+    function onMsg(e) {
+      if (e.origin !== 'https://player.vimeo.com' || e.source !== f.contentWindow) return;
+      var d = e.data;
+      try { if (typeof d === 'string') d = JSON.parse(d); } catch (_) { return; }
+      if (d && (d.event === 'playProgress' || d.event === 'play')) reveal();
+    }
+
+    window.addEventListener('message', onMsg);
+
+    f.addEventListener('load', function () {
+      // Subscribe to playback events via the player's postMessage API.
+      ['play', 'playProgress'].forEach(function (ev) {
+        try {
+          f.contentWindow.postMessage(
+            JSON.stringify({ method: 'addEventListener', value: ev }),
+            'https://player.vimeo.com'
+          );
+        } catch (_) {}
+      });
+    });
+
+    // Give up quietly: poster stays, nothing flashes.
+    setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener('message', onMsg);
+    }, 4000);
+
+    host.appendChild(f);
+    return f;
+  }
+
+  /* Hero loop — deferred so it never competes with first paint. */
+  var heroBg = document.querySelector('[data-bg-video]');
+  if (heroBg && motionOK && dataOK) {
+    var startHero = function () { mountLoop(heroBg, heroBg.dataset.bgVideo); };
+    if ('requestIdleCallback' in window) requestIdleCallback(startHero, { timeout: 2500 });
+    else setTimeout(startHero, 1200);
+  }
+
+  /* Tile previews — pointer devices only. Touch has no hover state, and
+     autoplaying twelve loops on a phone would be indefensible. */
+  if (finePointer && motionOK && dataOK) {
+    var active = null;
+    var timer = null;
+
+    var stop = function () {
+      if (!active) return;
+      active.classList.remove('is-playing');
+      var host = active;
+      active = null;
+      setTimeout(function () { if (host !== active) host.innerHTML = ''; }, 700);
+    };
+
+    document.querySelectorAll('.tile__link').forEach(function (link) {
+      var host = link.querySelector('.tile__preview');
+      var id = link.dataset.video;
+      if (!host || !id) return;
+
+      link.addEventListener('mouseenter', function () {
+        clearTimeout(timer);
+        // Hover intent: a cursor crossing the grid shouldn't spawn a player
+        // in every tile it passes over.
+        timer = setTimeout(function () {
+          if (active === host) return;
+          stop();
+          active = host;
+          host.innerHTML = '';
+          mountLoop(host, id);
+        }, 200);
+      });
+
+      link.addEventListener('mouseleave', function () {
+        clearTimeout(timer);
+        if (active === host) stop();
+      });
+    });
+  }
+
   /* ---- scroll reveal ----------------------------------------------- */
 
   var targets = document.querySelectorAll('.reveal');

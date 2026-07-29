@@ -126,6 +126,30 @@ a { color: inherit; }
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
   padding: 9rem var(--gut) clamp(3rem, 8vh, 6rem);
+  isolation: isolate;
+}
+
+/* Full-bleed silent loop behind the hero. The iframe is sized in viewport
+   units so it always covers, whatever the window aspect ratio. */
+.hero__bg {
+  position: absolute; inset: 0; z-index: -2;
+  overflow: hidden; background: #000;
+  opacity: 0; transition: opacity 1.6s var(--ease);
+}
+.hero__bg.is-playing { opacity: 1; }
+.hero__bg iframe {
+  position: absolute; top: 50%; left: 50%;
+  width: 100vw; height: 56.25vw;
+  min-height: 100svh; min-width: 177.78svh;
+  transform: translate(-50%, -50%);
+  border: 0; pointer-events: none;
+}
+/* Scrim: without it the headline sits on moving footage and becomes unreadable. */
+.hero__scrim {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgba(10,10,12,0.82) 0%, rgba(10,10,12,0.62) 45%, rgba(10,10,12,0.92) 100%),
+    radial-gradient(70vw 60vh at 50% 45%, rgba(10,10,12,0.25), rgba(10,10,12,0.8) 75%);
 }
 
 .hero__eyebrow {
@@ -231,6 +255,23 @@ a { color: inherit; }
   transition: transform 0.9s var(--ease), filter 0.6s var(--ease);
 }
 .tile__link:hover .tile__img { transform: scale(1.06); filter: saturate(1) brightness(1); }
+
+/* Silent preview, injected on hover intent and torn down on leave. */
+.tile__preview {
+  position: absolute; inset: 0; overflow: hidden;
+  opacity: 0; transition: opacity 0.7s var(--ease);
+  pointer-events: none; background: #000;
+}
+.tile__preview.is-playing { opacity: 1; }
+.tile__preview iframe {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%; aspect-ratio: 16 / 9;
+  border: 0; pointer-events: none;
+}
+/* Portrait tiles are taller than the 16:9 source, so drive from height instead
+   or the video letterboxes inside the frame. */
+.tile--tall .tile__preview iframe { width: auto; height: 100%; }
 
 .tile__veil {
   position: absolute; inset: 0; pointer-events: none;
