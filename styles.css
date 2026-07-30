@@ -281,11 +281,10 @@ a { color: inherit; }
 
 .tile__img {
   width: 100%; height: 100%; object-fit: cover;
-  transform: scale(1.015);
-  filter: saturate(0.9) brightness(0.85);
-  transition: transform 0.9s var(--ease), filter 0.6s var(--ease);
+  transform: scale(1.001);
+  transition: transform 1s var(--film);
 }
-.tile__link:hover .tile__img { transform: scale(1.06); filter: saturate(1) brightness(1); }
+.tile__link:hover .tile__img { transform: scale(1.045); }
 
 /* Silent preview, injected on hover intent and torn down on leave. */
 .tile__preview {
@@ -306,10 +305,10 @@ a { color: inherit; }
 
 .tile__veil {
   position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 55%);
-  opacity: 0.9; transition: opacity 0.5s var(--ease);
+  background: linear-gradient(to top, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0) 42%);
+  opacity: 0.75; transition: opacity 0.5s var(--ease);
 }
-.tile__link:hover .tile__veil { opacity: 0.45; }
+.tile__link:hover .tile__veil { opacity: 0.3; }
 
 .tile__play {
   position: absolute; inset: 0; margin: auto;
@@ -843,15 +842,18 @@ body.is-locked { overflow: hidden; }
   transition: opacity 1s var(--film) var(--d, 0ms), transform 1s var(--film) var(--d, 0ms);
 }
 
-/* Tiles wipe open rather than fading — closer to a cut than a dissolve. */
+/* Tiles settle into place. An earlier version wiped them open from a
+   zero-height sliver via clip-path; across a full grid that stage reads as
+   broken rather than deliberate. A short rise and fade keeps the image
+   legible from the first frame. */
 .tile.reveal { opacity: 1; transform: none; }
 .tile.reveal .tile__link {
-  clip-path: inset(0 0 100% 0);
-  transform: scale(1.04);
-  transition: clip-path 1.15s var(--film), transform 1.4s var(--film);
+  opacity: 0;
+  transform: translateY(20px) scale(0.985);
+  transition: opacity 0.85s var(--film), transform 1.05s var(--film);
   transition-delay: var(--d, 0ms);
 }
-.tile.reveal.is-in .tile__link { clip-path: inset(0 0 0 0); transform: none; }
+.tile.reveal.is-in .tile__link { opacity: 1; transform: none; }
 .tile.reveal .tile__meta {
   opacity: 0; transform: translateY(14px);
   transition: opacity 0.9s var(--film), transform 0.9s var(--film);
