@@ -1,0 +1,6 @@
+# alnimeri.com
+
+User-agent: *
+Allow: /
+
+Sitemap: https://alnimeri.com/sitemap.xml
