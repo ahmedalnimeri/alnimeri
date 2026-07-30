@@ -1,0 +1,21 @@
+# Cloudflare Pages header rules.
+#
+# HTML must always be revalidated. Without this, a browser can pair freshly
+# deployed markup with a cached stylesheet — which is how the brand mark once
+# rendered at its full 900px, and how an old figure kept showing after it had
+# been corrected. must-revalidate costs one conditional request and removes a
+# whole class of "it still shows the old version" confusion.
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Fingerprinted and content-stable assets can be cached hard. Stylesheet and
+# script carry a ?v= query that changes on every edit, so a stale copy can
+# never be paired with new HTML.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/styles.css
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/main.js
+  Cache-Control: public, max-age=604800, must-revalidate
