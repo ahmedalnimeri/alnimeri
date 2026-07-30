@@ -22,7 +22,9 @@ def stamp(page):
             return m.group(0)
         n += 1
         return f'{attr}="{path}?h={digest(path)}"'
-    s = re.sub(r'\b(src|href)="(assets/[^"?]+)(?:\?h=[a-f0-9]+)?"', sub, s)
+    # Favicons are deliberately excluded: Google caches them by URL and a
+    # changing hash would keep resetting that cache.
+    s = re.sub(r'\b(src|href)="(assets/(?!favicon)[^"?]+)(?:\?h=[a-f0-9]+)?"', sub, s)
     open(page, 'w').write(s)
     return n, missing
 
