@@ -15,23 +15,28 @@ def iso(d):
     return f"PT{m}M{sec}S"
 
 videos = []
-for m in re.finditer(r'data-video="(\d+)" data-title="([^"]*)"', s):
-    vid, title = m.group(1), m.group(2)
+for m in re.finditer(r'<a class="tile__link"[^>]*?data-title="([^"]*)"', s, re.S):
+    title = m.group(1)
+    head  = s[max(0, m.start()-400):m.end()]
+    vm    = re.search(r'data-video="(\d+)"', m.group(0)) or re.search(r'data-video="(\d+)"', head)
+    vid   = vm.group(1) if vm else None
     blk  = s[m.start():m.start()+1800]
     dur  = re.search(r'tile__dur">([\d:]+)<', blk)
     kind = re.search(r'tile__kind">([^<]*)<', blk)
     stat = re.search(r'tile__stat" href="([^"]*)"', blk)
     name = title.replace('&amp;', '&')
     kindtxt = (kind.group(1) if kind else '').replace('&amp;', '&').replace(' · ', ' — ')
+    poster = re.search(r'src="assets/(posters/[^"?]+)', blk)
     v = {
         "@type": "VideoObject",
         "name": name,
-        "description": f"{kindtxt} by Ahmed El-Nimeri." if kindtxt else f"Film by Ahmed El-Nimeri.",
-        "thumbnailUrl": f"https://alnimeri.com/assets/posters/{vid}.jpg",
-        "embedUrl": f"https://player.vimeo.com/video/{vid}",
+        "description": f"{kindtxt} by Ahmed El-Nimeri." if kindtxt else "Film by Ahmed El-Nimeri.",
         "creator": {"@id": "https://alnimeri.com/#person"},
         "director": {"@id": "https://alnimeri.com/#person"},
     }
+    if poster: v["thumbnailUrl"] = f"https://alnimeri.com/assets/{poster.group(1)}"
+    # Only films with a Vimeo master can be embedded; the rest live on X only.
+    if vid: v["embedUrl"] = f"https://player.vimeo.com/video/{vid}"
     if dur:  v["duration"] = iso(dur.group(1))
     if stat: v["sameAs"] = stat.group(1)
     videos.append(v)
