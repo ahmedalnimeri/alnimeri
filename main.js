@@ -249,6 +249,28 @@
     }, { passive: true });
   }
 
+  /* ---- masthead contracts on scroll --------------------------------- */
+
+  (function () {
+    var bar = document.querySelector('.masthead');
+    if (!bar) return;
+    var pending = false;
+    function apply() {
+      // Separate thresholds for shrinking and growing, so a scroll position
+      // resting near the boundary cannot make the bar flicker.
+      var y = window.scrollY;
+      var on = bar.classList.contains('is-compact');
+      if (!on && y > 140) bar.classList.add('is-compact');
+      else if (on && y < 90) bar.classList.remove('is-compact');
+    }
+    window.addEventListener('scroll', function () {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(function () { apply(); pending = false; });
+    }, { passive: true });
+    apply();
+  })();
+
   /* ---- timeline HUD -------------------------------------------------
      Scroll position drives a playhead across a track of clips, one per
      section, with running timecode. Doubles as navigation: click a clip to

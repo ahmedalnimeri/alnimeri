@@ -168,6 +168,13 @@ a { color: inherit; }
   opacity: 0; transition: opacity 1.6s var(--ease);
 }
 .hero__bg.is-playing { opacity: 1; }
+/* Slow push so the plate is never wholly static, even before any scroll. */
+.hero__bg iframe { animation: drift 34s ease-in-out infinite alternate; }
+@keyframes drift {
+  from { transform: translate(-50%, -50%) scale(1.02); }
+  to   { transform: translate(-50%, -50%) scale(1.10); }
+}
+@media (prefers-reduced-motion: reduce) { .hero__bg iframe { animation: none; } }
 .hero__bg iframe {
   position: absolute; top: 50%; left: 50%;
   width: 100vw; height: 56.25vw;
@@ -175,12 +182,46 @@ a { color: inherit; }
   transform: translate(-50%, -50%);
   border: 0; pointer-events: none;
 }
-/* Scrim: without it the headline sits on moving footage and becomes unreadable. */
+/* Scrim. The previous version ran 82-92% black across the whole frame, which
+   made the footage effectively invisible — a black rectangle with type on it.
+   Top and bottom stay dark where the navbar and CTAs need contrast; the middle
+   breathes. A vignette pulls the corners down so the eye stays centred. */
 .hero__scrim {
   position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background:
-    linear-gradient(to bottom, rgba(10,10,12,0.82) 0%, rgba(10,10,12,0.62) 45%, rgba(10,10,12,0.92) 100%),
-    radial-gradient(70vw 60vh at 50% 45%, rgba(10,10,12,0.25), rgba(10,10,12,0.8) 75%);
+    linear-gradient(to bottom,
+      rgba(10,10,12,0.80) 0%,
+      rgba(10,10,12,0.36) 32%,
+      rgba(10,10,12,0.32) 58%,
+      rgba(10,10,12,0.90) 100%),
+    radial-gradient(58vw 52vh at 50% 44%, rgba(10,10,12,0.12), rgba(10,10,12,0.60) 78%),
+    radial-gradient(125% 125% at 50% 50%, transparent 40%, rgba(0,0,0,0.58) 100%);
+}
+
+/* Film grain. Self-contained SVG turbulence — no request, no library. Overlay
+   blend grades the footage rather than fogging it, and steps() jitters the
+   offset so it reads as emulsion instead of a static texture. */
+.hero__grain {
+  position: absolute; inset: -60%; z-index: -1; pointer-events: none;
+  opacity: 0.15;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 6s steps(8) infinite;
+  will-change: transform;
+}
+@keyframes grain {
+  0%   { transform: translate3d(0,0,0); }
+  12%  { transform: translate3d(-2%,-3%,0); }
+  25%  { transform: translate3d(3%,-1%,0); }
+  37%  { transform: translate3d(-1%,2%,0); }
+  50%  { transform: translate3d(2%,3%,0); }
+  62%  { transform: translate3d(-3%,1%,0); }
+  75%  { transform: translate3d(1%,-2%,0); }
+  87%  { transform: translate3d(-2%,2%,0); }
+  100% { transform: translate3d(0,0,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__grain { animation: none; opacity: 0.09; }
 }
 
 .hero__eyebrow {
