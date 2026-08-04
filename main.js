@@ -308,7 +308,12 @@
       b.innerHTML = '<span>' + name + '</span>';
       b.setAttribute('aria-label', 'Go to ' + name);
       b.addEventListener('click', function () {
-        s.scrollIntoView({ behavior: motionOK ? 'smooth' : 'auto', block: 'start' });
+        // block:'start' lands the heading underneath the fixed masthead, so
+        // offset by its height instead of using scrollIntoView directly.
+        window.scrollTo({
+          top: Math.max(0, s.offsetTop - headerOffset()),
+          behavior: motionOK ? 'smooth' : 'auto'
+        });
       });
       track.appendChild(b);
       return b;
@@ -323,6 +328,13 @@
 
     bar.appendChild(tc); bar.appendChild(track); bar.appendChild(pct);
     document.body.appendChild(bar);
+
+    function headerOffset() {
+      var m = document.querySelector('.masthead');
+      if (!m) return 0;
+      var r = m.getBoundingClientRect();
+      return r.height + r.top + 12;
+    }
 
     var now = tc.querySelector('.tl__now');
     var RUNTIME = 154; // seconds of notional sequence length
@@ -375,11 +387,20 @@
       else hide();
 
       // Mark the clip whose section currently owns the middle of the viewport.
-      var mid = window.scrollY + window.innerHeight / 2;
+      // Probe just below the masthead, not the viewport centre. Using the
+      // centre marked the NEXT section as live whenever a section was shorter
+      // than half a screen — so clicking a clip appeared to jump you forward.
+      var probe = window.scrollY + headerOffset() + 24;
       var live = 0;
       secs.forEach(function (s, n) {
-        if (s.offsetTop <= mid) live = n;
+        if (s.offsetTop <= probe) live = n;
       });
+      // The final section can never reach the probe line — the document runs
+      // out of scroll first — so it would never light up. At the bottom of the
+      // page, it is by definition the one you are looking at.
+      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4) {
+        live = secs.length - 1;
+      }
       clips.forEach(function (c, n) { c.classList.toggle('is-live', n === live); });
     }
 
