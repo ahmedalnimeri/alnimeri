@@ -663,6 +663,7 @@ a { color: inherit; }
   font-size: clamp(2rem, 5.6vw, 4.5rem);
   line-height: 1.06; letter-spacing: -0.035em; font-weight: 600;
 }
+.pagehead__title em { font-style: normal; color: var(--fg-dim); }
 .pagehead__lede {
   margin: clamp(1.5rem, 4vh, 2.25rem) auto 0;
   max-width: 62ch; color: var(--fg-dim);
