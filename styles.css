@@ -8,6 +8,7 @@
 @font-face { font-family: Poppins; font-weight: 700; font-style: normal; font-display: swap; src: url(assets/fonts/poppins-700.woff2) format("woff2"); }
 
 :root {
+  --hero-poster: url("assets/posters/1061799826.jpg");
   --bg:        #0a0a0c;
   --bg-raised: #141418;
   --fg:        #ffffff;
@@ -164,24 +165,32 @@ a { color: inherit; }
    units so it always covers, whatever the window aspect ratio. */
 .hero__bg {
   position: absolute; inset: 0; z-index: -2;
-  overflow: hidden; background: #000;
-  opacity: 0; transition: opacity 1.6s var(--ease);
+  overflow: hidden;
+  /* Always-visible still frame. Autoplay is blocked in iOS Low Power Mode, under
+     Reduce Motion, with Data Saver on, and on some corporate networks — in all
+     of those the hero previously rendered as flat black. The poster is the
+     floor; the video is the enhancement. */
+  background: #000 var(--hero-poster) center / cover no-repeat;
 }
-.hero__bg.is-playing { opacity: 1; }
-/* Slow push so the plate is never wholly static, even before any scroll. */
-.hero__bg iframe { animation: drift 34s ease-in-out infinite alternate; }
-@keyframes drift {
-  from { transform: translate(-50%, -50%) scale(1.02); }
-  to   { transform: translate(-50%, -50%) scale(1.10); }
-}
-@media (prefers-reduced-motion: reduce) { .hero__bg iframe { animation: none; } }
+/* Sized in viewport units so it always covers, whatever the window aspect.
+   Fades in over the poster only once playback is confirmed, and drifts slowly
+   so the plate is never wholly static. */
 .hero__bg iframe {
   position: absolute; top: 50%; left: 50%;
   width: 100vw; height: 56.25vw;
   min-height: 100svh; min-width: 177.78svh;
   transform: translate(-50%, -50%);
   border: 0; pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.6s var(--ease);
+  animation: drift 34s ease-in-out infinite alternate;
 }
+.hero__bg.is-playing iframe { opacity: 1; }
+@keyframes drift {
+  from { transform: translate(-50%, -50%) scale(1.02); }
+  to   { transform: translate(-50%, -50%) scale(1.10); }
+}
+@media (prefers-reduced-motion: reduce) { .hero__bg iframe { animation: none; } }
 /* Scrim. The previous version ran 82-92% black across the whole frame, which
    made the footage effectively invisible — a black rectangle with type on it.
    Top and bottom stay dark where the navbar and CTAs need contrast; the middle
