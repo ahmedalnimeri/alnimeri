@@ -44,6 +44,17 @@ export async function onRequest(context) {
         // No binding yet — still visible in the live log stream.
         console.log(JSON.stringify(row));
       }
+
+      // Enforce the 90-day retention promised in the privacy note, rather than
+      // only stating it. Runs on roughly 1 in 200 page views so the cost is
+      // negligible and no scheduled job is needed.
+      if (env.DB && Math.random() < 0.005) {
+        waitUntil(
+          env.DB.prepare(
+            `DELETE FROM visits WHERE ts < datetime('now', '-90 days')`
+          ).run().catch((e) => console.log('d1-purge-failed: ' + e.message))
+        );
+      }
     }
   } catch (err) {
     console.log('log-error: ' + err.message);
