@@ -3,6 +3,15 @@
   // files from its edge. There is no build step — the repo is the output.
   "name": "alnimeri",
   "compatibility_date": "2026-07-29",
+  // Visit log. The database_id is filled in after creating the D1 database;
+  // the binding name DB is what functions/_middleware.js expects.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "alnimeri_visits",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ],
   "assets": {
     "directory": "./",
     "not_found_handling": "404-page"

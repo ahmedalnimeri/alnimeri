@@ -19,3 +19,8 @@
 
 /main.js
   Cache-Control: public, max-age=604800, must-revalidate
+
+# The visit log is private and must never be cached or indexed.
+/api/*
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
