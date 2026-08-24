@@ -1,6 +1,0 @@
-# Build config is not site content. Pages serves the repo root, so these are
-# reachable by default; a scanner probed /.git/config and /.env within hours
-# of launch, and wrangler.jsonc was answering 200 with the D1 database id.
-/wrangler.jsonc  /404.html  404
-/package.json    /404.html  404
-/README.md       /404.html  404

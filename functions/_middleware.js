@@ -9,6 +9,12 @@
  * never take the site down.
  */
 
+// Pages serves the repository root, so build config is reachable as site
+// content. _redirects cannot cover it: a static file that exists is served
+// before redirects are consulted. Middleware runs first, so the block goes
+// here. wrangler.jsonc was answering 200 with the D1 database id in it.
+const BLOCKED = /^\/(wrangler\.(jsonc|toml|json)|package(-lock)?\.json|README\.md|bin-[^/]*\.py)$/i;
+
 const ASSET = /\.(css|js|mjs|jpg|jpeg|png|svg|ico|webp|woff2?|pdf|xml|txt|map)$/i;
 const BOT   = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|curl|wget|python-requests|monitor|preview/i;
 
@@ -17,6 +23,9 @@ export async function onRequest(context) {
 
   try {
     const url = new URL(request.url);
+    if (BLOCKED.test(url.pathname)) {
+      return new Response('Not found', { status: 404 });
+    }
     if (!ASSET.test(url.pathname)) {
       const cf = request.cf || {};
       const ua = request.headers.get('User-Agent') || '';
