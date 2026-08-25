@@ -118,7 +118,27 @@ a { color: inherit; }
 .masthead__nav a:hover { color: var(--fg); }
 @media (max-width: 620px) {
   .masthead { padding-left: 1.1rem; }
+
+  /* The header fits one destination at this width. It used to spend it on
+     "Get in touch", which hid About from phones entirely — the only other
+     link sits 85% down an 8,500px page, and most arrivals are Instagram's
+     in-app browser, where nobody scrolls nine screens. Two days of logs:
+     every mobile visitor landed on / and left without reaching /about.
+
+     So the slot goes to the other page, whichever that is: the work page
+     offers About, the About page offers Work. Contact drops out — someone
+     who hasn't read the background isn't ready to email, and the contact
+     section is already at the foot of the page they're scrolling. */
   .masthead__nav a:not(.btn) { display: none; }
+  .masthead__nav a[href="/about"]:not([aria-current]),
+  .masthead__nav a[href="./"] {
+    display: inline-flex; align-items: center;
+    padding: 0.55rem 1.15rem;
+    border-radius: var(--pill);
+    background: var(--fg); color: #0a0a0c;
+    font-weight: 600; font-size: 0.85rem;
+  }
+  .masthead__nav a.btn--solid { display: none; }
 }
 
 /* ---------- pill buttons ---------- */
