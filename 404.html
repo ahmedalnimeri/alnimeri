@@ -6,8 +6,16 @@
 <title>Not found — Ahmed El-Nimeri</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0a0a0c">
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48.png">
+<link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<!-- Root-relative on purpose: Pages serves this document at the URL that was
+     requested, so a relative href resolves against /some/missing/path/ and
+     404s in turn — leaving an unstyled error page. -->
+<link rel="stylesheet" href="/styles.css?v=48">
 <style>
   .lost {
     position: relative; z-index: 1;

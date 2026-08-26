@@ -15,6 +15,11 @@
   function open(id, title, portrait) {
     if (!lb) return;
     lb.classList.toggle('is-portrait', !!portrait);
+    // Paint the poster the visitor just tapped behind the player. iOS blocks
+    // the unmuted autoplay, so the frame would otherwise be black until they
+    // press play — the tile's own facade pattern, carried into the dialog.
+    var poster = opener && opener.querySelector('.tile__img');
+    frame.style.backgroundImage = poster ? 'url("' + (poster.currentSrc || poster.src) + '")' : '';
     frame.innerHTML =
       '<iframe src="https://player.vimeo.com/video/' + id +
       '?autoplay=1&title=0&byline=0&portrait=0&dnt=1" ' +
@@ -38,6 +43,7 @@
     setTimeout(function () {
       lb.classList.remove('is-open');
       frame.innerHTML = '';
+      frame.style.backgroundImage = '';
     }, 400);
     if (opener) { opener.focus(); opener = null; }
   }
@@ -56,11 +62,20 @@
   if (lb) lb.addEventListener('click', function (e) { if (e.target === lb) close(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
 
-  // Keep tab focus inside the lightbox while it's open.
+  // Keep tab focus inside the lightbox while it's open. The previous version
+  // forced focus back to the close button on every Tab, which kept focus in
+  // the dialog but made the player itself unreachable — a keyboard user could
+  // open a film and never start it. Cycle between the two real stops instead.
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Tab' || !lb || !lb.classList.contains('is-open')) return;
+    var stops = [closeBtn, frame.querySelector('iframe')].filter(Boolean);
+    if (!stops.length) return;
     e.preventDefault();
-    closeBtn.focus();
+    var i = stops.indexOf(document.activeElement);
+    var next = e.shiftKey
+      ? stops[(i - 1 + stops.length) % stops.length]
+      : stops[(i + 1) % stops.length];
+    next.focus();
   });
 
   /* ---- silent video ------------------------------------------------
@@ -208,7 +223,9 @@
       document.querySelector('.hero__eyebrow'),
       document.querySelector('.hero__lede'),
       document.querySelector('.hero__cta'),
-      document.querySelector('.hero__note')
+      // Was '.hero__note', which does not exist in the markup — so the strip
+      // sat outside the choreography while JS staggered nothing.
+      document.querySelector('.hero .strip')
     ].filter(Boolean);
     lifts.forEach(function (el, n) {
       el.classList.add('lift');
@@ -353,25 +370,32 @@
     // never sits on top of the work. Hovering it holds it open, otherwise
     // reaching for a clip would dismiss the thing you were reaching for.
     var idle = null, hovering = false;
+    // A thumb has further to travel than a cursor, and on touch there is no
+    // hover to hold the bar open once it starts closing.
+    var IDLE = window.matchMedia('(pointer: coarse)').matches ? 3200 : 1500;
 
     function wake() {
       bar.classList.add('is-up');
       clearTimeout(idle);
       idle = setTimeout(function () {
         if (!hovering) bar.classList.remove('is-up');
-      }, 1500);
+      }, IDLE);
     }
     function hide() {
       clearTimeout(idle);
       if (!hovering) bar.classList.remove('is-up');
     }
 
-    bar.addEventListener('mouseenter', function () {
-      hovering = true;
-      clearTimeout(idle);
-      bar.classList.add('is-up');
-    });
-    bar.addEventListener('mouseleave', function () { hovering = false; wake(); });
+    // Hover-hold is a pointer concept. On touch, mouseleave may never fire, so
+    // a single tap pinned the bar open on top of the work with no way back.
+    if (finePointer) {
+      bar.addEventListener('mouseenter', function () {
+        hovering = true;
+        clearTimeout(idle);
+        bar.classList.add('is-up');
+      });
+      bar.addEventListener('mouseleave', function () { hovering = false; wake(); });
+    }
     bar.addEventListener('focusin',  function () { hovering = true; bar.classList.add('is-up'); });
     bar.addEventListener('focusout', function () { hovering = false; wake(); });
 
@@ -401,7 +425,11 @@
       if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4) {
         live = secs.length - 1;
       }
-      clips.forEach(function (c, n) { c.classList.toggle('is-live', n === live); });
+      clips.forEach(function (c, n) {
+        c.classList.toggle('is-live', n === live);
+        if (n === live) c.setAttribute('aria-current', 'true');
+        else c.removeAttribute('aria-current');
+      });
     }
 
     window.addEventListener('scroll', function () {
@@ -472,6 +500,38 @@
     nums.forEach(function (el) { cio.observe(el); });
   })();
 
+  /* ---- copy the email ----------------------------------------------
+     mailto: often has no handler inside Instagram's in-app browser, which is
+     how most visitors arrive — the tap silently does nothing and the site's
+     one ask dead-ends. The link keeps working where it works; this adds a
+     second route rather than replacing the first. */
+
+  (function () {
+    var mail = document.querySelector('.contact__mail');
+    if (!mail || !navigator.clipboard) return;
+
+    var note = document.createElement('span');
+    note.className = 'copied';
+    note.setAttribute('role', 'status');
+    note.textContent = 'Copied';
+    mail.insertAdjacentElement('afterend', note);
+
+    var hideTimer = null;
+    mail.addEventListener('click', function (e) {
+      // Let a real mail client win when one exists: only intercept the
+      // modifier-free left click, and never block the default on desktop
+      // where mailto: is reliable.
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+      // writeText resolves asynchronously — only claim success once it does,
+      // or a failed copy would still show "Copied".
+      navigator.clipboard.writeText(mail.textContent.trim()).then(function () {
+        note.classList.add('is-on');
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(function () { note.classList.remove('is-on'); }, 1800);
+      }).catch(function () {});
+    });
+  })();
+
   /* ---- scroll reveal ----------------------------------------------- */
 
   var targets = document.querySelectorAll('.reveal');
@@ -485,13 +545,41 @@
     entries.forEach(function (entry) {
       if (!entry.isIntersecting) return;
       var el = entry.target;
-      // --d drives the delay on descendants (clip wipe, meta lift), so set the
-      // variable rather than transitionDelay on the element itself.
+      // --d drives the delay on the element and its descendants (clip wipe,
+      // meta lift).
       el.style.setProperty('--d', (el.dataset.delay || 0) + 'ms');
       el.classList.add('is-in');
       io.unobserve(el);
     });
-  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    // Positive bottom margin: start un-hiding a screen-and-a-bit before the
+    // element arrives. The old -8% waited until it was already on screen, so
+    // a fast scroll outran the 0.85s fade and the evidence — a 12.8M-view
+    // poster — rendered as a blank card.
+  }, { rootMargin: '0px 0px 40% 0px', threshold: 0.01 });
 
   targets.forEach(function (el) { io.observe(el); });
+
+  // Same doctrine as the headline and the counters: nothing the visitor can
+  // actually see may sit hidden waiting on a callback that might not come.
+  // Scoped to the viewport on purpose — a blanket reveal would un-hide the
+  // whole document and delete the scroll choreography. Anything at or above
+  // the fold that is still masked gets shown, with its stagger dropped since
+  // the moment it was choreographed for has passed.
+  var failOpen = function () {
+    var h = window.innerHeight;
+    targets.forEach(function (el) {
+      if (el.classList.contains('is-in')) return;
+      var r = el.getBoundingClientRect();
+      if (r.top < h && r.bottom > 0) {
+        el.style.setProperty('--d', '0ms');
+        el.classList.add('is-in');
+        io.unobserve(el);
+      }
+    });
+  };
+  setTimeout(failOpen, 2200);
+  // Also catch the case where the tab was hidden for the whole load.
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) setTimeout(failOpen, 400);
+  });
 })();
