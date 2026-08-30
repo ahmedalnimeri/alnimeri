@@ -202,6 +202,24 @@ a { color: inherit; }
   top: var(--matte); bottom: var(--matte);
 }
 .hero { --matte: clamp(3.2rem, 9svh, 5.5rem); background: #000; }
+/* The matte bars are real elements so they can move: as the hero scrolls
+   out, the gate closes — the bars grind shut in mechanical steps and the
+   opening shot irises to black. Static letterbox where scroll-driven
+   animations don't exist. */
+.hero::before, .hero::after {
+  content: ""; position: absolute; left: 0; right: 0; height: var(--matte);
+  background: #000; z-index: 5; pointer-events: none;
+}
+.hero::before { top: 0; transform-origin: top; }
+.hero::after  { bottom: 0; transform-origin: bottom; }
+@supports (animation-timeline: view()) {
+  .hero::before, .hero::after {
+    animation: gate steps(12, end) both;
+    animation-timeline: view();
+    animation-range: exit 0% exit 100%;
+  }
+}
+@keyframes gate { from { transform: scaleY(1); } to { transform: scaleY(6.5); } }
 
 /* The scrim thins to ~0.32 across the middle band so the footage can breathe,
    which is also exactly where the headline's second clause and the lede sit.
@@ -352,6 +370,15 @@ a { color: inherit; }
   content: ""; position: absolute; top: -2px; left: 0;
   width: 34px; height: 3px; background: var(--fg);
 }
+/* The splice mark cuts itself onto the timeline as the slate arrives. */
+@supports (animation-timeline: view()) {
+  .slate::before {
+    animation: splice steps(6, end) both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 70%;
+  }
+}
+@keyframes splice { from { width: 0; } to { width: 34px; } }
 .slate__tc, .slate__meta {
   font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--fg-faint); white-space: nowrap;
@@ -430,11 +457,33 @@ a { color: inherit; }
 .tile__img {
   width: 100%; height: 100%; object-fit: cover;
   transform: scale(1.001);
+  /* At rest the whole grid is a monochrome contact sheet — the site's chrome
+     is monochrome, and so is the archive. Engage a clip and its colour
+     floods back in stepped frames: the work is what's alive here. */
+  filter: grayscale(1) contrast(1.04);
   /* A 12-frame stepped push-in, not a glide — the zoom an editor nudges in
      whole frames. Bridges into the hover preview once playback confirms. */
-  transition: transform calc(var(--f) * 12) steps(12, end);
+  transition: transform calc(var(--f) * 12) steps(12, end),
+              filter calc(var(--f) * 8) steps(8, end);
 }
-.tile__link:hover .tile__img { transform: scale(1.035); }
+.tile__link:hover .tile__img,
+.tile__link:focus-visible .tile__img { transform: scale(1.035); filter: none; }
+/* Touch has no hover, so on phones the film nearest the centre of the screen
+   develops into colour as you scroll — the playhead is the viewport itself.
+   Browsers without scroll-driven animations keep colour at rest. */
+@supports (animation-timeline: view()) {
+  @media (hover: none) {
+    .tile__img {
+      animation: develop steps(8, end) both;
+      animation-timeline: view();
+      animation-range: cover 10% cover 90%;
+    }
+  }
+}
+@keyframes develop {
+  0%, 100% { filter: grayscale(1) contrast(1.04); }
+  32%, 68% { filter: none; }
+}
 
 /* Silent preview, injected on hover intent and torn down on leave. */
 .tile__preview {
@@ -1029,6 +1078,21 @@ a { color: inherit; }
 }
 .lb.is-open { display: grid; }
 .lb.is-visible { opacity: 1; }
+/* The source monitor opens inside its own gate: two matte bars snap shut
+   around the player in stepped frames, tying the dialog to the hero's
+   letterbox language. @starting-style animates the first paint; without it
+   the bars simply appear — a cut either way. */
+.lb::before, .lb::after {
+  content: ""; position: absolute; left: 0; right: 0;
+  height: clamp(2rem, 6svh, 4rem); background: #000; z-index: 1;
+  transition: height calc(var(--f) * 3) steps(3, end);
+}
+.lb::before { top: 0; } .lb::after { bottom: 0; }
+@starting-style {
+  .lb.is-open::before, .lb.is-open::after { height: 0; }
+}
+.lb__frame { z-index: 2; }
+.lb__close, .lb__cap { z-index: 3; }
 
 .lb__frame {
   width: min(100%, 1400px); aspect-ratio: 16 / 9;
@@ -1098,7 +1162,12 @@ body.is-locked { overflow: hidden; }
 .is-armed .shot { opacity: 0; }
 .is-lit .shot { opacity: 1; transition: opacity 0s linear; }
 .is-lit .shot--1 { transition-delay: calc(var(--f) * 6); }
-.is-lit .shot--2 { transition-delay: calc(var(--f) * 20); }
+.is-lit .shot--2 {
+  transition-delay: calc(var(--f) * 20);
+  /* The reverse lands a stop and a half hot and settles — five frames. */
+  animation: expose calc(var(--f) * 5) steps(5, end) calc(var(--f) * 20) both;
+}
+@keyframes expose { from { filter: brightness(1.6); } to { filter: none; } }
 
 /* Hero furniture cuts in after the reverse, in whole frames. */
 .lift { opacity: 0; transform: translateY(14px); }
@@ -1140,6 +1209,13 @@ body.is-locked { overflow: hidden; }
   .reveal { opacity: 1; transform: none; }
   .is-armed .shot { opacity: 1; }
   .cut { display: none; }
+  /* Scroll-driven pieces: a 0.01ms duration is overridden by the timeline,
+     so they must be switched off by name. Gate stays a static letterbox,
+     posters keep colour, splice marks sit complete. */
+  .hero::before, .hero::after { animation: none; }
+  .slate::before { animation: none; }
+  .tile__img { animation: none; filter: none; }
+  .shot--2 { animation: none !important; }
   /* .tile.reveal keeps the element visible but hides its children, so the
      generic rule above left the grid blank for reduced-motion users. */
   .tile.reveal .tile__link,
@@ -1154,6 +1230,21 @@ body.is-locked { overflow: hidden; }
 .no-js .lift { opacity: 1; transform: none; }
 .no-js .shot { opacity: 1; }
 .no-js .tile__play { display: none; }
+
+/* ---------- page-to-page: the cut crosses documents ----------
+   Same-origin navigation runs through the View Transitions API: the old
+   page snaps to black for one frame, the new one cuts in two frames later.
+   Changing pages is a splice, not a load. Browsers without support just
+   navigate; reduced motion turns it off entirely. */
+
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: vt-out calc(var(--f) * 2) steps(1, end) both; }
+::view-transition-new(root) { animation: vt-in  calc(var(--f) * 3) steps(2, end) both; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in  { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}
 
 /* ---------- prose pages ---------- */
 
