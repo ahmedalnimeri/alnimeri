@@ -29,7 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/poppins-600.woff2" crossorigin>
 <link rel="preload" as="image" href="/assets/posters/1061799826.jpg?h=9170cb76" fetchpriority="high">
 <link rel="preconnect" href="https://player.vimeo.com">
-<link rel="stylesheet" href="styles.css?v=48">
+<link rel="stylesheet" href="styles.css?v=49">
 <script type="application/ld+json">{
   "@context": "https://schema.org",
   "@graph": [
@@ -364,7 +364,6 @@
 </head>
 <body>
 <a class="skip" href="#work">Skip to work</a>
-<div class="glow" aria-hidden="true"></div>
 
 <header class="masthead">
   <a class="masthead__mark" href="#top" aria-label="Ahmed El-Nimeri — home"><img class="mark" src="assets/logo-96.png?h=e8529375" alt="" width="32" height="30" aria-hidden="true"><span>Ahmed El-Nimeri</span></a>
@@ -382,24 +381,21 @@
     <div class="hero__scrim" aria-hidden="true"></div>
     <div class="hero__grain" aria-hidden="true"></div>
     <p class="hero__eyebrow"><strong>Ahmed El-Nimeri</strong> — Storyteller, Director &amp; Video Producer, Dubai</p>
-    <h1 class="hero__name">Some of it was a brief. <em>Some of it was my country.</em></h1>
+    <h1 class="hero__name"><span class="shot shot--1">Some of it was a brief.</span> <em class="shot shot--2">Some of it was my country.</em></h1>
     <p class="hero__lede">Eleven years of film — commercial, documentary, institutional. Currently
       <strong>Associate Creative Director</strong> at 1000media, part of Nas Company.
-      Dubai, working anywhere. English and Arabic.</p>
+      English and Arabic. Based in Dubai; the work travels.</p>
     <div class="hero__cta">
-      <a class="btn btn--solid" href="#work">View selected work</a>
-      <a class="btn btn--ghost" href="https://vimeo.com/nimeri" target="_blank" rel="noopener">Full archive on Vimeo</a>
+      <a class="btn btn--solid" href="#work">Watch the work</a>
+      <a class="btn btn--ghost" href="https://vimeo.com/nimeri" target="_blank" rel="noopener">The rest is on Vimeo</a>
     </div>
-    <div class="strip lift">
-      <div><span class="strip__n">#01</span><span class="strip__t">Storytelling</span></div>
-      <div><span class="strip__n">#02</span><span class="strip__t">Direction</span></div>
-      <div><span class="strip__n">#03</span><span class="strip__t">Cinematography</span></div>
-      <div><span class="strip__n">#04</span><span class="strip__t">Edit, Colour &amp; Sound</span></div>
-    </div>
+    <!-- Frame one, parked. The zeros are static on purpose: the timecode
+         starts running in the HUD the moment you scroll. -->
+    <p class="burnin" aria-hidden="true"><span class="tl__rec"></span>A-ROLL 001 &middot; 00:00:00:00 &middot; 24 FPS</p>
   </section>
 
   <section class="marquee" aria-label="Selected clients">
-    <p class="marquee__label">Trusted by</p>
+    <p class="marquee__label">Commissioned by</p>
     <div class="marquee__row">
       <div class="marquee__track">
         <img width="100" height="100" class="logo logo--mark" src="assets/logos/solana.svg?h=785c382e" alt="Solana" title="Solana" loading="lazy" decoding="async">
@@ -427,23 +423,30 @@
   </section>
 
   <section class="section" id="numbers">
-    <div class="section__head">
-      <span class="section__num">01</span>
-      <h2 class="section__title">By the Numbers</h2>
+    <div class="slate">
+      <span class="slate__tc" data-tc>TC 05:40:00</span>
+      <h2 class="slate__title">On the Record</h2>
+      <span class="slate__meta">001</span>
     </div>
     <div class="stats stats--lg">
       <div class="reveal"><b data-to="100" data-suffix="M+">100M+</b><span>Views across published work</span></div>
       <div class="reveal" data-delay="80"><b data-to="66">66</b><span>Films delivered and published</span></div>
-      <div class="reveal" data-delay="160"><b data-to="100" data-suffix="+">100+</b><span>Clients and brands worldwide</span></div>
+      <div class="reveal" data-delay="160"><b data-to="100" data-suffix="+">100+</b><span>Clients, Khartoum to New York</span></div>
       <div class="reveal" data-delay="240"><b data-to="14">14</b><span>Films past half a million views</span></div>
     </div>
   </section>
 
   <section class="section" id="work">
-    <div class="section__head">
-      <span class="section__num">02</span>
-      <h2 class="section__title">Selected Work</h2>
+    <div class="slate">
+      <span class="slate__tc" data-tc>TC 07:51:00</span>
+      <h2 class="slate__title">Selects</h2>
+      <span class="slate__meta">002 &middot; 16 clips &middot; TRT 42:18</span>
     </div>
+    <!-- The SC/IN stamps below and the TRT in the slate are derived numbers:
+     each IN is the running sum of the .tile__dur chips above it, in DOM
+     order, and TRT is their total (42:18 across 16 films). Adding, removing
+     or reordering a tile means re-deriving all of them — bin-build-schema.py
+     era rule: chrome that prints a real number must stay real. -->
     <div class="grid">
         <article class="tile tile--wide reveal tile--lead-1" data-delay="0">
           <a class="tile__link" href="https://x.com/solana/status/1891889506489598298" data-video="1058181870" data-title="Solana Accelerate" data-portrait="false"
@@ -455,7 +458,7 @@
             <span class="tile__dur">1:18</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">01</span>
+            <span class="tile__idx">SC 01 &middot; IN 00:00</span>
             <div>
               <h3 class="tile__name">Solana Accelerate</h3>
               <p class="tile__kind">Campaign film</p>
@@ -473,7 +476,7 @@
             <span class="tile__dur">0:33</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">02</span>
+            <span class="tile__idx">SC 02 &middot; IN 01:18</span>
             <div>
               <h3 class="tile__name">Solana x All In</h3>
               <p class="tile__kind">Event promo</p>
@@ -491,7 +494,7 @@
             <span class="tile__dur">1:47</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">03</span>
+            <span class="tile__idx">SC 03 &middot; IN 01:51</span>
             <div>
               <h3 class="tile__name">SGB — Solana Accelerate HK</h3>
               <p class="tile__kind">Campaign film</p>
@@ -509,7 +512,7 @@
             <span class="tile__dur">2:28</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">04</span>
+            <span class="tile__idx">SC 04 &middot; IN 03:38</span>
             <div>
               <h3 class="tile__name">Sia x Solana</h3>
               <p class="tile__kind">Documentary</p>
@@ -527,7 +530,7 @@
             <span class="tile__dur">22:01</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">05</span>
+            <span class="tile__idx">SC 05 &middot; IN 06:06</span>
             <div>
               <h3 class="tile__name">Al Doroub</h3>
               <p class="tile__kind">Feature documentary · Compass Creative</p>
@@ -545,7 +548,7 @@
             <span class="tile__dur">2:34</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">06</span>
+            <span class="tile__idx">SC 06 &middot; IN 28:07</span>
             <div>
               <h3 class="tile__name">The Greatest Sudanese Sit-In</h3>
               <p class="tile__kind">Documentary</p>
@@ -563,7 +566,7 @@
             <span class="tile__dur">3:07</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">07</span>
+            <span class="tile__idx">SC 07 &middot; IN 30:41</span>
             <div>
               <h3 class="tile__name">Solana Solstice</h3>
               <p class="tile__kind">Event film</p>
@@ -581,7 +584,7 @@
             <span class="tile__dur">1:05</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">08</span>
+            <span class="tile__idx">SC 08 &middot; IN 33:48</span>
             <div>
               <h3 class="tile__name">60 Secs of New York</h3>
               <p class="tile__kind">Campaign film</p>
@@ -599,7 +602,7 @@
             <span class="tile__dur">1:42</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">09</span>
+            <span class="tile__idx">SC 09 &middot; IN 34:53</span>
             <div>
               <h3 class="tile__name">Press “Generate”</h3>
               <p class="tile__kind">Brand film</p>
@@ -616,7 +619,7 @@
             <span class="tile__dur">0:53</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">10</span>
+            <span class="tile__idx">SC 10 &middot; IN 36:35</span>
             <div>
               <h3 class="tile__name">El Fasher City</h3>
               <p class="tile__kind">Documentary</p>
@@ -634,7 +637,7 @@
             <span class="tile__dur">0:19</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">11</span>
+            <span class="tile__idx">SC 11 &middot; IN 37:28</span>
             <div>
               <h3 class="tile__name">Sugar vs Jaggery</h3>
               <p class="tile__kind">Explainer · FITTR</p>
@@ -652,7 +655,7 @@
             <span class="tile__dur">0:59</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">12</span>
+            <span class="tile__idx">SC 12 &middot; IN 37:47</span>
             <div>
               <h3 class="tile__name">Why Is His Pinky Purple?</h3>
               <p class="tile__kind">Explainer · Global Health Channel</p>
@@ -670,7 +673,7 @@
             <span class="tile__dur">0:42</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">13</span>
+            <span class="tile__idx">SC 13 &middot; IN 38:46</span>
             <div>
               <h3 class="tile__name">Solana Developer Platform</h3>
               <p class="tile__kind">Animation · Motion graphics</p>
@@ -688,7 +691,7 @@
             <span class="tile__dur">1:43</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">14</span>
+            <span class="tile__idx">SC 14 &middot; IN 39:28</span>
             <div>
               <h3 class="tile__name">Crypto in the UAE</h3>
               <p class="tile__kind">Brand film</p>
@@ -705,7 +708,7 @@
             <span class="tile__dur">0:26</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">15</span>
+            <span class="tile__idx">SC 15 &middot; IN 41:11</span>
             <div>
               <h3 class="tile__name">Assets API</h3>
               <p class="tile__kind">Animation · Motion graphics</p>
@@ -723,7 +726,7 @@
             <span class="tile__dur">0:41</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">16</span>
+            <span class="tile__idx">SC 16 &middot; IN 41:37</span>
             <div>
               <h3 class="tile__name">Solana Skyline</h3>
               <p class="tile__kind">Visuals</p>
@@ -740,9 +743,10 @@
   
 
   <section class="section" id="about">
-    <div class="section__head">
-      <span class="section__num">03</span>
-      <h2 class="section__title">About</h2>
+    <div class="slate">
+      <span class="slate__tc" data-tc>TC 34:42:00</span>
+      <h2 class="slate__title">About</h2>
+      <span class="slate__meta">003</span>
     </div>
     <div class="about__grid">
       <div class="card reveal">
@@ -750,11 +754,11 @@
         <p class="about__body">Eleven years across commercial, documentary and institutional work —
           from a courtroom in The Hague to a sit-in in Khartoum to a stage in Abu Dhabi.</p>
         <p class="about__body">Since 2023 I have made films for Solana at 1000media, part of Nas
-          Company — sixty-six published pieces, 22.6 million verified views, twelve of them past half
+          Company — sixty-six published pieces, 22.4 million verified views, twelve of them past half
           a million and two past a million. Before that, campaign and documentary work across Sudan
           and the Gulf.</p>
         <p class="about__body">I work in English and Arabic, and I travel.</p>
-        <p class="about__body"><a class="btn btn--ghost" href="/about">Full background</a></p>
+        <p class="about__body"><a class="btn btn--ghost" href="/about">The long version</a></p>
       </div>
       <dl class="facts card reveal" data-delay="120">
         <div><dt>Based</dt><dd>Dubai, United Arab Emirates — working worldwide</dd></div>
@@ -767,19 +771,23 @@
 
   <section class="contact" id="contact">
     <div class="contact__inner">
-      <div class="section__head">
-        <span class="section__num">04</span>
-        <h2 class="section__title">Contact</h2>
+      <div class="slate">
+        <span class="slate__tc" data-tc>TC 42:07:00</span>
+        <h2 class="slate__title">Contact</h2>
+        <span class="slate__meta">004 &middot; OUT</span>
       </div>
       <img class="lockup reveal" src="assets/lockup.png?h=85640908" alt="Ahmed Nimeri Production"
            width="1100" height="1295" loading="lazy" decoding="async">
+      <p class="contact__head reveal">Send the brief.</p>
       <a class="contact__mail" href="mailto:ahmed@alnimeri.com">ahmed@alnimeri.com</a>
+      <p class="contact__sub reveal" data-delay="80">Senior roles, commissions, collaborations &mdash; English or Arabic. I answer my own email.</p>
       <nav class="contact__links" aria-label="Elsewhere">
         <a class="btn btn--ghost" href="https://vimeo.com/nimeri" rel="me noopener" target="_blank">Vimeo</a>
         <a class="btn btn--ghost" href="https://www.instagram.com/by_nimeri" rel="me noopener" target="_blank">Instagram</a>
         <a class="btn btn--ghost" href="https://www.linkedin.com/in/ahmedalnimeri/" rel="me noopener" target="_blank">LinkedIn</a>
         <a class="btn btn--ghost" href="assets/Ahmed_ElNimeri_CV.pdf?h=7d560729">Download CV (PDF)</a>
       </nav>
+      <span class="colophon__seq">SEQ 2026 &middot; 16 clips &middot; TRT 42:18 &middot; 24 FPS</span>
       <div class="colophon">
         <span>© 2026 Ahmed El-Nimeri</span>
         <span>Dubai, UAE · <a href="/privacy">Privacy</a></span>
@@ -795,7 +803,7 @@
   <p class="lb__cap"></p>
 </div>
 
-<script src="main.js?v=48" defer></script>
+<script src="main.js?v=49" defer></script>
 <!-- Cloudflare Web Analytics -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "031672bac7b743a990b8dfcf074f7a38"}'></script>
 <!-- End Cloudflare Web Analytics -->

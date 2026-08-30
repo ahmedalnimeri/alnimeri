@@ -15,7 +15,7 @@
 <!-- Root-relative on purpose: Pages serves this document at the URL that was
      requested, so a relative href resolves against /some/missing/path/ and
      404s in turn — leaving an unstyled error page. -->
-<link rel="stylesheet" href="/styles.css?v=48">
+<link rel="stylesheet" href="/styles.css?v=49">
 <style>
   .lost {
     position: relative; z-index: 1;
@@ -24,7 +24,7 @@
     align-items: center; justify-content: center; text-align: center;
     padding: 6rem var(--gut);
   }
-  .lost__code { margin: 0 0 1.5rem; font-size: 0.78rem; font-weight: 500; color: var(--fg-faint); }
+  .lost__code { margin: 0 0 1.5rem; font-family: var(--mono); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; color: var(--fg-faint); }
   .lost__title {
     margin: 0; font-weight: 600; letter-spacing: -0.035em; line-height: 1.05;
     font-size: clamp(2rem, 6vw, 4.5rem);
@@ -33,13 +33,12 @@
 </style>
 </head>
 <body>
-<div class="glow" aria-hidden="true"></div>
 <main class="lost">
-  <p class="lost__code">404</p>
-  <h1 class="lost__title">This page doesn’t exist.</h1>
-  <p class="lost__body">The link may be out of date, or the page may have moved.
-    Everything worth seeing is on the front page.</p>
-  <a class="btn btn--solid" href="/">Back to the work</a>
+  <p class="lost__code">404 &middot; MEDIA OFFLINE</p>
+  <h1 class="lost__title">Media offline.</h1>
+  <p class="lost__body">Nothing at this address. The link is stale, or the file moved.
+    The work is where it was.</p>
+  <a class="btn btn--solid" href="/">Relink</a>
 </main>
 </body>
 </html>

@@ -4,6 +4,19 @@
 
   document.documentElement.classList.remove('no-js');
 
+  /* One frame at 24fps. Every authored delay is quantized onto this grid, in
+     one place, so the whole page cuts on the same clock. */
+  var FRAME = 1000 / 24;
+  function onGrid(ms) { return Math.round(ms / FRAME) * FRAME; }
+
+  /* The cut: a one-frame drop to black that covers hard jumps, so navigation
+     reads as a splice rather than a broken anchor. Created here, not in the
+     markup — it is pure chrome and works identically on every page. */
+  var cutEl = document.createElement('div');
+  cutEl.className = 'cut';
+  cutEl.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(cutEl);
+
   /* ---- lightbox ---------------------------------------------------- */
 
   var lb      = document.querySelector('.lb');
@@ -26,10 +39,18 @@
       'allow="autoplay; fullscreen; picture-in-picture" allowfullscreen ' +
       'title="' + title.replace(/"/g, '&quot;') + '"></iframe>';
     caption.textContent = title;
+    // Source metadata, read off the tile's own chip — never invented.
+    var dur = opener && opener.querySelector('.tile__dur');
+    if (dur) {
+      var src = document.createElement('span');
+      src.className = 'lb__src';
+      src.textContent = 'SRC ' + dur.textContent.trim();
+      caption.appendChild(src);
+    }
     lb.classList.add('is-open');
     document.body.classList.add('is-locked');
     lb.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(function () { lb.classList.add('is-visible'); });
+    lb.classList.add('is-visible');
     closeBtn.focus();
   }
 
@@ -38,13 +59,12 @@
     lb.classList.remove('is-visible');
     lb.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('is-locked');
-    // Wait out the fade before tearing down the iframe, so the video
-    // doesn't vanish mid-transition.
+    // One frame of grace so the class flip paints before teardown.
     setTimeout(function () {
       lb.classList.remove('is-open');
       frame.innerHTML = '';
       frame.style.backgroundImage = '';
-    }, 400);
+    }, 60);
     if (opener) { opener.focus(); opener = null; }
   }
 
@@ -190,46 +210,27 @@
     });
   }
 
-  /* ---- hero headline: masked word reveal --------------------------- */
+  /* ---- hero headline: two shots ------------------------------------
+     The clause spans are real text in the markup; CSS holds them at opacity 0
+     only under .hero (armed below) and cuts them in on the frame grid once
+     is-lit lands. No masks, no walkers, nothing rises. */
 
   var hero = document.querySelector('.hero');
   var head = document.querySelector('.hero__name');
 
   if (head && motionOK) {
-    var i = 0;
-    // Walk child nodes so the <em> keeps its own colour while its words
-    // still get wrapped and staggered like the rest.
-    var out = [];
-    [].slice.call(head.childNodes).forEach(function (node) {
-      var isEm = node.nodeType === 1 && node.tagName === 'EM';
-      var text = node.textContent || '';
-      text.split(/\s+/).filter(Boolean).forEach(function (w) {
-        var span = document.createElement('span');
-        span.className = 'word';
-        var inner = document.createElement('i');
-        inner.textContent = w;
-        inner.style.setProperty('--d', (i * 55) + 'ms');
-        if (isEm) { span.style.color = 'var(--fg-dim)'; }
-        span.appendChild(inner);
-        out.push(span, document.createTextNode(' '));
-        i++;
-      });
-    });
-    head.innerHTML = '';
-    out.forEach(function (n) { head.appendChild(n); });
-
-    // Stagger the surrounding furniture in after the headline lands.
+    // Arm the cut only now that the code that fires it is running.
+    hero.classList.add('is-armed');
+    // The furniture cuts in after the reverse shot, three beats on the grid.
     var lifts = [
       document.querySelector('.hero__eyebrow'),
       document.querySelector('.hero__lede'),
       document.querySelector('.hero__cta'),
-      // Was '.hero__note', which does not exist in the markup — so the strip
-      // sat outside the choreography while JS staggered nothing.
-      document.querySelector('.hero .strip')
+      document.querySelector('.hero .burnin')
     ].filter(Boolean);
     lifts.forEach(function (el, n) {
       el.classList.add('lift');
-      el.style.setProperty('--d', (i * 55 + 120 + n * 90) + 'ms');
+      el.style.setProperty('--d', onGrid(920 + n * 125) + 'ms');
     });
 
     // Two paths to the same switch. rAF gives a clean first frame, but it is
@@ -265,6 +266,35 @@
       });
     }, { passive: true });
   }
+
+  /* ---- hard-cut navigation ------------------------------------------
+     Editors cut; templates glide. Any in-page jump drops one frame to black,
+     moves under it, and comes back two frames later — a splice, not a scroll. */
+
+  function headerOffset() {
+    var m = document.querySelector('.masthead');
+    if (!m) return 0;
+    var r = m.getBoundingClientRect();
+    return r.height + r.top + 12;
+  }
+
+  function cutTo(y) {
+    y = Math.max(0, y);
+    if (!motionOK) { window.scrollTo(0, y); return; }
+    cutEl.classList.add('is-cutting');
+    setTimeout(function () { window.scrollTo(0, y); }, 42);
+    setTimeout(function () { cutEl.classList.remove('is-cutting'); }, 125);
+  }
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || a.classList.contains('skip')) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    var target = document.querySelector(a.getAttribute('href'));
+    if (!target) return;
+    e.preventDefault();
+    cutTo(target.offsetTop - headerOffset());
+  });
 
   /* ---- masthead contracts on scroll --------------------------------- */
 
@@ -325,12 +355,8 @@
       b.innerHTML = '<span>' + name + '</span>';
       b.setAttribute('aria-label', 'Go to ' + name);
       b.addEventListener('click', function () {
-        // block:'start' lands the heading underneath the fixed masthead, so
-        // offset by its height instead of using scrollIntoView directly.
-        window.scrollTo({
-          top: Math.max(0, s.offsetTop - headerOffset()),
-          behavior: motionOK ? 'smooth' : 'auto'
-        });
+        // Offset by the fixed masthead's height so the slate lands clear.
+        cutTo(s.offsetTop - headerOffset());
       });
       track.appendChild(b);
       return b;
@@ -340,21 +366,18 @@
     headEl.className = 'tl__head';
     track.appendChild(headEl);
 
-    var pct = document.createElement('div');
-    pct.className = 'tl__pct';
-
-    bar.appendChild(tc); bar.appendChild(track); bar.appendChild(pct);
+    bar.appendChild(tc); bar.appendChild(track);
     document.body.appendChild(bar);
 
-    function headerOffset() {
-      var m = document.querySelector('.masthead');
-      if (!m) return 0;
-      var r = m.getBoundingClientRect();
-      return r.height + r.top + 12;
-    }
-
     var now = tc.querySelector('.tl__now');
-    var RUNTIME = 154; // seconds of notional sequence length
+    // The timebase is real: the sequence length is the summed running time of
+    // the films actually on this page (42:18 on the index at last count).
+    // Scrolling the page plays the reel. Pages without duration chips fall
+    // back to a notional length; the maths is identical.
+    var RUNTIME = [].reduce.call(document.querySelectorAll('.tile__dur'), function (t, d) {
+      var m = d.textContent.trim().split(':');
+      return t + (parseInt(m[0], 10) || 0) * 60 + (parseInt(m[1], 10) || 0);
+    }, 0) || 154;
     var FPS = 24;
 
     function stamp(p) {
@@ -366,9 +389,10 @@
       return pad(m) + ':' + pad(s) + ':' + pad(f);
     }
 
-    // The HUD surfaces while you scroll and retreats once you stop, so it
-    // never sits on top of the work. Hovering it holds it open, otherwise
-    // reaching for a clip would dismiss the thing you were reaching for.
+    // On a desktop with a real pointer the deck stays up once you are in the
+    // sequence — an editor doesn't hide the timeline panel. On touch it still
+    // retreats, because the bar sits where thumbs scroll.
+    var persist = window.matchMedia('(hover: hover) and (min-width: 721px)');
     var idle = null, hovering = false;
     // A thumb has further to travel than a cursor, and on touch there is no
     // hover to hold the bar open once it starts closing.
@@ -377,6 +401,7 @@
     function wake() {
       bar.classList.add('is-up');
       clearTimeout(idle);
+      if (persist.matches) return;
       idle = setTimeout(function () {
         if (!hovering) bar.classList.remove('is-up');
       }, IDLE);
@@ -405,8 +430,8 @@
       var p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
 
       now.textContent = stamp(p);
-      pct.textContent = Math.round(p * 100) + '%';
       headEl.style.left = (p * 100) + '%';
+      bar.classList.toggle('is-out', p >= 0.999);
       if (window.scrollY > window.innerHeight * 0.35) wake();
       else hide();
 
@@ -437,8 +462,87 @@
       tick = true;
       requestAnimationFrame(function () { draw(); tick = false; });
     }, { passive: true });
-    window.addEventListener('resize', draw, { passive: true });
+
+    /* An honest minimap: each clip's width is its section's real share of the
+       sequence, so Selects is visibly the long clip. Desktop only — on phones
+       the live clip grows to fit its label, and an inline flex would trump
+       that tuned behaviour. */
+    function layout() {
+      var docH = document.documentElement.scrollHeight;
+      var wide = window.matchMedia('(min-width: 721px)').matches;
+      clips.forEach(function (c, n) {
+        if (!wide) { c.style.flex = ''; c.style.minWidth = ''; return; }
+        c.style.flex = Math.max(8, secs[n].offsetHeight / docH * 100) + ' 1 0px';
+        c.style.minWidth = '44px';
+      });
+    }
+
+    /* The slates carry the same timebase: the stamp printed at each cut line
+       agrees with the HUD readout the moment you scroll past it. Hardcoded
+       defaults ship in the markup; this only refines them. */
+    function stampSlates() {
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      if (max <= 0) return;
+      secs.forEach(function (sec) {
+        var el = sec.querySelector('.slate__tc[data-tc]');
+        if (el) el.textContent = 'TC ' + stamp(Math.min(1, sec.offsetTop / max));
+      });
+    }
+
+    /* Scrubbing: the track is a jog strip. Drag anywhere on it and the page
+       is the transport — instant scrollTo, never smooth, because a playhead
+       is finger-tracked. An 8px threshold keeps taps working as cuts. */
+    (function () {
+      var down = null, dragged = false;
+      track.style.touchAction = 'none';
+      function seek(e) {
+        var r = track.getBoundingClientRect();
+        var p = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+        window.scrollTo(0, p * (document.documentElement.scrollHeight - window.innerHeight));
+      }
+      track.addEventListener('pointerdown', function (e) {
+        down = e.clientX; dragged = false;
+      });
+      track.addEventListener('pointermove', function (e) {
+        if (down === null) return;
+        if (!dragged && Math.abs(e.clientX - down) <= 8) return;
+        if (!dragged) {
+          dragged = true;
+          try { track.setPointerCapture(e.pointerId); } catch (_) {}
+          hovering = true;
+          bar.classList.add('is-up');
+        }
+        seek(e);
+      });
+      function release() {
+        if (down === null) return;
+        down = null;
+        hovering = false;
+        wake();
+      }
+      track.addEventListener('pointerup', release);
+      track.addEventListener('pointercancel', release);
+      // A drag must not fire the clip underneath when the finger lets go.
+      track.addEventListener('click', function (e) {
+        if (!dragged) return;
+        dragged = false;
+        e.stopPropagation();
+        e.preventDefault();
+      }, true);
+    })();
+
+    var settleTimer = null;
+    window.addEventListener('resize', function () {
+      draw();
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(function () { layout(); stampSlates(); }, 150);
+    }, { passive: true });
+
     draw();
+    layout();
+    stampSlates();
+    // Poster and font arrival can shift offsets after first paint.
+    window.addEventListener('load', function () { layout(); stampSlates(); });
   })();
 
   /* ---- counters -----------------------------------------------------
@@ -460,7 +564,7 @@
 
       if (!motionOK) { el.textContent = pre + fmt(to, dec) + suf; return; }
 
-      var dur = 1600, t0 = null, done = false;
+      var dur = 1600, t0 = null, done = false, lastQ = -1;
       var settle = function () {
         if (done) return;
         done = true;
@@ -470,7 +574,12 @@
         if (done) return;
         if (t0 === null) t0 = ts;
         var p = Math.min(1, (ts - t0) / dur);
-        // easeOutExpo — fast start, long settle, like a counter coming to rest
+        // Same easeOutExpo reach, but the display only updates on 24fps
+        // boundaries — the figure ratchets like a burnt-in counter instead
+        // of easing like a dashboard.
+        var q = Math.floor((ts - t0) / FRAME);
+        if (q === lastQ && p < 1) { requestAnimationFrame(step); return; }
+        lastQ = q;
         var e = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
         el.textContent = pre + fmt(to * e, dec) + suf;
         if (p < 1) requestAnimationFrame(step); else settle();
@@ -545,9 +654,9 @@
     entries.forEach(function (entry) {
       if (!entry.isIntersecting) return;
       var el = entry.target;
-      // --d drives the delay on the element and its descendants (clip wipe,
-      // meta lift).
-      el.style.setProperty('--d', (el.dataset.delay || 0) + 'ms');
+      // --d drives the delay on the element and its descendants, quantized to
+      // the 24fps grid so every entrance lands on a frame boundary.
+      el.style.setProperty('--d', onGrid(parseFloat(el.dataset.delay) || 0) + 'ms');
       el.classList.add('is-in');
       io.unobserve(el);
     });
