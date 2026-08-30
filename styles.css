@@ -193,8 +193,6 @@ a { color: inherit; }
   text-align: center;
   padding: 9rem var(--gut) clamp(4.5rem, 12vh, 8rem);
   isolation: isolate;
-  /* The parallax translates .hero__bg downward on scroll. Without clipping
-     here the video escapes the section and paints over the work grid. */
   overflow: hidden;
 }
 /* Cinemascope mattes. The picture is letterboxed by two true-black bars, so

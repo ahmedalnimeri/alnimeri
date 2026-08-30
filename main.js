@@ -249,23 +249,11 @@
     hero.classList.add('is-lit');
   }
 
-  /* ---- hero parallax ------------------------------------------------ */
-
-  var heroLayer = document.querySelector('.hero__bg');
-  if (heroLayer && motionOK) {
-    var ticking = false;
-    window.addEventListener('scroll', function () {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(function () {
-        var y = window.scrollY;
-        if (y < window.innerHeight * 1.2) {
-          heroLayer.style.transform = 'translate3d(0,' + (y * 0.28) + 'px,0) scale(' + (1 + y * 0.00012) + ')';
-        }
-        ticking = false;
-      });
-    }, { passive: true });
-  }
+  /* The hero parallax is gone. It was a faked dolly move — this director
+     cuts — and once the mattes went in it broke them: translating the
+     footage layer slid the frame's bottom edge out of the gate and painted
+     the poster over the black matte. The picture stays in its frame; the
+     only motion is the footage's own drift. */
 
   /* ---- hard-cut navigation ------------------------------------------
      Editors cut; templates glide. Any in-page jump drops one frame to black,
