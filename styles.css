@@ -8,7 +8,7 @@
 @font-face { font-family: Poppins; font-weight: 700; font-style: normal; font-display: swap; src: url(assets/fonts/poppins-700.woff2) format("woff2"); }
 
 :root {
-  --hero-poster: url("assets/posters/1061799826.jpg?h=9170cb76");
+  --hero-poster: url("assets/posters/843280565.jpg?h=416adb93");
   --bg:        #0a0a0c;
   --bg-raised: #141418;
   --fg:        #ffffff;
@@ -191,12 +191,19 @@ a { color: inherit; }
   min-height: 100svh;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
-  padding: 9rem var(--gut) clamp(3rem, 8vh, 6rem);
+  padding: 9rem var(--gut) clamp(4.5rem, 12vh, 8rem);
   isolation: isolate;
   /* The parallax translates .hero__bg downward on scroll. Without clipping
      here the video escapes the section and paints over the work grid. */
   overflow: hidden;
 }
+/* Cinemascope mattes. The picture is letterboxed by two true-black bars, so
+   the hero reads as a frame of projected film, not a website background. The
+   footage and scrim stop at the matte edges. */
+.hero__bg, .hero__scrim, .hero__grain {
+  top: var(--matte); bottom: var(--matte);
+}
+.hero { --matte: clamp(3.2rem, 9svh, 5.5rem); background: #000; }
 
 /* The scrim thins to ~0.32 across the middle band so the footage can breathe,
    which is also exactly where the headline's second clause and the lede sit.
@@ -208,7 +215,7 @@ a { color: inherit; }
 /* Full-bleed silent loop behind the hero. The iframe is sized in viewport
    units so it always covers, whatever the window aspect ratio. */
 .hero__bg {
-  position: absolute; inset: 0; z-index: -2;
+  position: absolute; left: 0; right: 0; z-index: -2;
   overflow: hidden;
   /* Always-visible still frame. Autoplay is blocked in iOS Low Power Mode, under
      Reduce Motion, with Data Saver on, and on some corporate networks — in all
@@ -256,7 +263,7 @@ a { color: inherit; }
    Top and bottom stay dark where the navbar and CTAs need contrast; the middle
    breathes. A vignette pulls the corners down so the eye stays centred. */
 .hero__scrim {
-  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  position: absolute; left: 0; right: 0; z-index: -1; pointer-events: none;
   background:
     linear-gradient(to bottom,
       rgba(10,10,12,0.80) 0%,
@@ -273,7 +280,7 @@ a { color: inherit; }
 .hero__grain {
   /* Was inset:-60%, compositing a layer ~4x the hero's area to serve a
      jitter that travels about 3% of its width. */
-  position: absolute; inset: -8%; z-index: -1; pointer-events: none;
+  position: absolute; left: -8%; right: -8%; z-index: -1; pointer-events: none;
   opacity: 0.15;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -298,10 +305,8 @@ a { color: inherit; }
 .hero__eyebrow {
   display: inline-block;
   margin: 0 0 clamp(1.5rem, 4vh, 2.25rem);
-  padding: 0.45rem 1.1rem;
-  border: 1px solid var(--line); border-radius: var(--pill);
-  background: rgba(255,255,255,0.035);
-  font-size: 0.78rem; font-weight: 500; letter-spacing: 0.01em;
+  font-size: 0.82rem; font-weight: 500; letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--fg-dim);
 }
 .hero__eyebrow strong { color: var(--fg); font-weight: 600; }
@@ -355,8 +360,10 @@ a { color: inherit; }
 }
 .slate__meta { margin-left: auto; }
 .slate__title {
-  margin: 0; font-size: 0.9rem; font-weight: 600;
-  letter-spacing: -0.005em; color: var(--fg);
+  margin: 0;
+  font-size: clamp(1.9rem, 4.5vw, 3.4rem);
+  font-weight: 600; letter-spacing: -0.03em; line-height: 1;
+  color: var(--fg);
 }
 @media (max-width: 560px) { .slate__meta { display: none; } }
 
@@ -739,13 +746,19 @@ a { color: inherit; }
    thesis taught in one glance. */
 
 .burnin {
-  margin-top: clamp(2.5rem, 6vh, 4rem);
-  display: flex; align-items: center; justify-content: center; gap: 0.55rem;
+  position: absolute; left: var(--gut); bottom: calc(var(--matte) + 1.1rem);
+  margin: 0;
+  display: flex; align-items: center; gap: 0.55rem;
   font-family: var(--mono); font-size: 0.66rem; font-weight: 500;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim);
   font-variant-numeric: tabular-nums;
 }
 .burnin .tl__rec { width: 6px; height: 6px; }
+/* Centered via box + flex, never transform — the lift choreography owns the
+   transform channel and would override it. */
+@media (max-width: 560px) {
+  .burnin { left: var(--gut); right: var(--gut); justify-content: center; white-space: nowrap; }
+}
 
 /* ---------- client marquee ----------
    Two identical tracks side by side, the pair translated by exactly -50%.
