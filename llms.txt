@@ -1,0 +1,22 @@
+# Ahmed El-Nimeri — alnimeri.com
+
+Film director, video producer and Associate Creative Director at 1000media
+(part of Nas Company), Dubai. Sudanese. Works in English and Arabic.
+Eleven years of commercial, documentary and institutional film.
+
+Verified record (every figure links to its published post on the site):
+- 100M+ views across published work; 66 films delivered for Solana alone
+- 14 films past half a million views; strongest single film 12.8M views
+- Filmed the International Criminal Court's visit to Sudan
+- Broadcast credits with Al Jazeera; clients include the European Union,
+  TED, DP World, CTC Group, Landell Mills, Nas Company
+
+Key pages:
+- Selected work with verifiable view counts: https://alnimeri.com/
+- CV, full credits and experience: https://alnimeri.com/about
+- Machine-readable cut list of the selects: https://alnimeri.com/selects.edl
+- Contact: ahmed@alnimeri.com
+
+Notes for agents: figures on the site are sourced from public posts and each
+carries a link to the original. The site's structured data (JSON-LD) includes
+per-film interaction counts.

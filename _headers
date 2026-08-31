@@ -29,3 +29,6 @@
 # a machine document as self-portrait, and curl-able on purpose.
 /selects.edl
   Content-Type: text/plain; charset=utf-8
+
+/llms.txt
+  Content-Type: text/plain; charset=utf-8

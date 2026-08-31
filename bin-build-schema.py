@@ -24,6 +24,10 @@ for m in re.finditer(r'<a class="tile__link"[^>]*?data-title="([^"]*)"', s, re.S
     dur  = re.search(r'tile__dur">([\d:]+)<', blk)
     kind = re.search(r'tile__kind">([^<]*)<', blk)
     stat = re.search(r'tile__stat" href="([^"]*)"', blk)
+    # The verified engagement figure, machine-readable. "1.4M views on X" ->
+    # 1400000 WatchActions; "4.3K reactions" -> LikeActions. The number is
+    # the same one the visible pill shows and links to.
+    fig  = re.search(r'tile__stat"[^>]*>\s*([\d.]+)([KM]?)\s+(views|reactions)', blk)
     name = title.replace('&amp;', '&')
     kindtxt = (kind.group(1) if kind else '').replace('&amp;', '&').replace(' · ', ' — ')
     poster = re.search(r'src="assets/(posters/[^"?]+)', blk)
@@ -38,6 +42,14 @@ for m in re.finditer(r'<a class="tile__link"[^>]*?data-title="([^"]*)"', s, re.S
     # Only films with a Vimeo master can be embedded; the rest live on X only.
     if vid: v["embedUrl"] = f"https://player.vimeo.com/video/{vid}"
     if dur:  v["duration"] = iso(dur.group(1))
+    if fig:
+        n = float(fig.group(1)) * {"K": 1e3, "M": 1e6, "": 1}[fig.group(2)]
+        action = "WatchAction" if fig.group(3) == "views" else "LikeAction"
+        v["interactionStatistic"] = {
+            "@type": "InteractionCounter",
+            "interactionType": {"@type": action},
+            "userInteractionCount": int(n),
+        }
     if stat: v["sameAs"] = stat.group(1)
     videos.append(v)
 
