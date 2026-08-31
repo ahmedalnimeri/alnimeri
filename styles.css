@@ -672,6 +672,9 @@ a { color: inherit; }
   font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--fg-faint);
 }
+.colophon__seq a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
+.colophon__seq a:hover { color: var(--fg-dim); }
+.colophon__seq--tell { margin-top: 0.45rem; }
 .colophon {
   margin-top: 1.1rem;
   padding-top: 1.4rem; border-top: 1px solid var(--line-soft);
@@ -988,6 +991,24 @@ a { color: inherit; }
 }
 .track__points a { color: var(--fg); text-underline-offset: 3px; }
 
+/* The splice. The whole site rules in 1px soft lines; this is the only
+   3px solid-white rule on the domain — a physical cut in the stock, with
+   sprocket gaps bitten out of it. 15 April 2023 needs no more than that. */
+.track__splice {
+  list-style: none; position: relative;
+  padding: clamp(1.4rem, 3vh, 2rem) 0;
+  border-top: 3px solid var(--fg);
+}
+.track__splice::before {
+  content: ""; position: absolute; top: -3px; left: 0; right: 0; height: 3px;
+  background: repeating-linear-gradient(to right, var(--bg) 0 2px, transparent 2px 11px);
+}
+.track__splice-tc {
+  font-family: var(--mono); font-size: 0.66rem; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg);
+}
+.track__splice + .track__item { border-top: 0; }
+
 /* project cards */
 .cards {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1268,3 +1289,53 @@ body.is-locked { overflow: hidden; }
   width: 5px; height: 5px; border-radius: 50%; background: var(--fg-faint);
 }
 .prose a { color: var(--fg); text-underline-offset: 3px; }
+
+/* ---------- print: the page leaves as a cut list ----------
+   On paper the media is, by definition, offline — so the posters don't
+   print. What prints is the sequence: event rows with SC/IN stamps,
+   durations, andevery source URL, in ink. One token flip turns the whole
+   cascade to paper. */
+
+@media print {
+  :root { --bg: #fff; --fg: #000; --fg-dim: #222; --fg-faint: #555; }
+  body { background: #fff; color: #000; }
+  @page { margin: 16mm; }
+  .masthead, .marquee, .hero__bg, .hero__scrim, .hero__grain, .hero__cta,
+  .burnin, .tile__img, .tile__preview, .tile__veil, .tile__play,
+  .contact__links, .lockup, .lb, .cut, .skip, .tl { display: none !important; }
+  .hero { min-height: 0; background: #fff; --matte: 0px; padding: 0 0 8mm; }
+  .hero::before, .hero::after { display: none; }
+  .hero { --fg-dim: #222; }
+  .reveal, .lift, .is-armed .shot { opacity: 1 !important; transform: none !important; }
+  .tile.reveal .tile__link, .tile.reveal .tile__meta { opacity: 1 !important; transform: none !important; }
+  .slate { border-top-color: #000; }
+  .slate::before { background: #000; }
+  .grid { display: block; }
+  .tile { display: block; border-top: 0.5pt solid #000; padding: 5pt 0;
+          break-inside: avoid; page-break-inside: avoid; }
+  .tile__link { display: block; position: static; aspect-ratio: auto; height: auto;
+                border: 0; background: none; }
+  .tile__link::before, .tile__link::after { display: none; }
+  .tile__dur { position: static; background: none; padding: 0; float: right;
+               color: #000; font-size: 8.5pt; }
+  .tile__dur::before { content: "DUR "; color: #555; }
+  .tile__meta { display: block; font-family: var(--mono); font-size: 8.5pt; margin: 0; }
+  .tile__idx { display: inline; color: #000; margin-right: 6pt; }
+  .tile__name { display: inline; font-size: 9.5pt; margin-right: 6pt; }
+  .tile__kind { display: inline; color: #555; margin: 0; }
+  .tile__stat { display: block; text-decoration: none; color: #000;
+                border: 0; padding: 0; margin-top: 2pt; font-size: 7.5pt; }
+  .tile__stat::before { content: "* "; }
+  .tile__stat::after { content: " — " attr(href); color: #555; word-break: break-all; }
+  .tile__stat span { display: none; }
+  .grid::after {
+    content: "PICTURE MEDIA OFFLINE IN THIS FORMAT — THE FRAMES ARE AT ALNIMERI.COM";
+    display: block; border-top: 0.5pt solid #000; padding-top: 5pt;
+    font-family: var(--mono); font-size: 7.5pt; letter-spacing: 0.08em;
+  }
+  .card, .stats, .facts { break-inside: avoid; border-color: #000; background: none; }
+  .credit { break-inside: avoid; }
+  .contact { background: #fff; padding: 8mm 0 0; }
+  .contact__mail { font-size: 14pt; }
+  .colophon__seq--tell { display: none; }
+}

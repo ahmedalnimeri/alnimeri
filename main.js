@@ -284,6 +284,17 @@
     cutTo(target.offsetTop - headerOffset());
   });
 
+  /* E exports the sequence — the same muscle memory as an edit bay. The
+     colophon carries the visible link; this is for the hands that know. */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'e' || e.metaKey || e.ctrlKey || e.altKey) return;
+    var t = e.target;
+    if (t && (/^(INPUT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable)) return;
+    if (lb && lb.classList.contains('is-open')) return;
+    cutEl.classList.add('is-cutting');
+    setTimeout(function () { location.href = '/selects.edl'; }, 42);
+  });
+
   /* ---- masthead contracts on scroll --------------------------------- */
 
   (function () {
@@ -413,9 +424,11 @@
     bar.addEventListener('focusout', function () { hovering = false; wake(); });
 
     var tick = false;
+    var lastP = 0;
     function draw() {
       var max = document.documentElement.scrollHeight - window.innerHeight;
       var p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+      lastP = p;
 
       now.textContent = stamp(p);
       headEl.style.left = (p * 100) + '%';
@@ -531,6 +544,18 @@
     stampSlates();
     // Poster and font arrival can shift offsets after first paint.
     window.addEventListener('load', function () { layout(); stampSlates(); });
+
+    /* A hidden tab is a parked deck: the title becomes the timecode where
+       the playhead stopped, from the same stamp() as the HUD. A recruiter
+       triaging twelve candidate tabs sees eleven names and one timecode.
+       Never stamped on tabs that were opened in the background and never
+       engaged — same threshold the HUD uses to wake. */
+    var baseTitle = document.title;
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) { document.title = baseTitle; return; }
+      if (window.scrollY <= window.innerHeight * 0.35) return;
+      document.title = 'PARKED ' + stamp(lastP) + ' \u2014 Ahmed El-Nimeri';
+    });
   })();
 
   /* ---- counters -----------------------------------------------------

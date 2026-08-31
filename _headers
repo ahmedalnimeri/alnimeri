@@ -24,3 +24,8 @@
 /api/*
   Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow
+
+# The sequence's own export. Plain text so it opens raw in the browser —
+# a machine document as self-portrait, and curl-able on purpose.
+/selects.edl
+  Content-Type: text/plain; charset=utf-8
