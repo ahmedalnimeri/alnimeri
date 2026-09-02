@@ -1,0 +1,4 @@
+# www and apex were both serving 200, so every page existed at two addresses.
+# The canonical tags already pointed search engines at the apex, but a 301 is
+# unambiguous — one URL, one set of ranking signals, no split.
+https://www.alnimeri.com/* https://alnimeri.com/:splat 301!
