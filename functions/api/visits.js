@@ -4,9 +4,11 @@
  *   /api/visits?key=<VISITS_TOKEN>
  *
  * Options:
- *   &humans=1  hide machine traffic (see below)
- *   &limit=200 rows to return, max 1000
- *   &bots=1    include anything the user-agent check flagged
+ *   &humans=1   hide machine traffic (see below)
+ *   &limit=200  rows to return; max 20000 for JSON, 5000 for the HTML table
+ *   &offset=0   skip N rows — page back through history beyond one screenful
+ *   &days=30    only the last N days
+ *   &bots=1     include anything the user-agent check flagged
  *   &format=json
  *
  * The key is compared against the VISITS_TOKEN environment variable, which is
@@ -59,7 +61,15 @@ export async function onRequestGet({ request, env }) {
     return new Response('D1 binding "DB" is missing.', { status: 503 });
   }
 
-  const limit  = Math.min(parseInt(url.searchParams.get('limit') || '200', 10) || 200, 1000);
+  const asJson = url.searchParams.get('format') === 'json';
+  // JSON is a data pull and can take the whole table; the HTML view has to
+  // stay a page a browser can actually render, so it caps lower. Both are far
+  // above the old 1000, which the log had already grown past — the oldest
+  // rows were scrolling out of reach while still sitting in the database.
+  const CAP = asJson ? 20000 : 5000;
+  const limit  = Math.min(parseInt(url.searchParams.get('limit') || '200', 10) || 200, CAP);
+  const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10) || 0);
+  const days   = Math.max(0, parseInt(url.searchParams.get('days') || '0', 10) || 0);
   const bots   = url.searchParams.get('bots') === '1';
   const humans = url.searchParams.get('humans') === '1';
 
@@ -69,6 +79,7 @@ export async function onRequestGet({ request, env }) {
   const where = [];
   const binds = [];
   if (!bots) where.push('is_bot = 0');
+  if (days) where.push(`ts >= datetime('now', '-${days} days')`);
   if (humans) {
     where.push(`path IN (${PAGES.map(() => '?').join(',')})`);
     binds.push(...PAGES);
@@ -81,22 +92,33 @@ export async function onRequestGet({ request, env }) {
   const { results } = await env.DB.prepare(
     `SELECT ts, ip, country, region, city, asn, path, referrer, ua, is_bot
        FROM visits ${clause}
-      ORDER BY ts DESC LIMIT ?`
-  ).bind(...binds, limit).all();
+      ORDER BY ts DESC LIMIT ? OFFSET ?`
+  ).bind(...binds, limit, offset).all();
 
-  // Shown only so the filtered view says what it is hiding, rather than
-  // looking like a site with almost no traffic.
-  let total = null;
-  if (humans) {
-    const t = await env.DB.prepare(
-      `SELECT COUNT(*) AS n FROM visits ${bots ? '' : 'WHERE is_bot = 0'}`
-    ).first();
-    total = t && t.n;
-  }
+  // Two counts, always: how many rows match the current filter (so paging
+  // knows where it ends) and how many exist at all (so a filtered view says
+  // what it is hiding rather than looking like a site with no traffic).
+  const matchRow = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM visits ${clause}`
+  ).bind(...binds).first();
+  const matching = matchRow ? matchRow.n : 0;
+  const allRow = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM visits ${bots ? '' : 'WHERE is_bot = 0'}`
+  ).first();
+  const total = allRow ? allRow.n : 0;
 
-  if (url.searchParams.get('format') === 'json') {
+  if (asJson) {
     return new Response(JSON.stringify(results, null, 2), {
-      headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'no-store',
+        // A bare array stays the body so existing pulls keep working; the
+        // counts ride in headers, so a caller can tell a full pull from a
+        // truncated one without parsing the page.
+        'x-rows-returned': String(results.length),
+        'x-rows-matching': String(matching),
+        'x-rows-total': String(total),
+      },
     });
   }
 
@@ -133,12 +155,21 @@ export async function onRequestGet({ request, env }) {
  tr:hover td{background:#131318}
 </style>
 <h1>Visits</h1>
-<p>${results.length} shown${humans && total ? ` of ${total} — ${total - results.length} machine requests hidden` : ''}${bots ? ' · including crawlers' : ''} · newest first<br>
-   <a class="${humans ? 'on' : ''}" href="${link({ humans: humans ? 0 : 1 })}">${humans ? '← show everything' : 'people only →'}</a>
+<p>${offset ? `${offset + 1}–${offset + results.length}` : results.length} of ${matching} matching${
+     matching !== total ? ` · ${total - matching} hidden by filters` : ''}${
+     days ? ` · last ${days} days` : ''}${bots ? ' · including crawlers' : ''} · newest first<br>
+   <a class="${humans ? 'on' : ''}" href="${link({ humans: humans ? 0 : 1, offset: 0 })}">${humans ? '← show everything' : 'people only →'}</a>
    &nbsp;·&nbsp;
-   <a href="${link({ bots: bots ? 0 : 1 })}">${bots ? 'hide' : 'show'} flagged crawlers</a>
+   <a href="${link({ bots: bots ? 0 : 1, offset: 0 })}">${bots ? 'hide' : 'show'} flagged crawlers</a>
    &nbsp;·&nbsp;
-   <a href="${link({ limit: 1000 })}">last 1000</a></p>
+   <a href="${link({ limit: 5000, offset: 0 })}">everything</a>
+   &nbsp;·&nbsp;
+   <a href="${link({ days: 7, offset: 0 })}">7d</a>
+   <a href="${link({ days: 30, offset: 0 })}">30d</a>
+   <a href="${link({ days: 0, offset: 0 })}">all time</a>
+   ${offset > 0 ? `&nbsp;·&nbsp;<a href="${link({ offset: Math.max(0, offset - limit) })}">← newer</a>` : ''}
+   ${offset + results.length < matching ? `&nbsp;·&nbsp;<a href="${link({ offset: offset + limit })}">older ${limit} →</a>` : ''}
+   </p>
 <table>
  <thead><tr><th>Time (UTC)</th><th>IP</th><th>Location</th><th>Network</th><th>Page</th><th>From</th></tr></thead>
  <tbody>${rows || `<tr><td colspan="6" class="d">${humans ? 'No human visits in this window.' : 'No visits recorded yet.'}</td></tr>`}</tbody>
