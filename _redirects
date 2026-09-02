@@ -1,4 +1,8 @@
-# www and apex were both serving 200, so every page existed at two addresses.
-# The canonical tags already pointed search engines at the apex, but a 301 is
-# unambiguous — one URL, one set of ranking signals, no split.
-https://www.alnimeri.com/* https://alnimeri.com/:splat 301!
+# Nothing here yet.
+#
+# www -> apex cannot be done from this file: Cloudflare Pages only matches
+# path-relative sources in _redirects, not hostnames, and it serves an
+# existing static file before consulting redirects at all. The fix is a
+# dashboard Redirect Rule (Rules -> Redirect Rules) or removing www as a
+# custom domain on the Pages project. Until then the canonical tag on every
+# page names the apex, which is what search engines consolidate on.
