@@ -1339,3 +1339,84 @@ body.is-locked { overflow: hidden; }
   .contact__mail { font-size: 14pt; }
   .colophon__seq--tell { display: none; }
 }
+
+/* ---------- film pages ----------
+   One page per film. Same slate, same mono machine voice, same monochrome
+   discipline — a film page is a section of the sequence that happens to have
+   its own URL. */
+
+.film {
+  position: relative; z-index: 1;
+  padding: clamp(8rem, 18vh, 11rem) var(--gut) clamp(4rem, 10vh, 7rem);
+  max-width: 1320px; margin: 0 auto;
+}
+.film__frame {
+  position: relative; aspect-ratio: 16 / 9;
+  border: 1px solid var(--line-soft); border-radius: var(--card);
+  overflow: hidden; background: #000;
+}
+/* Height-driven, like the lightbox: a 9:16 box sized by width grows taller
+   than the screen and pushes everything below it out of view. */
+.film__frame--portrait {
+  aspect-ratio: 9 / 16; width: auto; max-width: 100%;
+  height: min(68svh, 720px); margin-inline: auto;
+}
+.film__frame iframe, .film__frame img {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover;
+}
+
+.film__facts {
+  margin: clamp(2rem, 5vh, 3rem) 0 0;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+  border-top: 1px solid var(--line-soft); padding-top: 1.5rem;
+}
+@media (max-width: 700px) { .film__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.film__facts dt {
+  font-family: var(--mono); font-size: 0.66rem; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint);
+  margin-bottom: 0.4rem;
+}
+.film__facts dd { margin: 0; font-size: 0.95rem; }
+.film__facts a { color: var(--fg-dim); text-decoration: none; border-bottom: 1px solid var(--line); }
+.film__facts a:hover { color: var(--fg); }
+
+.film__note {
+  margin: clamp(2rem, 5vh, 3rem) 0 0; max-width: 62ch;
+  color: var(--fg-dim); font-size: 0.95rem;
+}
+.film__note a { color: var(--fg); text-underline-offset: 3px; }
+
+.film__nav {
+  margin-top: clamp(2.5rem, 6vh, 4rem);
+  padding-top: 1.4rem; border-top: 1px solid var(--line-soft);
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 1rem; flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+.film__nav a { color: var(--fg-dim); text-decoration: none; }
+.film__nav a:hover { color: var(--fg); }
+.film__nav-all { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* the list */
+.filmlist { list-style: none; margin: 0; padding: 0; }
+.filmlist__item a {
+  display: grid; grid-template-columns: 10rem 1fr auto auto;
+  gap: 1.5rem; align-items: baseline;
+  padding: clamp(0.9rem, 2vh, 1.2rem) 0;
+  border-top: 1px solid var(--line-soft);
+  text-decoration: none; color: var(--fg-dim);
+}
+.filmlist__item:last-child a { border-bottom: 1px solid var(--line-soft); }
+.filmlist__item a:hover { color: var(--fg); }
+.filmlist__idx, .filmlist__dur {
+  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.06em;
+  color: var(--fg-faint); white-space: nowrap;
+}
+.filmlist__name { font-size: 1.05rem; font-weight: 600; color: var(--fg); letter-spacing: -0.015em; }
+.filmlist__kind { font-size: 0.85rem; color: var(--fg-faint); }
+@media (max-width: 700px) {
+  .filmlist__item a { grid-template-columns: 1fr auto; gap: 0.35rem 1rem; }
+  .filmlist__idx { grid-column: 1 / -1; }
+  .filmlist__kind { grid-column: 1; }
+}
