@@ -1493,109 +1493,30 @@ body.is-locked { overflow: hidden; }
 }
 @media (max-width: 560px) { .reel__track { grid-auto-columns: minmax(230px, 78vw); } }
 
-/* ---- Dailies: the director on the other side of the lens ------------- */
-.dailies {
-  position: relative; z-index: 1;
-  padding: clamp(2rem, 6vh, 4rem) var(--gut) 0;
-  max-width: 1320px; margin: 0 auto;
-}
-.dailies__grid {
-  display: grid; gap: 3px;
-  grid-template-columns: repeat(12, 1fr);
-  grid-template-areas:
-    "a a a a a a a c c c c c"
-    "a a a a a a a c c c c c"
-    "d d d x e e e b b b b b";
-}
-.dailies__frame {
-  position: relative; margin: 0; overflow: hidden;
-  background: #000; border: 1px solid var(--line-soft);
-  min-height: 0;
-}
-/* Every frame carries its own aspect so the rows agree without stretching:
-   A is square across seven columns, C beside it is 5:7, the 2014/2025 pair
-   are squares, and B fills the rest of that row at 5:3 — a letterbox. */
-.dailies__frame--a { grid-area: a; aspect-ratio: 1; }
-.dailies__frame--c { grid-area: c; aspect-ratio: 5 / 7; }
-.dailies__frame--d { grid-area: d; aspect-ratio: 1; }
-.dailies__frame--e { grid-area: e; aspect-ratio: 1; }
-.dailies__frame--b { grid-area: b; aspect-ratio: 5 / 3; }
-.dailies__cut { grid-area: x; }
-.dailies__frame img {
-  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-  filter: grayscale(1) contrast(1.04);
-  transition: filter calc(var(--f) * 8) steps(8, end),
-              transform calc(var(--f) * 12) steps(12, end);
-}
-.dailies__frame--b img { object-position: 70% 50%; }
-.dailies__frame--c img { object-position: 50% 40%; }
-.dailies__frame:hover img,
-.dailies__frame:focus-within img { filter: none; transform: scale(1.035); }
-/* Frame A was shot monochrome. It never develops; it is the archive. */
-.dailies__frame--a img { filter: contrast(1.06); }
-.dailies__frame--a:hover img { filter: contrast(1.06); transform: none; }
 
-/* Burn-in: what the deck writes, top-left, never brighter than the picture. */
-.dailies__burn {
-  position: absolute; top: 0; left: 0; right: 0;
-  padding: 0.6rem 0.85rem 1.6rem;
-  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--fg);
-  background: linear-gradient(to bottom, rgba(0,0,0,0.72), transparent);
-  pointer-events: none;
+/* ---- About: one plate behind the opening -------------------------------- */
+.pagehead--plate { overflow: hidden; max-width: none; }
+.pagehead--plate > :not(.pagehead__plate) { position: relative; z-index: 1; }
+.pagehead--plate .stats, .pagehead--plate .pagehead__title,
+.pagehead--plate .pagehead__lede { max-width: min(1320px - 2 * var(--gut), 62ch); }
+.pagehead--plate .pagehead__title { max-width: 20ch; }
+.pagehead--plate .stats { max-width: calc(1320px - 2 * var(--gut)); }
+.pagehead__plate {
+  position: absolute; inset: 0; z-index: 0; background: #000;
 }
-
-/* The splice between 2014 and 2025 — the one white rule on the page, the
-   same 3px cut the CV timeline makes at Khartoum. */
-.dailies__cut {
-  position: relative; display: grid; place-items: center;
-  min-width: 0;
+.pagehead__plate img {
+  width: 100%; height: 100%; object-fit: cover; object-position: 86% 50%;
+  /* Monochrome, held down under the type: the chrome is monochrome, and
+     this is chrome. The 2014→2025 ratchet, the gate, the grain — none of it;
+     the picture just holds still. */
+  filter: grayscale(1) contrast(1.05) brightness(0.7);
 }
-.dailies__cut::before {
-  content: ""; position: absolute; top: 12%; bottom: 12%; left: 50%;
-  width: 3px; margin-left: -1.5px; background: var(--fg);
+.pagehead__plate::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(10,10,12,0.5) 0%, rgba(10,10,12,0.15) 35%, rgba(10,10,12,0.45) 75%, var(--bg) 100%),
+    radial-gradient(ellipse 60% 70% at 50% 45%, rgba(10,10,12,0.35), transparent 70%);
 }
-.dailies__cut span {
-  position: absolute; left: 50%; top: 50%;
-  transform: translate(-50%, -50%) rotate(-90deg);
-  white-space: nowrap; background: var(--bg); padding: 0.35rem 0.5rem;
-  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--fg-dim);
-}
-
-.dailies__note {
-  margin: 1.4rem 0 0;
-  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--fg-dim);
-}
-
-/* Entrances: each frame is exposed in six whole frames as it enters the
-   gate. Browsers without scroll-driven animations show them at rest. */
-@supports (animation-timeline: view()) {
-  .dailies__frame { animation: expose-frame steps(6, end) both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
-  @media (hover: none) {
-    .dailies__frame:not(.dailies__frame--a) img {
-      animation: develop steps(8, end) both;
-      animation-timeline: view();
-      animation-range: cover 15% cover 85%;
-    }
-  }
-}
-@keyframes expose-frame { from { opacity: 0; filter: brightness(1.8); } to { opacity: 1; filter: none; } }
-
 @media (max-width: 700px) {
-  .dailies__grid {
-    grid-template-columns: repeat(11, 1fr);
-    grid-template-areas:
-      "a a a a a a a a a a a"
-      "b b b b b b b b b b b"
-      "d d d d d x e e e e e"
-      "c c c c c c c c c c c";
-  }
-  .dailies__frame--b { aspect-ratio: 4 / 3; }
-  .dailies__frame--c { aspect-ratio: 3 / 4; }
-  .dailies__cut span { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dailies__frame, .dailies__frame img { animation: none !important; transition: none !important; }
+  .pagehead__plate img { object-position: 78% 50%; filter: grayscale(1) contrast(1.05) brightness(0.45); }
 }
