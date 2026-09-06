@@ -59,7 +59,7 @@ person = {
   "alternateName": ["Ahmed Al-Nimeri", "Ahmed Nimeri", "Ahmed Alnimeri",
                     "Ahmed Amin El-Nimeri", "أحمد النميري"],
   "url": "https://alnimeri.com",
-  "image": "https://alnimeri.com/assets/og.jpg",
+  "image": "https://alnimeri.com/assets/portrait/studio-1280.jpg",
   "email": "mailto:ahmed@alnimeri.com",
   "jobTitle": "Storyteller, Director & Video Producer",
   "description": "Storyteller and film director in Dubai. Eleven years of commercial, documentary and institutional film.",
