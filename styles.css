@@ -1517,12 +1517,22 @@ body.is-locked { overflow: hidden; }
     linear-gradient(to bottom, rgba(10,10,12,0.5) 0%, transparent 30%, transparent 70%, var(--bg) 100%);
 }
 @media (max-width: 900px) {
-  .pagehead--plate { padding-right: var(--gut); }
+  /* Portrait screens have no negative space to share, so the plate becomes
+     its own frame: full-bleed under the masthead, the profile on the right,
+     the words below it on black. */
+  .pagehead--plate { padding-top: 0; padding-right: var(--gut); }
   .pagehead--plate .pagehead__title { max-width: 16ch; }
-  .pagehead__plate img { object-position: 92% 50%; filter: contrast(1.05) brightness(0.5); }
+  .pagehead__plate {
+    position: relative; inset: auto; z-index: 0;
+    margin: 0 calc(-1 * var(--gut)) clamp(1.5rem, 5vh, 2.5rem);
+    aspect-ratio: 4 / 3;
+  }
+  .pagehead__plate img {
+    position: absolute; inset: 0; object-position: 100% 50%;
+    filter: contrast(1.05) brightness(0.85);
+  }
   .pagehead__plate::after {
     background:
-      linear-gradient(to right, rgba(10,10,12,0.75), rgba(10,10,12,0.35)),
-      linear-gradient(to bottom, rgba(10,10,12,0.5) 0%, transparent 30%, transparent 70%, var(--bg) 100%);
+      linear-gradient(to bottom, rgba(10,10,12,0.55) 0%, transparent 28%, transparent 62%, var(--bg) 100%);
   }
 }
