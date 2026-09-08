@@ -410,10 +410,13 @@ a { color: inherit; }
      slots 10 and 11, behind a run that decayed 1.4M -> 293K -> 148K -> 4.3K.
      A phone visitor from Instagram scrolls a few cards, not sixteen.
      Reordering here rather than in the markup leaves the wide/tall desktop
-     grid exactly as composed. */
-  .tile--lead-1 { order: -3; }
-  .tile--lead-2 { order: -2; }
-  .tile--lead-3 { order: -1; }
+     grid exactly as composed. The ladder is ordinal, not fixed to a film:
+     lead-1..4 is simply the phone's running order, so a new film slots in by
+     taking a rung and pushing the ones below it down. */
+  .tile--lead-1 { order: -4; }
+  .tile--lead-2 { order: -3; }
+  .tile--lead-3 { order: -2; }
+  .tile--lead-4 { order: -1; }
   /* The sequence index is desktop furniture; with the running order changed
      it would read 01, 10, 11, 02 — and the mobile meta row is tight anyway. */
   .tile__idx { display: none; }
