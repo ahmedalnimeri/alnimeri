@@ -25,8 +25,8 @@ for b in blocks:
     tiles.append((href.group(1), vid.group(1) if vid else 'AX',
                   title.group(1), dur.group(1), idx.group(1),
                   stat.group(1) if stat else ''))
-if len(tiles) != 16:
-    sys.exit(f'expected 16 tiles, matched {len(tiles)}')
+if len(tiles) < 10:
+    sys.exit(f'suspiciously few tiles matched: {len(tiles)}')
 
 def tc(sec):
     return f'{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}:00'
@@ -47,8 +47,8 @@ for n, (href, vid, title, dur, idx, stat) in enumerate(tiles, 1):
     lines.append('')
     tot += d
 
-lines += [f'* TRT {tc(tot)} · 16 EVENTS · 24 FPS',
+lines += [f'* TRT {tc(tot)} · {len(tiles)} EVENTS · 24 FPS',
           '* SOME OF IT WAS A BRIEF. SOME OF IT WAS MY COUNTRY.',
           '* SEND THE BRIEF: AHMED@ALNIMERI.COM', '']
 open('selects.edl', 'w').write('\n'.join(lines))
-print(f'selects.edl: 16 events, TRT {tc(tot)}')
+print(f'selects.edl: {len(tiles)} events, TRT {tc(tot)}')

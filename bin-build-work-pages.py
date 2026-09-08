@@ -13,6 +13,9 @@ into this directory.
 """
 import re, os, json, html, sys
 
+WORDS = {14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen',
+         18: 'eighteen', 19: 'nineteen', 20: 'twenty'}
+
 SRC = open('index.html').read()
 
 VER = re.search(r'styles\.css\?v=(\d+)', SRC).group(1)
@@ -48,8 +51,8 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
         'portrait': field(b, r'data-portrait="(\w+)"') == 'true',
     })
 
-if len(films) != 16:
-    sys.exit(f'expected 16 films, found {len(films)}')
+if len(films) < 10 or len(films) not in WORDS:
+    sys.exit(f'unexpected film count: {len(films)} (add it to WORDS)')
 
 def iso_dur(d):
     m, s = (int(x) for x in d.split(':'))
@@ -105,6 +108,12 @@ FOOT = '''</main>
 '''
 
 os.makedirs('work', exist_ok=True)
+
+# Counts printed in prose are derived, never typed: adding a tile to
+# index.html must move every 'one of N films' line with it.
+_secs = sum(int(f['dur'].split(':')[0]) * 60 + int(f['dur'].split(':')[1]) for f in films)
+COUNT = WORDS.get(len(films), str(len(films)))
+TRT   = f'{_secs // 60}:{_secs % 60:02d}'
 
 for i, f in enumerate(films):
     prev_f = films[i - 1] if i else None
@@ -173,7 +182,7 @@ for i, f in enumerate(films):
   </div>
   {player}
   <dl class="film__facts">{facts_html}</dl>
-  <p class="film__note">One of sixteen films in the <a href="/">selected work</a> of Ahmed El-Nimeri,
+  <p class="film__note">One of {COUNT} films in the <a href="/">selected work</a> of Ahmed El-Nimeri,
     a film director and Associate Creative Director based in Dubai. Every figure on this site links
     to the published post it came from.</p>
   <nav class="film__nav" aria-label="Films">{''.join(nav)}</nav>
@@ -203,7 +212,7 @@ idx_schema = {
                  "url": f"https://alnimeri.com/work/{f['slug']}"} for f in films]}
 
 idx = (HEAD.format(title='All films', slug='', poster=films[0]['poster'].split('?')[0], ver=VER, mark=MARK,
-                   desc='Every film by Ahmed El-Nimeri on this site — sixteen pieces, 42:18 total running time, each with its published view count and source.',
+                   desc=f'Every film by Ahmed El-Nimeri on this site — {COUNT} pieces, {TRT} total running time, each with its published view count and source.',
                    schema=json.dumps(idx_schema, ensure_ascii=False))
        .replace('<link rel="canonical" href="https://alnimeri.com/work/">',
                 '<link rel="canonical" href="https://alnimeri.com/work/">')
@@ -211,10 +220,10 @@ idx = (HEAD.format(title='All films', slug='', poster=films[0]['poster'].split('
   <div class="slate">
     <span class="slate__tc">SEQ 2026</span>
     <h1 class="slate__title">All films</h1>
-    <span class="slate__meta">16 clips &middot; TRT {total // 60}:{total % 60:02d}</span>
+    <span class="slate__meta">{len(films)} clips &middot; TRT {total // 60}:{total % 60:02d}</span>
   </div>
   <ol class="filmlist">{rows}</ol>
-  <p class="film__note">The same sixteen films as the <a href="/">front page</a>, as a list.
+  <p class="film__note">The same {COUNT} films as the <a href="/">front page</a>, as a list.
     Each page carries the film, its running time and the published post its view count came from.
     The machine-readable cut list is at <a href="/selects.edl">/selects.edl</a>.</p>
 </section>

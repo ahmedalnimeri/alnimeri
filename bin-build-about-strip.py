@@ -10,6 +10,14 @@ import re, sys, html
 
 SRC = open('index.html').read()
 
+# The count in the strip's footer link is derived from the tiles, like every
+# other printed number on the site — hand-typing it is how "sixteen" outlived
+# the sixteenth film.
+WORDS = {14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen',
+         18: 'eighteen', 19: 'nineteen', 20: 'twenty'}
+_n = len(re.findall(r'<article class="tile', SRC))
+COUNT = WORDS.get(_n, str(_n))
+
 # Landscape frames only — a strip of 16:9 gates, mixed so the range reads:
 # Sudan documentary next to global commercial work.
 WANT = ['The Greatest Sudanese Sit-In', 'Solana Accelerate', 'Sia x Solana',
@@ -53,7 +61,7 @@ strip = f'''
   <section class="reel" aria-label="Frames from selected films">
     <div class="reel__track">{items}
     </div>
-    <p class="reel__note"><a href="/work/">All sixteen films &rarr;</a></p>
+    <p class="reel__note"><a href="/work/">All {COUNT} films &rarr;</a></p>
   </section>
 '''
 

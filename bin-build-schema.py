@@ -74,6 +74,7 @@ person = {
                  "Cinematography", "Video editing", "Colour grading",
                  "Motion graphics", "Animation", "Brand storytelling"],
   "sameAs": ["https://vimeo.com/nimeri", "https://www.instagram.com/by_nimeri",
+             "https://sudannextgen.com/members/ahmed-el-nimeri/",
              "https://www.linkedin.com/in/ahmedalnimeri"],
 }
 
