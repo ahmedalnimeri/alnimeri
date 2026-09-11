@@ -127,14 +127,18 @@
     return {
       el: cv, ctx: ctx, w: w, h: h,
       // Collapse whatever has been drawn to one bit per pixel.
-      dither: function () {
-        var img = ctx.getImageData(0, 0, w, h), d = img.data, x, y, i, l;
+      // erase (0..1) knocks pixels out by the same matrix, so the picture
+      // can break up and let whatever is behind it through.
+      dither: function (erase) {
+        var img = ctx.getImageData(0, 0, w, h), d = img.data, x, y, i, l, t;
         for (y = 0; y < h; y++) {
           for (x = 0; x < w; x++) {
             i = (y * w + x) * 4;
+            t = thresholdAt(x, y);
             l = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
-            l = l > thresholdAt(x, y) ? 255 : 0;
-            d[i] = d[i + 1] = d[i + 2] = l; d[i + 3] = 255;
+            l = l > t ? 255 : 0;
+            d[i] = d[i + 1] = d[i + 2] = l;
+            d[i + 3] = (erase && t < erase) ? 0 : 255;
           }
         }
         ctx.putImageData(img, 0, 0);
@@ -584,6 +588,270 @@
     if ('requestIdleCallback' in window) requestIdleCallback(startHero, { timeout: 2500 });
     else setTimeout(startHero, 1200);
   }
+
+  /* ---- boot ------------------------------------------------------------
+     The first thing on the screen. The hero opens as a 1-bit machine
+     picture — carrier noise resolving into a horizon grid with a reticle
+     over it — and then breaks up, pixel by pixel along the same dither
+     matrix, to reveal the footage underneath. Drawn at 256 across and
+     scaled up with smoothing off, so it is genuinely a bitmap and not a
+     photograph of one.
+
+     It runs once per browsing session, skips on the first touch of the
+     screen, and holds a single still frame instead of moving for anyone
+     who asked for reduced motion. Everything it prints is either fixed
+     fact or read off the page — the sequence line comes from the Selects
+     slate, so it can never drift from what the deck actually holds. */
+
+  (function () {
+    var hero = document.querySelector('.hero');
+    if (!hero || !window.requestAnimationFrame) return;
+
+    var force = /(^|[?&#])boot\b/.test(location.search + location.hash);
+    try {
+      if (!force && sessionStorage.getItem('boot') === '1') return;
+      sessionStorage.setItem('boot', '1');
+    } catch (e) {}
+
+    var gate = hero.querySelector('.hero__bg') || hero;
+    var r = gate.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+
+    var W = 256, H = Math.max(72, Math.min(420, Math.round(W * r.height / r.width)));
+    var bmp = bitmap(W, H), c = bmp.ctx;
+    bmp.el.className = 'hero__boot';
+    var grain = hero.querySelector('.hero__grain');
+    if (grain && grain.parentNode === hero) hero.insertBefore(bmp.el, grain.nextSibling);
+    else hero.insertBefore(bmp.el, hero.firstChild);
+
+    // What the deck is actually holding, read off its own slate.
+    var meta = document.querySelector('#work .slate__meta');
+    var seq = meta ? meta.textContent.replace(/^\s*\d+\s*[^\w]+\s*/, '').trim().toUpperCase() : '';
+
+    var cx = W / 2, hy = Math.round(H * 0.6);
+
+    function scene(f) {
+      var t = f / 24;
+      c.globalAlpha = 1;
+      c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+
+      // Carrier noise, thinning as the picture locks up.
+      var snow = Math.max(0, 1 - f / 16);
+      if (snow > 0) {
+        c.fillStyle = '#fff';
+        var n = Math.round(snow * W * H * 0.055), i;
+        for (i = 0; i < n; i++) c.fillRect((Math.random() * W) | 0, (Math.random() * H) | 0, 1, 1);
+      }
+
+      c.lineWidth = 1;
+
+      // The floor: depth lines running toward the viewer, verticals fanning
+      // out from the vanishing point.
+      var grid = Math.min(1, Math.max(0, (f - 5) / 20));
+      if (grid > 0) {
+        c.strokeStyle = '#9c9c9c';
+        var M = 15, k, u, y;
+        for (k = 0; k < M; k++) {
+          u = ((k + t * 1.5) % M) / M;
+          y = hy + (H - hy) * u * u;
+          c.globalAlpha = Math.min(1, u * 3.2) * grid;
+          c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(W, y + 0.5); c.stroke();
+        }
+        var K = 8;
+        for (k = -K; k <= K; k++) {
+          if (Math.abs(k) > K * grid) continue;
+          c.globalAlpha = grid;
+          c.beginPath();
+          c.moveTo(cx + k * (W * 0.24), H);
+          c.lineTo(cx + k * 1.2, hy);
+          c.stroke();
+        }
+        // The horizon draws itself outward from the centre.
+        c.globalAlpha = 1;
+        c.strokeStyle = '#fff';
+        var half = W / 2 * Math.min(1, f / 10);
+        c.beginPath(); c.moveTo(cx - half, hy + 0.5); c.lineTo(cx + half, hy + 0.5); c.stroke();
+      }
+
+      // The reticle, irising open over the horizon.
+      var ret = Math.min(1, Math.max(0, (f - 12) / 18));
+      if (ret > 0) {
+        var ry = hy - H * 0.3, R = Math.min(W, H) * 0.16 * ret, a, ang;
+        c.globalAlpha = 1; c.strokeStyle = '#e2e2e2';
+        c.beginPath(); c.arc(cx, ry, R, 0, Math.PI * 2); c.stroke();
+        c.beginPath(); c.arc(cx, ry, R * 0.6, 0, Math.PI * 2); c.stroke();
+        for (a = 0; a < 12; a++) {
+          ang = a / 12 * Math.PI * 2 + t * 0.5;
+          c.beginPath();
+          c.moveTo(cx + Math.cos(ang) * R * 1.15, ry + Math.sin(ang) * R * 1.15);
+          c.lineTo(cx + Math.cos(ang) * R * 1.34, ry + Math.sin(ang) * R * 1.34);
+          c.stroke();
+        }
+        c.beginPath();
+        c.moveTo(cx - R * 0.28, ry + 0.5); c.lineTo(cx + R * 0.28, ry + 0.5);
+        c.moveTo(cx + 0.5, ry - R * 0.28); c.lineTo(cx + 0.5, ry + R * 0.28);
+        c.stroke();
+      }
+
+      // Hold the middle band back, so the headline keeps its contrast over
+      // the pattern rather than fighting it.
+      var band = c.createLinearGradient(0, H * 0.16, 0, H * 0.86);
+      band.addColorStop(0, 'rgba(0,0,0,0)');
+      band.addColorStop(0.45, 'rgba(0,0,0,0.62)');
+      band.addColorStop(0.75, 'rgba(0,0,0,0.5)');
+      band.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = band; c.fillRect(0, H * 0.16, W, H * 0.7);
+
+      // One bright line sweeping the gate.
+      var sy = ((t * 0.5) % 1) * H;
+      var sweep = c.createLinearGradient(0, sy - 9, 0, sy + 9);
+      sweep.addColorStop(0, 'rgba(255,255,255,0)');
+      sweep.addColorStop(0.5, 'rgba(255,255,255,0.5)');
+      sweep.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = sweep; c.fillRect(0, sy - 9, W, 18);
+
+      // Readouts. White, always — grey type dithers into a pattern and the
+      // letters go with it.
+      c.font = 'bold 8px ui-monospace, Menlo, monospace';
+      c.fillStyle = '#fff'; c.textBaseline = 'alphabetic';
+      if (f > 18) { c.textAlign = 'left';  c.fillText('ALNIMERI', 6, 12); }
+      if (f > 22) { c.textAlign = 'right'; c.fillText('24 FPS', W - 6, 12); }
+      if (f > 28) { c.textAlign = 'left';  c.fillText('DUBAI 25.2N 55.3E', 6, H - 6); }
+      if (f > 32 && seq) { c.textAlign = 'right'; c.fillText(seq, W - 6, H - 6); }
+    }
+
+    var TOTAL = 78, OUT = 18, f = 0, running = true;
+
+    function done() {
+      running = false;
+      offSkip();
+      if (bmp.el.parentNode) bmp.el.parentNode.removeChild(bmp.el);
+    }
+
+    function skip() {
+      if (!running) return;
+      if (f < TOTAL - OUT) f = TOTAL - OUT;   // cut straight to the break-up
+    }
+    function offSkip() {
+      ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) {
+        window.removeEventListener(ev, skip);
+      });
+    }
+    ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) {
+      window.addEventListener(ev, skip, { passive: true });
+    });
+
+    // Reduced motion: one still frame of the same picture, held, then cut.
+    if (!motionOK) {
+      scene(46);
+      bmp.dither(0);
+      setTimeout(done, 800);
+      return;
+    }
+
+    (function tick() {
+      if (!running) return;
+      scene(f);
+      bmp.dither(f > TOTAL - OUT ? (f - (TOTAL - OUT)) / OUT : 0);
+      f++;
+      if (f > TOTAL) { done(); return; }
+      setTimeout(tick, FRAME);
+    })();
+  })();
+
+  /* ---- the deck reads every frame --------------------------------------
+     Every still on the site is shown twice: once as the machine reads it —
+     one bit per pixel, thresholded through the same Bayer matrix as the
+     leader — and once as the photograph, when you engage with it. The
+     dithered plate sits on a canvas over the real <img>, so the photograph
+     is always the thing that loaded, the thing a crawler sees and the thing
+     that prints. The pattern is only ever paint on top of it.
+
+     Resolving is a cut, not a fade: hover on a pointer device, and on a
+     phone the frame nearest the middle of the screen — the one you are
+     actually looking at — locks in as you scroll. */
+
+  (function () {
+    var shots = [].slice.call(document.querySelectorAll(
+      '.tile__img, .pagehead__plate img, .film__frame > img'));
+    if (!shots.length) return;
+
+    var coarse = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    function plate(img) {
+      var host = img.parentNode;
+      if (!host || img.dataset.read) return;
+      var w = 300, nw = img.naturalWidth || 16, nh = img.naturalHeight || 9;
+      var h = Math.max(40, Math.round(w * nh / nw));
+      var bmp = bitmap(w, h);
+      bmp.el.className = 'read';
+      try {
+        bmp.ctx.drawImage(img, 0, 0, w, h);
+        // Push the contrast before thresholding. A straight threshold of a
+        // graded film still collapses to two blobs; steepening it first is
+        // what keeps a face readable at one bit.
+        // drawImage samples the file, not the styled element — the CSS
+        // filter on a plate (brightness .72) never reaches the canvas, so a
+        // bright sky came through blown out and the dot field buried the
+        // headline. Carry the same gain here, and take it further for a
+        // plate, which has to sit under type.
+        var isPlate = host.classList.contains('pagehead__plate');
+        var gain = isPlate ? 0.45 : 1, bias = isPlate ? -12 : 10;
+        var d = bmp.ctx.getImageData(0, 0, w, h), p = d.data, i, v;
+        for (i = 0; i < p.length; i += 4) {
+          v = (p[i] * 0.299 + p[i + 1] * 0.587 + p[i + 2] * 0.114) * gain;
+          v = Math.max(0, Math.min(255, (v - 128) * 1.45 + 128 + bias));
+          p[i] = p[i + 1] = p[i + 2] = v;
+        }
+        bmp.ctx.putImageData(d, 0, 0);
+        bmp.dither(0);
+      } catch (e) { return; }   // a cross-origin still simply stays a still
+      img.dataset.read = '1';
+      host.insertBefore(bmp.el, img.nextSibling);
+      host.classList.add('has-read');
+    }
+
+    // Only pay for a frame once it is worth looking at.
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          io.unobserve(e.target);
+          var img = e.target;
+          if (img.complete && img.naturalWidth) plate(img);
+          else img.addEventListener('load', function () { plate(img); }, { once: true });
+        });
+      }, { rootMargin: '300px' });
+      shots.forEach(function (img) { io.observe(img); });
+    } else {
+      shots.forEach(function (img) { if (img.complete) plate(img); });
+    }
+
+    // On a phone there is no hover, so the deck locks onto whatever is in
+    // the middle of the screen and lets that one frame resolve.
+    if (coarse) {
+      var tiles = [].slice.call(document.querySelectorAll('article.tile, .pagehead__plate')), pending = false;
+      if (tiles.length) {
+        var lock = function () {
+          pending = false;
+          var mid = window.innerHeight / 2, best = null, bestD = 1e9;
+          tiles.forEach(function (t) {
+            var b = t.getBoundingClientRect();
+            if (b.bottom < 0 || b.top > window.innerHeight) { t.classList.remove('is-locked'); return; }
+            var d = Math.abs(b.top + b.height / 2 - mid);
+            if (d < bestD) { bestD = d; best = t; }
+          });
+          tiles.forEach(function (t) { if (t !== best) t.classList.remove('is-locked'); });
+          if (best && bestD < window.innerHeight * 0.34) best.classList.add('is-locked');
+        };
+        window.addEventListener('scroll', function () {
+          if (pending) return; pending = true;
+          (window.requestAnimationFrame || setTimeout)(lock);
+        }, { passive: true });
+        lock();
+      }
+    }
+  })();
 
   /* Tile previews — pointer devices only. Touch has no hover state, and
      autoplaying twelve loops on a phone would be indefensible. */

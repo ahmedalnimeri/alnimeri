@@ -1776,3 +1776,54 @@ body.is-locked { overflow: hidden; }
 .lb__outacts { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
 .lb__outacts .btn { padding: 0.6rem 1.15rem; font-size: 0.85rem; }
 .bin__screen { flex: none; }
+
+/* The boot picture. Sits inside the gate, above the footage and its scrim,
+   below the words — so the headline cuts in over the pattern. Removed from
+   the document the moment it has broken up. */
+.hero__boot {
+  /* A canvas is a replaced element: left/right alone will not stretch it,
+     it just sits at its intrinsic buffer size. The explicit width/height
+     are what make it fill the gate. */
+  position: absolute; left: 0; top: var(--matte);
+  width: 100%; height: calc(100% - var(--matte) * 2);
+  z-index: -1; pointer-events: none; background: #000;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+}
+@media print { .hero__boot { display: none; } }
+
+/* ---- the deck reads every frame ---------------------------------------
+   The 1-bit plate sits on a canvas over the photograph. It clears on a cut,
+   never a fade: hover on a pointer device, and on a phone whichever frame
+   is nearest the middle of the screen. */
+.read {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  pointer-events: none; background: #000;
+}
+.tile__link:hover .read,
+.tile__link:focus-visible .read,
+.is-locked .read,
+.film__frame:hover .read,
+.pagehead__plate:hover .read { opacity: 0; }
+/* The dither is paint, not picture: it never goes to the printer, and it is
+   not what a reader with reduced transparency preferences needs. */
+@media print { .read { display: none; } }
+
+/* Machine-vision brackets. Two opposite corners, faint until the deck is
+   looking at that frame. */
+.tile__veil::before, .tile__veil::after {
+  content: ""; position: absolute; width: 14px; height: 14px;
+  border: 1.5px solid var(--fg); opacity: 0.42;
+}
+.tile__veil::before { top: 9px; left: 9px; border-right: 0; border-bottom: 0; }
+.tile__veil::after { bottom: 9px; right: 9px; border-left: 0; border-top: 0; }
+.tile__link:hover .tile__veil::before,
+.tile__link:hover .tile__veil::after,
+.is-locked .tile__veil::before,
+.is-locked .tile__veil::after { opacity: 1; width: 20px; height: 20px; }
+@media print { .tile__veil::before, .tile__veil::after { display: none; } }
+
+/* The stamp under a frame is the readout, so it lifts when that frame is
+   the one being read. */
+.tile__link:hover ~ .tile__meta .tile__idx,
+.is-locked .tile__idx { color: var(--fg); }
