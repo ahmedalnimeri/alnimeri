@@ -46,6 +46,7 @@ function screening(cf) {
   return {
     city: cf.city, cc: (cf.country || '').toUpperCase(), tz: cf.timezone,
     local, dubai, reply, ar: ARABIC.has((cf.country || '').toUpperCase()),
+    home: cf.timezone === 'Asia/Dubai',
   };
 }
 
@@ -56,13 +57,17 @@ function personalise(res, sc) {
     `<p class="screening" data-tz="${esc(sc.tz)}" aria-label="Screening in ${esc(sc.city)}">` +
     `<span>Screening</span><span class="screening__sep">·</span>` +
     `<span>${esc(sc.city)}${sc.cc ? ', ' + esc(sc.cc) : ''}</span><span class="screening__sep">·</span>` +
-    `<span><b data-clock="local">${sc.local}</b> local</span><span class="screening__sep">·</span>` +
-    `<span>Dubai <b data-clock="Asia/Dubai">${sc.dubai}</b></span>` +
+    (sc.home
+      ? `<span><b data-clock="Asia/Dubai">${sc.dubai}</b> local</span>`
+      : `<span><b data-clock="local">${sc.local}</b> local</span><span class="screening__sep">·</span>` +
+        `<span>Dubai <b data-clock="Asia/Dubai">${sc.dubai}</b></span>`) +
     (sc.ar ? `<span class="screening__sep">·</span><span lang="ar" dir="rtl" class="screening__ar">أهلاً — العربية متاحة</span>` : '') +
     `</p>`;
   const contact =
-    ` <span class="contact__clock">It is <b data-clock="Asia/Dubai">${sc.dubai}</b> in Dubai, ` +
-    `<b data-clock="local">${sc.local}</b> in ${esc(sc.city)}. ${sc.reply}</span>`;
+    (sc.home
+      ? ` <span class="contact__clock">It is <b data-clock="Asia/Dubai">${sc.dubai}</b> here in Dubai. ${sc.reply}</span>`
+      : ` <span class="contact__clock">It is <b data-clock="Asia/Dubai">${sc.dubai}</b> in Dubai, ` +
+        `<b data-clock="local">${sc.local}</b> in ${esc(sc.city)}. ${sc.reply}</span>`);
 
   const out = new HTMLRewriter()
     .on('html', { element(e) { e.setAttribute('data-screening', sc.ar ? 'ar' : 'on'); } })
