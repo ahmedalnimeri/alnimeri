@@ -798,52 +798,90 @@
   })();
 
   /* ---- the deck reads every frame --------------------------------------
-     Every still on the site is shown twice: once as the machine reads it —
-     one bit per pixel, thresholded through the same Bayer matrix as the
-     leader — and once as the photograph, when you engage with it. The
-     dithered plate sits on a canvas over the real <img>, so the photograph
-     is always the thing that loaded, the thing a crawler sees and the thing
-     that prints. The pattern is only ever paint on top of it.
+     Every still is shown twice: once as the machine reads it, once as the
+     photograph, when you engage with it. The plate sits on a canvas over
+     the real <img>, so the photograph is always the thing that loaded, the
+     thing a crawler sees and the thing that prints.
 
-     Resolving is a cut, not a fade: hover on a pointer device, and on a
-     phone the frame nearest the middle of the screen — the one you are
-     actually looking at — locks in as you scroll. */
+     The read is Floyd–Steinberg error diffusion, serpentine, at the frame's
+     own displayed size — one dot per screen pixel. The first attempt used
+     the ordered Bayer matrix from the boot, which is right for a synthetic
+     picture and wrong for a photograph: a graded sky sits at one tone, every
+     cell of the matrix tips at the same moment, and the whole thing comes
+     out as a uniform checkerboard. Error diffusion carries each pixel's
+     error into its neighbours instead, so tone becomes dot DENSITY and the
+     picture survives at one bit.
+
+     The animation is the read head: a band travelling down each plate where
+     the photograph shows through, staggered so no two frames are in step.
+     It is a CSS mask, so it costs the compositor and not the main thread,
+     and it makes the frame clearer as it passes rather than noisier. */
 
   (function () {
-    var shots = [].slice.call(document.querySelectorAll(
-      '.tile__img, .pagehead__plate img, .film__frame > img'));
+    var shots = [].slice.call(document.querySelectorAll('.tile__img, .film__frame > img'));
     if (!shots.length) return;
 
     var coarse = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-    function plate(img) {
+    function read(img) {
       var host = img.parentNode;
       if (!host || img.dataset.read) return;
-      var w = 300, nw = img.naturalWidth || 16, nh = img.naturalHeight || 9;
+      var box = img.getBoundingClientRect();
+      var w = Math.round(Math.min(700, Math.max(160, box.width || 320)));
+      var nw = img.naturalWidth || 16, nh = img.naturalHeight || 9;
       var h = Math.max(40, Math.round(w * nh / nw));
       var bmp = bitmap(w, h);
       bmp.el.className = 'read';
       try {
         bmp.ctx.drawImage(img, 0, 0, w, h);
-        // Push the contrast before thresholding. A straight threshold of a
-        // graded film still collapses to two blobs; steepening it first is
-        // what keeps a face readable at one bit.
-        // drawImage samples the file, not the styled element — the CSS
-        // filter on a plate (brightness .72) never reaches the canvas, so a
-        // bright sky came through blown out and the dot field buried the
-        // headline. Carry the same gain here, and take it further for a
-        // plate, which has to sit under type.
-        var isPlate = host.classList.contains('pagehead__plate');
-        var gain = isPlate ? 0.45 : 1, bias = isPlate ? -12 : 10;
-        var d = bmp.ctx.getImageData(0, 0, w, h), p = d.data, i, v;
-        for (i = 0; i < p.length; i += 4) {
-          v = (p[i] * 0.299 + p[i + 1] * 0.587 + p[i + 2] * 0.114) * gain;
-          v = Math.max(0, Math.min(255, (v - 128) * 1.45 + 128 + bias));
-          p[i] = p[i + 1] = p[i + 2] = v;
+        var d = bmp.ctx.getImageData(0, 0, w, h), p = d.data, i, j, v;
+
+        // Luminance, with a light contrast lift. Nothing heavier: crushing
+        // the tones here is what produced the wallpaper.
+        var buf = new Float32Array(w * h);
+        for (i = 0, j = 0; j < buf.length; i += 4, j++) {
+          v = p[i] * 0.299 + p[i + 1] * 0.587 + p[i + 2] * 0.114;
+          buf[j] = (v - 128) * 1.12 + 128;
+        }
+
+        // Floyd–Steinberg, serpentine: alternating the scan direction keeps
+        // the error from marching into a diagonal pattern.
+        var x, y, idx, old, nv, e, ltr;
+        for (y = 0; y < h; y++) {
+          ltr = (y & 1) === 0;
+          for (var n = 0; n < w; n++) {
+            x = ltr ? n : w - 1 - n;
+            idx = y * w + x;
+            old = buf[idx];
+            nv = old < 128 ? 0 : 255;
+            buf[idx] = nv;
+            e = old - nv;
+            if (ltr) {
+              if (x + 1 < w) buf[idx + 1] += e * 0.4375;
+              if (y + 1 < h) {
+                if (x > 0) buf[idx + w - 1] += e * 0.1875;
+                buf[idx + w] += e * 0.3125;
+                if (x + 1 < w) buf[idx + w + 1] += e * 0.0625;
+              }
+            } else {
+              if (x > 0) buf[idx - 1] += e * 0.4375;
+              if (y + 1 < h) {
+                if (x + 1 < w) buf[idx + w + 1] += e * 0.1875;
+                buf[idx + w] += e * 0.3125;
+                if (x > 0) buf[idx + w - 1] += e * 0.0625;
+              }
+            }
+          }
+        }
+        for (i = 0, j = 0; j < buf.length; i += 4, j++) {
+          p[i] = p[i + 1] = p[i + 2] = buf[j];
+          p[i + 3] = 255;
         }
         bmp.ctx.putImageData(d, 0, 0);
-        bmp.dither(0);
-      } catch (e) { return; }   // a cross-origin still simply stays a still
+      } catch (e2) { return; }   // a cross-origin still simply stays a still
+
+      // No two read heads in step.
+      bmp.el.style.animationDelay = (-Math.random() * 9).toFixed(2) + 's';
       img.dataset.read = '1';
       host.insertBefore(bmp.el, img.nextSibling);
       host.classList.add('has-read');
@@ -856,19 +894,19 @@
           if (!e.isIntersecting) return;
           io.unobserve(e.target);
           var img = e.target;
-          if (img.complete && img.naturalWidth) plate(img);
-          else img.addEventListener('load', function () { plate(img); }, { once: true });
+          if (img.complete && img.naturalWidth) read(img);
+          else img.addEventListener('load', function () { read(img); }, { once: true });
         });
       }, { rootMargin: '300px' });
       shots.forEach(function (img) { io.observe(img); });
     } else {
-      shots.forEach(function (img) { if (img.complete) plate(img); });
+      shots.forEach(function (img) { if (img.complete) read(img); });
     }
 
     // On a phone there is no hover, so the deck locks onto whatever is in
     // the middle of the screen and lets that one frame resolve.
     if (coarse) {
-      var tiles = [].slice.call(document.querySelectorAll('article.tile, .pagehead__plate')), pending = false;
+      var tiles = [].slice.call(document.querySelectorAll('article.tile')), pending = false;
       if (tiles.length) {
         var lock = function () {
           pending = false;

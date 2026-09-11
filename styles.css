@@ -1803,10 +1803,27 @@ body.is-locked { overflow: hidden; }
 .tile__link:hover .read,
 .tile__link:focus-visible .read,
 .is-locked .read,
-.film__frame:hover .read,
-.pagehead__plate:hover .read { opacity: 0; }
-/* The dither is paint, not picture: it never goes to the printer, and it is
-   not what a reader with reduced transparency preferences needs. */
+.film__frame:hover .read { opacity: 0; }
+
+/* The read head: a band travelling down the plate where the photograph
+   shows through. A mask, so it runs on the compositor and never touches the
+   main thread, and it makes the frame clearer as it passes, not noisier. */
+.read {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 44%, rgba(0,0,0,0.15) 49%, rgba(0,0,0,0.15) 51%, #000 56% 100%);
+          mask-image: linear-gradient(to bottom, #000 0 44%, rgba(0,0,0,0.15) 49%, rgba(0,0,0,0.15) 51%, #000 56% 100%);
+  -webkit-mask-size: 100% 260%; mask-size: 100% 260%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  animation: readhead 9s linear infinite;
+}
+@keyframes readhead {
+  from { -webkit-mask-position: 0 -130%; mask-position: 0 -130%; }
+  to   { -webkit-mask-position: 0 230%;  mask-position: 0 230%; }
+}
+@media (prefers-reduced-motion: reduce) { .read { animation: none; } }
+/* The dither is paint, not picture: it never goes to the printer. The
+   full-bleed About plate is deliberately NOT read — a dot field behind body
+   copy fights the words whatever its quality, and that page's job is to be
+   read. */
 @media print { .read { display: none; } }
 
 /* Machine-vision brackets. Two opposite corners, faint until the deck is
