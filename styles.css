@@ -1855,3 +1855,50 @@ body.is-locked { overflow: hidden; }
 .hero.is-booting .screening,
 .hero.is-booting .resume,
 .hero.is-booting .hero__start { opacity: 0; }
+
+/* The plate behind the About opening is read too, but only out in the
+   negative space: the dot field is masked away from the column the type
+   sits in, and it does not carry a read head — nothing should move behind
+   body copy. The machine reads the part of the frame that is not words. */
+.pagehead__plate .read {
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 30%, #000 64%, #000 100%);
+          mask-image: linear-gradient(to right, transparent 0%, transparent 30%, #000 64%, #000 100%);
+  animation: none;
+}
+@media (max-width: 900px) {
+  /* The phone layout puts the words below the frame, so the whole plate can
+     be read. */
+  .pagehead__plate .read {
+    -webkit-mask-image: none; mask-image: none;
+    animation: readhead 9s linear infinite;
+  }
+}
+
+/* The cut between pages. */
+.bmp--page {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  z-index: 95; pointer-events: none; background: transparent;
+}
+
+/* HUD furniture on the cards, the same two corners as the frames, so the
+   whole page reads as one instrument rather than tiles plus prose. */
+.card { position: relative; }
+.card::before, .card::after {
+  content: ""; position: absolute; width: 11px; height: 11px;
+  border: 1px solid var(--fg); opacity: 0.18; pointer-events: none;
+}
+.card::before { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
+.card::after { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+
+/* The ground. A 3px checker over the whole site at two per cent — under the
+   threshold of noticing, above the threshold of feeling. It is what stops
+   the pages between the frames from reading as plain web. */
+html::after {
+  content: ""; position: fixed; inset: 0; z-index: 92; pointer-events: none;
+  background-image: repeating-conic-gradient(rgba(255,255,255,0.6) 0% 25%, transparent 0% 50%);
+  background-size: 3px 3px;
+  opacity: 0.02;
+}
+@media print {
+  html::after, .card::before, .card::after { display: none; }
+}

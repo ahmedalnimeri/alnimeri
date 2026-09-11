@@ -818,7 +818,8 @@
      and it makes the frame clearer as it passes rather than noisier. */
 
   (function () {
-    var shots = [].slice.call(document.querySelectorAll('.tile__img, .film__frame > img'));
+    var shots = [].slice.call(document.querySelectorAll(
+      '.tile__img, .film__frame > img, .pagehead__plate img'));
     if (!shots.length) return;
 
     var coarse = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -826,8 +827,9 @@
     function read(img) {
       var host = img.parentNode;
       if (!host || img.dataset.read) return;
+      var wide = host.classList.contains('pagehead__plate');
       var box = img.getBoundingClientRect();
-      var w = Math.round(Math.min(700, Math.max(160, box.width || 320)));
+      var w = Math.round(Math.min(wide ? 900 : 700, Math.max(160, box.width || 320)));
       var nw = img.naturalWidth || 16, nh = img.naturalHeight || 9;
       var h = Math.max(40, Math.round(w * nh / nw));
       var bmp = bitmap(w, h);
@@ -837,11 +839,62 @@
         var d = bmp.ctx.getImageData(0, 0, w, h), p = d.data, i, j, v;
 
         // Luminance, with a light contrast lift. Nothing heavier: crushing
-        // the tones here is what produced the wallpaper.
+        // the tones here is what produced the wallpaper. The plate carries
+        // the same gain its CSS filter applies, because drawImage samples
+        // the file and never sees that filter.
+        var gain = wide ? 0.72 : 1;
         var buf = new Float32Array(w * h);
         for (i = 0, j = 0; j < buf.length; i += 4, j++) {
-          v = p[i] * 0.299 + p[i + 1] * 0.587 + p[i + 2] * 0.114;
+          v = (p[i] * 0.299 + p[i + 1] * 0.587 + p[i + 2] * 0.114) * gain;
           buf[j] = (v - 128) * 1.12 + 128;
+        }
+
+        // Two registers, because one algorithm cannot serve both jobs.
+        //
+        // A poster is a photograph with structure in it, and error diffusion
+        // renders structure: tone becomes dot density and the picture
+        // survives at one bit.
+        //
+        // The full-bleed plate is mostly smooth sky, and error diffusion on
+        // a smooth gradient has nothing to diffuse into — it breaks into
+        // worms and reads as television static. A halftone screen is what
+        // print has always used for exactly that: a regular lattice of dots
+        // whose SIZE carries the tone. On a gradient it graduates cleanly,
+        // and it reads as a frame that has been through a press rather than
+        // a signal that has been through a fault.
+        if (wide) {
+          var cell = 4, maxR = cell * 0.72, gx, gy, ux, uy, lumv, rr;
+          bmp.ctx.fillStyle = '#000'; bmp.ctx.fillRect(0, 0, w, h);
+          bmp.ctx.fillStyle = '#fff';
+          for (gy = 0; gy * cell < h + cell; gy++) {
+            for (gx = 0; gx * cell < w + cell; gx++) {
+              // Staggered rows: a square lattice lines the dots up into
+              // rows and columns the eye immediately reads as a grid.
+              ux = gx * cell + (gy & 1 ? cell * 0.5 : 0);
+              uy = gy * cell;
+              if (ux >= w || uy >= h) continue;
+              lumv = buf[(uy | 0) * w + (ux | 0)] / 255;
+              if (lumv <= 0.04) continue;
+              rr = Math.sqrt(Math.max(0, Math.min(1, lumv))) * maxR;
+              if (rr < 0.35) continue;
+              bmp.ctx.beginPath();
+              bmp.ctx.arc(ux, uy, rr, 0, 6.2832);
+              bmp.ctx.fill();
+            }
+          }
+          // Back to one bit: the arcs come out anti-aliased, and a halftone
+          // with soft edges is just a blurred photograph.
+          var hd = bmp.ctx.getImageData(0, 0, w, h), hp = hd.data, q;
+          for (q = 0; q < hp.length; q += 4) {
+            var on = hp[q] > 110 ? 255 : 0;
+            hp[q] = hp[q + 1] = hp[q + 2] = on; hp[q + 3] = 255;
+          }
+          bmp.ctx.putImageData(hd, 0, 0);
+          bmp.el.style.animationDelay = (-Math.random() * 9).toFixed(2) + 's';
+          img.dataset.read = '1';
+          host.insertBefore(bmp.el, img.nextSibling);
+          host.classList.add('has-read');
+          return;
         }
 
         // Floyd–Steinberg, serpentine: alternating the scan direction keeps
@@ -1052,6 +1105,43 @@
     cutEl.classList.add('is-cutting');
     setTimeout(function () { location.href = document.documentElement.getAttribute('data-edl') || '/selects.edl'; }, 42);
   });
+
+  /* ---- the cut between pages -------------------------------------------
+     Leaving a page is a splice like any other on this deck: the picture
+     breaks up along the dither matrix, and the next page comes up behind
+     it. Eight frames, which is as long as a cut is allowed to take here. */
+
+  (function () {
+    if (!motionOK) return;
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href]');
+      if (!a || a.classList.contains('skip')) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+      if (a.hasAttribute('download') || (a.target && a.target !== '_self')) return;
+      var href = a.getAttribute('href') || '';
+      if (!href || href.charAt(0) === '#' || /^(mailto|tel|javascript):/i.test(href)) return;
+      var url;
+      try { url = new URL(a.href, location.href); } catch (x) { return; }
+      if (url.origin !== location.origin) return;
+      if (url.pathname === location.pathname && url.search === location.search) return;
+
+      e.preventDefault();
+      var veil = bitmap(160, 90);
+      veil.el.className = 'bmp bmp--page';
+      document.body.appendChild(veil.el);
+      var f = 0, STEPS = 8;
+      (function tip() {
+        f++;
+        veil.veil(f / STEPS);
+        if (f < STEPS) { setTimeout(tip, FRAME); return; }
+        location.href = url.href;
+      })();
+      // If the navigation is blocked or slow, do not leave the page dark.
+      setTimeout(function () {
+        if (veil.el.parentNode) veil.el.parentNode.removeChild(veil.el);
+      }, 3000);
+    });
+  })();
 
   /* ---- masthead contracts on scroll --------------------------------- */
 
