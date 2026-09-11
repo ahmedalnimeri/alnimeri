@@ -628,77 +628,105 @@
     var meta = document.querySelector('#work .slate__meta');
     var seq = meta ? meta.textContent.replace(/^\s*\d+\s*[^\w]+\s*/, '').trim().toUpperCase() : '';
 
-    var cx = W / 2, hy = Math.round(H * 0.6);
+    var cx = W / 2, hy = Math.round(H * 0.78);
+    var ry = Math.round(H * 0.44);              // the bloom sits here
+    var SEEDS = 340, GOLD = Math.PI * (3 - Math.sqrt(5));   // 137.5°, the angle plants use
 
     function scene(f) {
-      var t = f / 24;
+      var t = f / 24, i;
       c.globalAlpha = 1;
       c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
 
       // Carrier noise, thinning as the picture locks up.
-      var snow = Math.max(0, 1 - f / 16);
+      var snow = Math.max(0, 1 - f / 15);
       if (snow > 0) {
         c.fillStyle = '#fff';
-        var n = Math.round(snow * W * H * 0.055), i;
+        var n = Math.round(snow * W * H * 0.05);
         for (i = 0; i < n; i++) c.fillRect((Math.random() * W) | 0, (Math.random() * H) | 0, 1, 1);
       }
 
       c.lineWidth = 1;
 
-      // The floor: depth lines running toward the viewer, verticals fanning
-      // out from the vanishing point.
-      var grid = Math.min(1, Math.max(0, (f - 5) / 20));
+      // A ground plane, kept faint: the bloom is the subject, this is only
+      // the floor it stands on.
+      var grid = Math.min(1, Math.max(0, (f - 6) / 20));
       if (grid > 0) {
-        c.strokeStyle = '#9c9c9c';
-        var M = 15, k, u, y;
+        c.strokeStyle = '#6e6e6e';
+        var M = 10, k, u, y;
         for (k = 0; k < M; k++) {
-          u = ((k + t * 1.5) % M) / M;
+          u = ((k + t * 1.4) % M) / M;
           y = hy + (H - hy) * u * u;
-          c.globalAlpha = Math.min(1, u * 3.2) * grid;
+          c.globalAlpha = Math.min(1, u * 3) * grid * 0.3;
           c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(W, y + 0.5); c.stroke();
         }
-        var K = 8;
+        var K = 7;
         for (k = -K; k <= K; k++) {
           if (Math.abs(k) > K * grid) continue;
-          c.globalAlpha = grid;
-          c.beginPath();
-          c.moveTo(cx + k * (W * 0.24), H);
-          c.lineTo(cx + k * 1.2, hy);
-          c.stroke();
+          c.globalAlpha = grid * 0.3;
+          c.beginPath(); c.moveTo(cx + k * (W * 0.3), H); c.lineTo(cx + k * 1.1, hy); c.stroke();
         }
-        // The horizon draws itself outward from the centre.
         c.globalAlpha = 1;
-        c.strokeStyle = '#fff';
-        var half = W / 2 * Math.min(1, f / 10);
-        c.beginPath(); c.moveTo(cx - half, hy + 0.5); c.lineTo(cx + half, hy + 0.5); c.stroke();
       }
 
-      // The reticle, irising open over the horizon.
-      var ret = Math.min(1, Math.max(0, (f - 12) / 18));
+      // The instrument: rings and a tick collar, irising open around the
+      // thing it is about to watch.
+      var ret = Math.min(1, Math.max(0, (f - 4) / 14));
+      var R = Math.min(W, H) * 0.34;
       if (ret > 0) {
-        var ry = hy - H * 0.3, R = Math.min(W, H) * 0.16 * ret, a, ang;
-        c.globalAlpha = 1; c.strokeStyle = '#e2e2e2';
-        c.beginPath(); c.arc(cx, ry, R, 0, Math.PI * 2); c.stroke();
-        c.beginPath(); c.arc(cx, ry, R * 0.6, 0, Math.PI * 2); c.stroke();
-        for (a = 0; a < 12; a++) {
-          ang = a / 12 * Math.PI * 2 + t * 0.5;
+        var RR = R * 1.18 * ret, a, ang;
+        c.strokeStyle = '#c8c8c8'; c.globalAlpha = 0.9;
+        c.beginPath(); c.arc(cx, ry, RR, 0, Math.PI * 2); c.stroke();
+        for (a = 0; a < 24; a++) {
+          ang = a / 24 * Math.PI * 2 - t * 0.35;
           c.beginPath();
-          c.moveTo(cx + Math.cos(ang) * R * 1.15, ry + Math.sin(ang) * R * 1.15);
-          c.lineTo(cx + Math.cos(ang) * R * 1.34, ry + Math.sin(ang) * R * 1.34);
+          c.moveTo(cx + Math.cos(ang) * RR * 1.06, ry + Math.sin(ang) * RR * 1.06);
+          c.lineTo(cx + Math.cos(ang) * RR * (a % 6 === 0 ? 1.18 : 1.12), ry + Math.sin(ang) * RR * (a % 6 === 0 ? 1.18 : 1.12));
           c.stroke();
         }
-        c.beginPath();
-        c.moveTo(cx - R * 0.28, ry + 0.5); c.lineTo(cx + R * 0.28, ry + 0.5);
-        c.moveTo(cx + 0.5, ry - R * 0.28); c.lineTo(cx + 0.5, ry + R * 0.28);
-        c.stroke();
+        c.globalAlpha = 1;
+      }
+
+      // The bloom. Seeds are laid down on the golden angle — the packing a
+      // sunflower head uses — so the form grows outward as a spiral and
+      // arrives as a flower rather than a circle of dots. Each seed eases
+      // out from the centre as it is laid, and the whole head turns.
+      var grow = (f - 7) / 40;
+      if (grow > 0) {
+        var shown = Math.min(SEEDS, grow * SEEDS * 1.15);
+        var blow = Math.max(0, (f - (TOTAL - OUT)) / OUT);   // the dispersal
+        for (i = 0; i < shown; i++) {
+          var age = Math.min(1, (shown - i) / 30);
+          age = 1 - (1 - age) * (1 - age);                   // ease out
+          var ang2 = i * GOLD + t * 0.3;
+          var rad = R * Math.sqrt(i / SEEDS) * age + blow * blow * 90;
+          var x = cx + Math.cos(ang2) * rad;
+          var y2 = ry + Math.sin(ang2) * rad;
+          // Outer seeds carry more light, so the head reads as a bloom and
+          // the dither opens up toward the rim.
+          var lum = (0.35 + 0.65 * (i / SEEDS)) * age * (1 - blow * 0.65);
+          var g = Math.round(255 * Math.max(0, Math.min(1, lum)));
+          c.fillStyle = 'rgb(' + g + ',' + g + ',' + g + ')';
+          var sz = i > SEEDS * 0.55 ? 2 : 1;
+          c.fillRect(Math.round(x), Math.round(y2), sz, sz);
+        }
+        // The stem, drawn once the head has something to hold up.
+        if (grow > 0.35) {
+          c.strokeStyle = '#8c8c8c';
+          c.globalAlpha = Math.min(1, (grow - 0.35) * 3) * (1 - blow);
+          c.beginPath();
+          c.moveTo(cx + 0.5, ry + R * 0.55);
+          c.quadraticCurveTo(cx + 4, (ry + hy) / 2, cx + 0.5, hy);
+          c.stroke();
+          c.globalAlpha = 1;
+        }
       }
 
       // Hold the middle band back, so the headline keeps its contrast over
       // the pattern rather than fighting it.
       var band = c.createLinearGradient(0, H * 0.16, 0, H * 0.86);
       band.addColorStop(0, 'rgba(0,0,0,0)');
-      band.addColorStop(0.45, 'rgba(0,0,0,0.62)');
-      band.addColorStop(0.75, 'rgba(0,0,0,0.5)');
+      band.addColorStop(0.45, 'rgba(0,0,0,0.34)');
+      band.addColorStop(0.75, 'rgba(0,0,0,0.3)');
       band.addColorStop(1, 'rgba(0,0,0,0)');
       c.fillStyle = band; c.fillRect(0, H * 0.16, W, H * 0.7);
 
@@ -706,7 +734,7 @@
       var sy = ((t * 0.5) % 1) * H;
       var sweep = c.createLinearGradient(0, sy - 9, 0, sy + 9);
       sweep.addColorStop(0, 'rgba(255,255,255,0)');
-      sweep.addColorStop(0.5, 'rgba(255,255,255,0.5)');
+      sweep.addColorStop(0.5, 'rgba(255,255,255,0.26)');
       sweep.addColorStop(1, 'rgba(255,255,255,0)');
       c.fillStyle = sweep; c.fillRect(0, sy - 9, W, 18);
 
@@ -714,16 +742,25 @@
       // letters go with it.
       c.font = 'bold 8px ui-monospace, Menlo, monospace';
       c.fillStyle = '#fff'; c.textBaseline = 'alphabetic';
-      if (f > 18) { c.textAlign = 'left';  c.fillText('ALNIMERI', 6, 12); }
-      if (f > 22) { c.textAlign = 'right'; c.fillText('24 FPS', W - 6, 12); }
-      if (f > 28) { c.textAlign = 'left';  c.fillText('DUBAI 25.2N 55.3E', 6, H - 6); }
-      if (f > 32 && seq) { c.textAlign = 'right'; c.fillText(seq, W - 6, H - 6); }
+      if (f > 16) { c.textAlign = 'left';  c.fillText('ALNIMERI', 6, 12); }
+      if (f > 20) { c.textAlign = 'right'; c.fillText('24 FPS', W - 6, 12); }
+      if (f > 26) { c.textAlign = 'left';  c.fillText('DUBAI 25.2N 55.3E', 6, H - 6); }
+      if (f > 30 && seq) { c.textAlign = 'right'; c.fillText(seq, W - 6, H - 6); }
     }
 
-    var TOTAL = 78, OUT = 18, f = 0, running = true;
+    var TOTAL = 78, OUT = 20, f = 0, running = true;
+
+    // The words are held back while the bloom has the frame, and cut in as
+    // it disperses — a title sequence, not a curtain. Belt and braces: the
+    // hold is released by done(), by the dispersal, and by a timer, so no
+    // single failure can leave the hero blank.
+    hero.classList.add('is-booting');
+    function words() { hero.classList.remove('is-booting'); }
+    setTimeout(words, 6000);
 
     function done() {
       running = false;
+      words();
       offSkip();
       if (bmp.el.parentNode) bmp.el.parentNode.removeChild(bmp.el);
     }
@@ -743,9 +780,9 @@
 
     // Reduced motion: one still frame of the same picture, held, then cut.
     if (!motionOK) {
-      scene(46);
+      scene(58);
       bmp.dither(0);
-      setTimeout(done, 800);
+      setTimeout(done, 900);
       return;
     }
 
@@ -753,6 +790,7 @@
       if (!running) return;
       scene(f);
       bmp.dither(f > TOTAL - OUT ? (f - (TOTAL - OUT)) / OUT : 0);
+      if (f === TOTAL - OUT) words();
       f++;
       if (f > TOTAL) { done(); return; }
       setTimeout(tick, FRAME);

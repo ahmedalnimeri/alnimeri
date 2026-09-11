@@ -1827,3 +1827,14 @@ body.is-locked { overflow: hidden; }
    the one being read. */
 .tile__link:hover ~ .tile__meta .tile__idx,
 .is-locked .tile__idx { color: var(--fg); }
+
+/* While the boot picture has the frame, the hero holds its words. Released
+   as the bloom disperses, so the title cuts in on the break-up. */
+.hero.is-booting .hero__eyebrow,
+.hero.is-booting .hero__name,
+.hero.is-booting .hero__lede,
+.hero.is-booting .hero__cta,
+.hero.is-booting .burnin,
+.hero.is-booting .screening,
+.hero.is-booting .resume,
+.hero.is-booting .hero__start { opacity: 0; }
