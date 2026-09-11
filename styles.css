@@ -1560,3 +1560,13 @@ body.is-locked { overflow: hidden; }
 .contact__clock { display: block; margin-top: 0.6rem; color: var(--fg-faint); font-size: 0.88rem; }
 .contact__clock b { font-weight: 500; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
 @media print { .screening, .contact__clock { display: none; } }
+
+/* "Start with →": one pointer under the hero buttons, only for arrivals whose
+   referrer tells us what they came for. Never reorders the grid. */
+.hero__start {
+  margin: 1.1rem 0 0; font-size: 0.86rem; color: var(--fg-faint);
+  animation: expose calc(var(--f) * 8) steps(8, end) both;
+}
+.hero__start a { color: var(--fg-dim); text-decoration: underline; text-underline-offset: 0.2em; }
+.hero__start a:hover { color: var(--fg); }
+@media print { .hero__start { display: none; } }
