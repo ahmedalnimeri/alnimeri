@@ -1592,3 +1592,88 @@ body.is-locked { overflow: hidden; }
   .screening__ar { font-size: 0.74rem; }
   .hero__start { font-size: 0.8rem; }
 }
+
+/* ---- Pull a reel -------------------------------------------------------
+   A viewer marks tiles as selects; the bin at the foot of the screen keeps
+   the count and TRT, and mints a link that IS the cut — one character per
+   film, in their order. Mono, small, chrome in the deck's own voice. */
+.tile__mark {
+  flex: none; margin-left: auto; align-self: flex-start;
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-faint); background: transparent; border: 1px solid var(--line-soft);
+  border-radius: var(--pill); padding: 0.28rem 0.6rem; cursor: pointer; white-space: nowrap;
+  transition: none;
+}
+.tile__mark:hover { color: var(--fg); border-color: var(--line); }
+.tile__mark b { font-weight: 500; }
+.tile.is-selected .tile__mark { color: #0a0a0c; background: var(--fg); border-color: var(--fg); }
+.tile.is-selected .tile__link::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  box-shadow: inset 0 0 0 2px var(--fg); pointer-events: none; z-index: 3;
+}
+@media (pointer: coarse) { .tile__mark { padding: 0.42rem 0.75rem; font-size: 0.64rem; } }
+
+.bin {
+  position: fixed; z-index: 50; left: 50%; bottom: clamp(0.75rem, 2.5vh, 1.4rem);
+  transform: translate(-50%, 140%);
+  display: flex; align-items: center; gap: 0.75rem;
+  max-width: calc(100vw - 1.5rem);
+  padding: 0.5rem 0.55rem 0.5rem 1.1rem;
+  background: rgba(20,20,24,0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--line); border-radius: var(--pill);
+  font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-faint); white-space: nowrap;
+  transition: transform calc(var(--f) * 4) steps(4, end);
+}
+.bin.is-up { transform: translate(-50%, 0); }
+.bin b { color: var(--fg); font-weight: 500; font-variant-numeric: tabular-nums; }
+.bin__sep { color: var(--line); }
+.bin .btn { padding: 0.5rem 1rem; font-size: 0.78rem; letter-spacing: 0; text-transform: none; font-family: var(--ff); }
+.bin__clear { background: none; border: 0; color: var(--fg-faint); font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; padding: 0.25rem 0.35rem; }
+.bin__clear:hover { color: var(--fg); }
+@media (max-width: 560px) {
+  .bin { gap: 0.5rem; padding-left: 0.85rem; font-size: 0.58rem; }
+  .bin__word { display: none; }
+}
+
+/* The sheet: the minted link, ready to send. A dialog cut in, not slid. */
+.sheet { position: fixed; inset: 0; z-index: 70; display: none; background: rgba(0,0,0,0.78); }
+.sheet.is-open { display: flex; align-items: flex-end; justify-content: center; }
+@media (min-width: 561px) { .sheet.is-open { align-items: center; } }
+.sheet__card {
+  width: min(100%, 34rem); background: var(--bg-raised); border: 1px solid var(--line);
+  border-radius: var(--card) var(--card) 0 0; padding: 1.5rem 1.4rem 1.6rem;
+  animation: expose calc(var(--f) * 4) steps(4, end) both;
+}
+@media (min-width: 561px) { .sheet__card { border-radius: var(--card); margin: 0 1rem; } }
+.sheet__slate { margin: 0 0 0.6rem; font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint); }
+.sheet__slate b { color: var(--fg-dim); font-weight: 500; }
+.sheet__title { margin: 0 0 1rem; font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; }
+.sheet__list { margin: 0 0 1.1rem; padding: 0; list-style: none; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-dim); }
+.sheet__list li { display: flex; gap: 0.7rem; padding: 0.3rem 0; border-top: 1px solid var(--line-soft); }
+.sheet__list li span:first-child { color: var(--fg-faint); flex: none; }
+.sheet__list li span:last-child { margin-left: auto; color: var(--fg-faint); font-variant-numeric: tabular-nums; }
+.sheet__url {
+  display: block; width: 100%; box-sizing: border-box; margin: 0 0 0.9rem;
+  font-family: var(--mono); font-size: 0.86rem; color: var(--fg);
+  background: #0a0a0c; border: 1px solid var(--line); border-radius: 10px; padding: 0.7rem 0.85rem;
+  -webkit-user-select: all; user-select: all;
+}
+.sheet__acts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.sheet__acts .btn { padding: 0.6rem 1.1rem; font-size: 0.85rem; }
+.sheet__note { margin: 0.9rem 0 0; font-size: 0.78rem; color: var(--fg-faint); }
+.sheet__close { position: absolute; top: 1rem; right: 1rem; background: none; border: 0; color: var(--fg-dim); font-size: 1.1rem; cursor: pointer; padding: 0.4rem; }
+.sheet__card { position: relative; }
+
+/* The reel page itself. */
+.pagehead--reel { padding-bottom: clamp(2rem, 6vh, 3.5rem); }
+.pagehead--reel .hero__eyebrow { margin-bottom: clamp(1.25rem, 3vh, 2rem); }
+.pagehead--reel .hero__cta { justify-content: center; }
+.pagehead--reel .burnin { position: static; justify-content: center; margin-top: clamp(1.5rem, 4vh, 2.5rem); }
+.reel__names {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 0.55rem;
+  margin: clamp(1rem, 3vh, 1.5rem) auto 0; max-width: 60ch;
+  font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint);
+}
+.is-reel .tile__mark, .is-reel .bin { display: none; }
+@media print { .tile__mark, .bin, .sheet { display: none !important; } }

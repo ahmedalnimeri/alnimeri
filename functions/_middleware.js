@@ -13,7 +13,7 @@
 // content. _redirects cannot cover it: a static file that exists is served
 // before redirects are consulted. Middleware runs first, so the block goes
 // here. wrangler.jsonc was answering 200 with the D1 database id in it.
-const BLOCKED = /^\/(wrangler\.(jsonc|toml|json)|package(-lock)?\.json|README\.md|bin-[^/]*\.py)$/i;
+const BLOCKED = /^\/(reel\.tpl\.html|wrangler\.(jsonc|toml|json)|package(-lock)?\.json|README\.md|bin-[^/]*\.py)$/i;
 
 const ASSET = /\.(css|js|mjs|jpg|jpeg|png|svg|ico|webp|woff2?|pdf|xml|txt|map)$/i;
 const BOT   = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|curl|wget|python-requests|monitor|preview/i;

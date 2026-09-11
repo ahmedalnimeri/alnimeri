@@ -31,6 +31,20 @@ python3 -m http.server 4321
 
 Set `data-portrait="true"` and add `tile--tall` for vertical pieces.
 
+## Generated files
+
+After touching the tiles in `index.html`, regenerate everything that derives from them, in this order:
+
+```sh
+python3 bin-build-work-pages.py && python3 bin-build-edl.py && python3 bin-build-about-strip.py \
+  && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-reel.py \
+  && python3 bin-stamp-assets.py
+```
+
+`bin-build-reel.py` compiles the film list and `reel.tpl.html` into `functions/_lib/reel.js`,
+which the `/reel/<code>` function renders at the edge. It also reads the `?v=` numbers, so run it
+after bumping `styles.css`/`main.js` versions too.
+
 ## Deploying
 
 Cloudflare Pages, free tier:

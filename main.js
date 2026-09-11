@@ -292,7 +292,7 @@
     if (t && (/^(INPUT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable)) return;
     if (lb && lb.classList.contains('is-open')) return;
     cutEl.classList.add('is-cutting');
-    setTimeout(function () { location.href = '/selects.edl'; }, 42);
+    setTimeout(function () { location.href = document.documentElement.getAttribute('data-edl') || '/selects.edl'; }, 42);
   });
 
   /* ---- masthead contracts on scroll --------------------------------- */
@@ -736,6 +736,7 @@
 // OUT clears it. The link is a plain #anchor so the deck's own hard-cut
 // handler does the jump, one frame of black and all.
 (function () {
+  if (!/^\/(index\.html)?$/.test(location.pathname)) return; // the home sequence only
   var tiles = [].slice.call(document.querySelectorAll('article.tile'));
   if (!tiles.length) return;
   var KEY = 'reel', store;
@@ -795,4 +796,166 @@
     if (pending) return; pending = true;
     (window.requestAnimationFrame || setTimeout)(remember);
   }, { passive: true });
+})();
+
+
+// ---- Pull a reel ------------------------------------------------------------
+// The viewer marks tiles as selects. The bin at the foot of the screen keeps
+// count and TRT, and mints a link that IS the cut: one character per film, in
+// the order they chose (the same alphabet the edge uses, keyed to DOM order).
+// /reel/<code> renders that cut with its own stamps and EDL. Nothing about the
+// viewer travels with the link; the selection lives in localStorage until
+// they clear it or reach OUT with a reel already sent.
+(function () {
+  if (!/^\/(index\.html)?$/.test(location.pathname)) return;
+  var tiles = [].slice.call(document.querySelectorAll('article.tile'));
+  if (tiles.length < 2) return;
+  var ALPHABET = '123456789abcdefghjkmnpqrstuvwxyz';
+  var KEY = 'bin', store = null;
+  try { store = window.localStorage; } catch (e) {}
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var mmss = function (s) { return Math.floor(s / 60) + ':' + pad(s % 60); };
+  var secs = function (t) {
+    var d = t.querySelector('.tile__dur'); if (!d) return 0;
+    var p = d.textContent.trim().split(':'); return (+p[0]) * 60 + (+p[1]);
+  };
+  var nameOf = function (t) { var n = t.querySelector('.tile__name'); return n ? n.textContent.trim() : ''; };
+
+  // Selection: an ordered list of keys.
+  var sel = [];
+  try { sel = (JSON.parse(store && store.getItem(KEY) || '[]') || []).filter(function (k) { return ALPHABET.indexOf(k) > -1 && ALPHABET.indexOf(k) < tiles.length; }); } catch (e) { sel = []; }
+  var save = function () { try { sel.length ? store.setItem(KEY, JSON.stringify(sel)) : store.removeItem(KEY); } catch (e) {} };
+
+  // One mark per tile, in the meta row.
+  tiles.forEach(function (t, i) {
+    var meta = t.querySelector('.tile__meta'); if (!meta) return;
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'tile__mark';
+    b.setAttribute('aria-label', 'Add ' + nameOf(t) + ' to your reel');
+    b.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var k = ALPHABET[i], at = sel.indexOf(k);
+      if (at > -1) sel.splice(at, 1); else sel.push(k);
+      save(); render();
+    });
+    meta.appendChild(b);
+  });
+
+  // The bin.
+  var bin = document.createElement('div');
+  bin.className = 'bin'; bin.setAttribute('role', 'status'); bin.setAttribute('aria-live', 'polite');
+  bin.innerHTML = '<span class="bin__word">Bin</span><span class="bin__sep bin__word">·</span>' +
+    '<span><b data-n>0</b> selects</span><span class="bin__sep">·</span><span>TRT <b data-trt>0:00</b></span>' +
+    '<button type="button" class="bin__clear" aria-label="Clear the bin">Clear</button>' +
+    '<button type="button" class="btn btn--solid bin__pull">Pull reel →</button>';
+  document.body.appendChild(bin);
+
+  // The sheet.
+  var sheet = document.createElement('div');
+  sheet.className = 'sheet'; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-label', 'Your reel'); sheet.setAttribute('aria-hidden', 'true');
+  sheet.innerHTML = '<div class="sheet__card">' +
+    '<button type="button" class="sheet__close" aria-label="Close">✕</button>' +
+    '<p class="sheet__slate">Reel <b data-code></b> · <b data-n></b> clips · TRT <b data-trt></b></p>' +
+    '<p class="sheet__title">Your cut, as a link.</p>' +
+    '<ol class="sheet__list" data-list></ol>' +
+    '<code class="sheet__url" data-url></code>' +
+    '<div class="sheet__acts">' +
+      '<button type="button" class="btn btn--solid" data-act="share">Send it</button>' +
+      '<button type="button" class="btn btn--ghost" data-act="copy">Copy link</button>' +
+      '<a class="btn btn--ghost" data-act="open" href="#">Open the reel</a>' +
+      '<a class="btn btn--ghost" data-act="edl" href="#">EDL ↓</a>' +
+    '</div>' +
+    '<p class="sheet__note">Anyone with the link sees these films, in this order, with the stamps recomputed. The link carries the cut and nothing about you.</p>' +
+    '</div>';
+  document.body.appendChild(sheet);
+
+  function code() { return sel.join(''); }
+  function trt() { return sel.reduce(function (s, k) { return s + secs(tiles[ALPHABET.indexOf(k)]); }, 0); }
+
+  function render() {
+    tiles.forEach(function (t, i) {
+      var at = sel.indexOf(ALPHABET[i]), b = t.querySelector('.tile__mark');
+      t.classList.toggle('is-selected', at > -1);
+      if (b) {
+        b.innerHTML = at > -1 ? 'SEL <b>' + pad(at + 1) + '</b>' : '+ Select';
+        b.setAttribute('aria-pressed', at > -1 ? 'true' : 'false');
+      }
+    });
+    bin.querySelector('[data-n]').textContent = sel.length;
+    bin.querySelector('[data-trt]').textContent = mmss(trt());
+    bin.classList.toggle('is-up', sel.length > 0);
+    if (!sel.length) closeSheet();
+  }
+
+  function openSheet() {
+    if (!sel.length) return;
+    var c = code(), url = location.origin + '/reel/' + c;
+    sheet.querySelector('[data-code]').textContent = c.toUpperCase();
+    sheet.querySelector('[data-n]').textContent = pad(sel.length);
+    sheet.querySelector('[data-trt]').textContent = mmss(trt());
+    sheet.querySelector('[data-url]').textContent = url.replace(/^https?:\/\//, '');
+    sheet.querySelector('[data-act="open"]').href = url;
+    sheet.querySelector('[data-act="edl"]').href = url + '.edl';
+    var list = sheet.querySelector('[data-list]'); list.innerHTML = '';
+    sel.forEach(function (k, n) {
+      var t = tiles[ALPHABET.indexOf(k)], li = document.createElement('li');
+      li.innerHTML = '<span>SC ' + pad(n + 1) + '</span><span>' + nameOf(t).replace(/[&<>]/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]; }) + '</span><span>' + mmss(secs(t)) + '</span>';
+      list.appendChild(li);
+    });
+    sheet.querySelector('[data-act="share"]').hidden = !navigator.share;
+    sheet.classList.add('is-open'); sheet.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('is-locked');
+    sheet.querySelector('.sheet__close').focus();
+  }
+  function closeSheet() {
+    if (!sheet.classList.contains('is-open')) return;
+    sheet.classList.remove('is-open'); sheet.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('is-locked');
+  }
+
+  bin.querySelector('.bin__pull').addEventListener('click', openSheet);
+  bin.querySelector('.bin__clear').addEventListener('click', function () { sel = []; save(); render(); });
+  sheet.querySelector('.sheet__close').addEventListener('click', closeSheet);
+  sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
+
+  function flash(btn, text) {
+    var was = btn.textContent; btn.textContent = text;
+    setTimeout(function () { btn.textContent = was; }, 1500);
+  }
+  sheet.querySelector('[data-act="copy"]').addEventListener('click', function () {
+    var url = location.origin + '/reel/' + code(), b = this;
+    var done = function () { flash(b, 'Copied'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { fallback(); });
+    else fallback();
+    function fallback() {
+      var r = document.createRange(); r.selectNodeContents(sheet.querySelector('[data-url]'));
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      try { document.execCommand('copy'); done(); } catch (e) {}
+    }
+  });
+  sheet.querySelector('[data-act="share"]').addEventListener('click', function () {
+    var n = sel.length, url = location.origin + '/reel/' + code();
+    var names = sel.map(function (k) { return nameOf(tiles[ALPHABET.indexOf(k)]); });
+    navigator.share({ title: n + ' film' + (n > 1 ? 's' : '') + ' by Ahmed El-Nimeri',
+      text: 'A ' + mmss(trt()) + ' cut of Ahmed El-Nimeri’s work: ' + names.join(', ') + '.', url: url }).catch(function () {});
+  });
+
+  render();
+})();
+
+
+// ---- Share a pulled reel ---------------------------------------------------
+// On /reel/<code>: the share button uses the phone's own sheet where there is
+// one, and copies the link everywhere else.
+(function () {
+  var b = document.querySelector('.reel__share'); if (!b) return;
+  b.addEventListener('click', function () {
+    var url = b.getAttribute('data-url'), title = document.title;
+    if (navigator.share) { navigator.share({ title: title, url: url }).catch(function () {}); return; }
+    var done = function () { var was = b.textContent; b.textContent = 'Link copied'; setTimeout(function () { b.textContent = was; }, 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { prompt('Copy this link', url); });
+    else prompt('Copy this link', url);
+  });
 })();

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en" class="no-js" data-edl="/reel/{{CODE}}.edl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<meta name="description" content="{{DESC}}">
+<!-- A pulled reel is a viewer's cut, not a page of the record. Crawlers may
+     follow it back to the films; they should not index every permutation. -->
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://alnimeri.com/reel/{{CODE}}">
+<meta name="theme-color" content="#0a0a0c">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://alnimeri.com/reel/{{CODE}}">
+<meta property="og:title" content="{{TITLE}}">
+<meta property="og:description" content="{{DESC}}">
+<meta property="og:image" content="{{OG_IMAGE}}">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="720">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{TITLE}}">
+<meta name="twitter:description" content="{{DESC}}">
+<meta name="twitter:image" content="{{OG_IMAGE}}">
+<link rel="preload" as="font" type="font/woff2" href="/assets/fonts/poppins-600.woff2" crossorigin>
+<link rel="preconnect" href="https://player.vimeo.com">
+<link rel="stylesheet" href="/styles.css?v={{VER}}">
+</head>
+<body class="is-reel">
+<a class="skip" href="#selects">Skip to the reel</a>
+
+<header class="masthead">
+  <a class="masthead__mark" href="/" aria-label="Ahmed El-Nimeri — home"><img class="mark" src="/{{MARK}}" alt="" width="32" height="30" aria-hidden="true"><span>Ahmed El-Nimeri</span></a>
+  <nav class="masthead__nav" aria-label="Primary">
+    <a href="/#work">Full sequence</a>
+    <a href="/about">About</a>
+    <a class="btn btn--solid" href="/#contact">Get in touch</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <section class="pagehead pagehead--reel">
+    <p class="hero__eyebrow"><strong>Ahmed El-Nimeri</strong> — a reel someone pulled from the selects</p>
+    <h1 class="pagehead__title">{{HEADLINE}}</h1>
+    <p class="reel__names">{{NAMES}}</p>
+    <p class="pagehead__lede">{{TOTAL_WORD}} films sit in the full sequence. Whoever sent you this chose {{COUNT_WORD}} and put them in this order.
+      Every stamp below is recomputed for their cut — the IN points, the total, the cut list you can download.</p>
+    <div class="hero__cta">
+      <button class="btn btn--solid reel__share" type="button" data-url="https://alnimeri.com/reel/{{CODE}}">Share this reel</button>
+      <a class="btn btn--ghost" href="/#work">Pull your own &rarr;</a>
+    </div>
+    <p class="burnin" aria-hidden="true"><span class="tl__rec"></span>REEL {{CODE_UP}} &middot; {{COUNT_PAD}} CLIPS &middot; TRT {{TRT}} &middot; 24 FPS</p>
+  </section>
+
+  <section class="section" id="selects">
+    <div class="slate">
+      <span class="slate__tc" data-tc>TC 00:00:00</span>
+      <h2 class="slate__title">The cut</h2>
+      <span class="slate__meta">REEL {{CODE_UP}} &middot; {{COUNT}} clips &middot; TRT {{TRT}}</span>
+    </div>
+    <div class="grid">
+{{TILES}}
+    </div>
+  </section>
+
+  <section class="contact" id="out">
+    <div class="contact__inner">
+      <div class="slate">
+        <span class="slate__tc" data-tc>TC {{TRT_TC}}</span>
+        <h2 class="slate__title">Out</h2>
+        <span class="slate__meta">OUT</span>
+      </div>
+      <p class="contact__head reveal">That was their cut. The rest is mine.</p>
+      <a class="contact__mail" href="mailto:ahmed@alnimeri.com">ahmed@alnimeri.com</a>
+      <p class="contact__sub reveal" data-delay="80">{{TOTAL_WORD}} films in the full sequence, sixty-six published. Send the brief &mdash; English or Arabic.</p>
+      <nav class="contact__links" aria-label="Elsewhere">
+        <a class="btn btn--ghost" href="/#work">The full sequence</a>
+        <a class="btn btn--ghost" href="/about">About Ahmed</a>
+        <a class="btn btn--ghost" href="/reel/{{CODE}}.edl">This reel as an EDL</a>
+      </nav>
+      <span class="colophon__seq">REEL {{CODE_UP}} &middot; {{COUNT}} clips &middot; TRT {{TRT}} &middot; 24 FPS &middot; <a href="/reel/{{CODE}}.edl">EDL &darr;</a></span>
+      <span class="colophon__seq colophon__seq--tell">Anyone with this link sees the same cut. Nothing about who pulled it is stored.</span>
+      <div class="colophon">
+        <span>© 2026 Ahmed El-Nimeri</span>
+        <span>Dubai, UAE · <a href="/work/">All films</a> · <a href="/privacy">Privacy</a></span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="lb" role="dialog" aria-modal="true" aria-label="Video player" aria-hidden="true">
+  <button class="lb__close" type="button" aria-label="Close video">&#10005;</button>
+  <div class="lb__frame"></div>
+  <p class="lb__cap"></p>
+</div>
+
+<script src="/main.js?v={{VER_JS}}" defer></script>
+</body>
+</html>
