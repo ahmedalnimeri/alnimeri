@@ -727,3 +727,57 @@
   tick();
   setTimeout(function () { tick(); setInterval(tick, 60000); }, (60 - new Date().getSeconds()) * 1000);
 })();
+
+
+// ---- The reel remembers where you stopped ---------------------------------
+// Phones are where a viewer leaves mid-sequence. Keep the clip they were on —
+// on this device only, in localStorage, nothing sent anywhere — and offer to
+// cut back to it next time: RESUME · SC 07 · SOLANA SOLSTICE →. Watching to
+// OUT clears it. The link is a plain #anchor so the deck's own hard-cut
+// handler does the jump, one frame of black and all.
+(function () {
+  var tiles = [].slice.call(document.querySelectorAll('article.tile'));
+  if (!tiles.length) return;
+  var KEY = 'reel', store;
+  try { store = window.localStorage; } catch (e) { return; }
+  if (!store) return;
+
+  tiles.forEach(function (t, n) { if (!t.id) t.id = 'sc-' + (n < 9 ? '0' : '') + (n + 1); });
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+
+  // Offer the resume, before the viewer has moved.
+  var saved = null;
+  try { saved = JSON.parse(store.getItem(KEY) || 'null'); } catch (e) {}
+  if (saved && saved.sc > 1 && document.getElementById(saved.id)) {
+    var host = document.querySelector('.screening') || document.querySelector('.hero__eyebrow');
+    if (host) {
+      var p = document.createElement('p');
+      p.className = 'resume';
+      p.innerHTML = '<span>Resume</span><span class="screening__sep">\u00b7</span>' +
+        '<a href="#' + saved.id + '">SC ' + pad(saved.sc) + ' \u00b7 ' + saved.name + ' \u2192</a>';
+      host.insertAdjacentElement('afterend', p);
+    }
+  }
+
+  // Remember the clip under the masthead as the viewer scrolls.
+  var pending = false, lastId = null;
+  function remember() {
+    pending = false;
+    var probe = window.scrollY + 120;
+    var atOut = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
+    if (atOut) { try { store.removeItem(KEY); } catch (e) {} lastId = null; return; }
+    var live = null, n = 0;
+    tiles.forEach(function (t, i) { if (t.offsetTop <= probe) { live = t; n = i; } });
+    if (!live || live.id === lastId) return;
+    lastId = live.id;
+    var name = live.querySelector('.tile__name');
+    try {
+      store.setItem(KEY, JSON.stringify({ id: live.id, sc: n + 1,
+        name: name ? name.textContent.trim() : live.id, at: Date.now() }));
+    } catch (e) {}
+  }
+  window.addEventListener('scroll', function () {
+    if (pending) return; pending = true;
+    (window.requestAnimationFrame || setTimeout)(remember);
+  }, { passive: true });
+})();

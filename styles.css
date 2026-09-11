@@ -1570,3 +1570,25 @@ body.is-locked { overflow: hidden; }
 .hero__start a { color: var(--fg-dim); text-decoration: underline; text-underline-offset: 0.2em; }
 .hero__start a:hover { color: var(--fg); }
 @media print { .hero__start { display: none; } }
+
+/* Resume line: the deck offering to cut back to the last clip this device
+   was on. Sits under the slate; mono, faint, one frame-stepped entrance. */
+.resume {
+  display: flex; justify-content: center; gap: 0.35rem 0.55rem;
+  margin: -0.9rem 0 clamp(1.5rem, 4vh, 2.25rem);
+  font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--fg-faint);
+  animation: expose calc(var(--f) * 8) steps(8, end) both;
+}
+.resume a { color: var(--fg-dim); text-decoration: none; border-bottom: 1px solid var(--line); }
+.resume a:hover { color: var(--fg); border-color: var(--fg-dim); }
+.screening + .resume { margin-top: -1.2rem; }
+@media print { .resume { display: none; } }
+
+/* Phones: the slate can run to four facts; let it breathe as two short
+   rows rather than one long one, and drop the tracking a touch. */
+@media (max-width: 560px) {
+  .screening, .resume { font-size: 0.58rem; letter-spacing: 0.08em; gap: 0.25rem 0.45rem; }
+  .screening__ar { font-size: 0.74rem; }
+  .hero__start { font-size: 0.8rem; }
+}
