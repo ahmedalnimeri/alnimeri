@@ -761,6 +761,7 @@
       // with the same one-frame overlay.
       p.querySelector('a').addEventListener('click', function (e) {
         e.preventDefault();
+        e.stopPropagation(); // the deck's generic #anchor cut would fire too, and land on the section
         var t = document.getElementById(saved.id), cut = document.querySelector('.cut');
         var mast = document.querySelector('.masthead');
         var pad = mast ? mast.getBoundingClientRect().height + 24 : 24;
