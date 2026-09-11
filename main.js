@@ -705,3 +705,25 @@
     if (!document.hidden) setTimeout(failOpen, 400);
   });
 })();
+
+
+// ---- Screening clocks ----------------------------------------------------
+// The slate is rendered at the edge; this only keeps its two clocks honest.
+// Ticks on the minute, in whole frames, like everything else on the deck.
+(function () {
+  var slate = document.querySelector('.screening');
+  if (!slate) return;
+  var tz = slate.getAttribute('data-tz');
+  function fmt(zone) {
+    try { return new Intl.DateTimeFormat('en-GB', { timeZone: zone, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()); }
+    catch (e) { return null; }
+  }
+  function tick() {
+    document.querySelectorAll('[data-clock]').forEach(function (el) {
+      var zone = el.getAttribute('data-clock') === 'local' ? tz : el.getAttribute('data-clock');
+      var t = fmt(zone); if (t) el.textContent = t;
+    });
+  }
+  tick();
+  setTimeout(function () { tick(); setInterval(tick, 60000); }, (60 - new Date().getSeconds()) * 1000);
+})();

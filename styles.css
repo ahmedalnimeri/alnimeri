@@ -1539,3 +1539,24 @@ body.is-locked { overflow: hidden; }
       linear-gradient(to bottom, rgba(10,10,12,0.55) 0%, transparent 28%, transparent 62%, var(--bg) 100%);
   }
 }
+
+/* ---- The Screening Slate ----------------------------------------------
+   Injected at the edge for visitors Cloudflare can place: a burn-in under
+   the hero eyebrow stamping their city and two clocks. Machine chrome, so
+   mono, small, and never brighter than the picture. Absent by default. */
+.screening {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 0.55rem;
+  margin: -0.6rem 0 clamp(1.5rem, 4vh, 2.25rem);
+  font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--fg-faint);
+  animation: expose calc(var(--f) * 8) steps(8, end) both;
+}
+.screening b { font-weight: 500; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
+.screening__sep { color: var(--line); }
+.screening__ar { text-transform: none; letter-spacing: 0; font-family: var(--ff); font-size: 0.8rem; color: var(--fg-dim); }
+.hero .screening { text-align: center; }
+.pagehead .screening { justify-content: flex-start; }
+@media (max-width: 900px) { .pagehead .screening { justify-content: flex-start; } }
+.contact__clock { display: block; margin-top: 0.6rem; color: var(--fg-faint); font-size: 0.88rem; }
+.contact__clock b { font-weight: 500; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
+@media print { .screening, .contact__clock { display: none; } }
