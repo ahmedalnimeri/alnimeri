@@ -27,6 +27,7 @@
 
   function open(id, title, portrait) {
     if (!lb) return;
+    if (run && !projecting) endRun();
     lb.classList.toggle('is-portrait', !!portrait);
     // Paint the poster the visitor just tapped behind the player. iOS blocks
     // the unmuted autoplay, so the frame would otherwise be black until they
@@ -66,6 +67,7 @@
       frame.style.backgroundImage = '';
     }, 60);
     if (opener) { opener.focus(); opener = null; }
+    if (run) endRun();
   }
 
   document.querySelectorAll('[data-video]').forEach(function (el) {
@@ -97,6 +99,418 @@
       : stops[(i + 1) % stops.length];
     next.focus();
   });
+
+  /* ---- 1-bit -----------------------------------------------------------
+     A dither engine, about forty lines. Everything drawn through it is
+     thresholded against an 8x8 Bayer matrix, so greys become patterns and
+     the whole picture collapses to black and white — the look of a picture
+     that has been through a machine, which is what this deck claims to be.
+     Drawn small (192x108) and scaled up with smoothing off, so the pixels
+     stay square and honest at any size. No assets, no library. */
+
+  var BAYER = [
+     0, 32,  8, 40,  2, 34, 10, 42,
+    48, 16, 56, 24, 50, 18, 58, 26,
+    12, 44,  4, 36, 14, 46,  6, 38,
+    60, 28, 52, 20, 62, 30, 54, 22,
+     3, 35, 11, 43,  1, 33,  9, 41,
+    51, 19, 59, 27, 49, 17, 57, 25,
+    15, 47,  7, 39, 13, 45,  5, 37,
+    63, 31, 55, 23, 61, 29, 53, 21
+  ];
+  function thresholdAt(x, y) { return (BAYER[(y & 7) * 8 + (x & 7)] + 0.5) / 64; }
+
+  function bitmap(w, h) {
+    var cv = document.createElement('canvas');
+    cv.width = w; cv.height = h; cv.className = 'bmp'; cv.setAttribute('aria-hidden', 'true');
+    var ctx = cv.getContext('2d', { willReadFrequently: true });
+    return {
+      el: cv, ctx: ctx, w: w, h: h,
+      // Collapse whatever has been drawn to one bit per pixel.
+      dither: function () {
+        var img = ctx.getImageData(0, 0, w, h), d = img.data, x, y, i, l;
+        for (y = 0; y < h; y++) {
+          for (x = 0; x < w; x++) {
+            i = (y * w + x) * 4;
+            l = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
+            l = l > thresholdAt(x, y) ? 255 : 0;
+            d[i] = d[i + 1] = d[i + 2] = l; d[i + 3] = 255;
+          }
+        }
+        ctx.putImageData(img, 0, 0);
+      },
+      // A dissolve to black that is itself dithered: pixels tip over one
+      // matrix step at a time, so the picture breaks up rather than fades.
+      veil: function (density) {
+        var img = ctx.createImageData(w, h), d = img.data, x, y, i, on;
+        for (y = 0; y < h; y++) {
+          for (x = 0; x < w; x++) {
+            i = (y * w + x) * 4;
+            on = thresholdAt(x, y) < density;
+            d[i] = d[i + 1] = d[i + 2] = 0; d[i + 3] = on ? 255 : 0;
+          }
+        }
+        ctx.putImageData(img, 0, 0);
+      }
+    };
+  }
+
+  /* ---- the leader ------------------------------------------------------
+     Before the reel runs, the thing that runs before every reel: an Academy
+     countdown, drawn at 192x108 and dithered to one bit. Sweep hand, circle,
+     crosshair, numeral, and the sequence's own slate along the bottom. Three
+     counts at eighteen frames each — long enough to read as a leader, short
+     enough that nobody waits for their film. */
+
+  function leader(sub, done) {
+    var bmp = bitmap(192, 108), c = bmp.ctx, W = 192, H = 108;
+    var cx = W / 2, cy = H / 2, R = 34;
+    frame.innerHTML = '';
+    frame.style.backgroundImage = '';
+    frame.appendChild(bmp.el);
+
+    var COUNTS = ['3', '2', '1'], PER = 18, total = COUNTS.length * PER + 2, f = 0;
+
+    function draw() {
+      var n = Math.min(COUNTS.length - 1, Math.floor(f / PER));
+      var t = (f % PER) / PER;                       // 0..1 within this count
+      var weave = (f % 6 === 0) ? 1 : 0;             // gate weave, one pixel
+
+      c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+      c.save();
+      c.translate(0, weave);
+
+      // The swept wedge: mid grey, so the dither turns it into a 50% screen.
+      c.fillStyle = '#8a8a8a';
+      c.beginPath(); c.moveTo(cx, cy);
+      c.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + t * Math.PI * 2);
+      c.closePath(); c.fill();
+
+      // Crosshair to the edges of the frame, and the circle.
+      c.strokeStyle = '#b4b4b4'; c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(cx + 0.5, 0); c.lineTo(cx + 0.5, H);
+      c.moveTo(0, cy + 0.5); c.lineTo(W, cy + 0.5);
+      c.stroke();
+      c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
+      c.beginPath(); c.arc(cx, cy, R - 6, 0, Math.PI * 2); c.stroke();
+
+      // Registration ticks at the quarters.
+      c.fillStyle = '#fff';
+      [[cx, 6], [cx, H - 7], [6, cy], [W - 7, cy]].forEach(function (p) {
+        c.fillRect(p[0] - 3, p[1] - 1, 6, 2);
+      });
+
+      // The numeral, punched out of the wedge.
+      c.fillStyle = '#fff';
+      c.font = 'bold 46px ui-monospace, Menlo, monospace';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(COUNTS[n], cx, cy + 2);
+
+      // Slate type stays pure white: anything grey would be thresholded into
+      // a pattern and the glyphs would dissolve with it. The rings and the
+      // wedge are the greys — they are meant to break up.
+      c.font = 'bold 8px ui-monospace, Menlo, monospace';
+      c.fillStyle = '#fff';
+      c.textAlign = 'left';   c.fillText('ALNIMERI', 6, 10);
+      c.textAlign = 'right';  c.fillText('24 FPS', W - 6, 10);
+      c.textAlign = 'center'; c.fillText(sub, cx, H - 7);
+
+      c.restore();
+      bmp.dither();
+
+      f++;
+      if (f >= total) { done(); return; }
+      setTimeout(draw, FRAME);
+    }
+    draw();
+  }
+
+  /* ---- the screening room -------------------------------------------
+     The oldest gap in this repo's own README: "No showreel. The hero is
+     built around a featured film because no cut reel exists." There is no
+     file to make — the sequence is already an edit, so the deck assembles
+     it at runtime. Play all mounts each clip in turn, advances on the
+     player's own ended event, and runs ONE timeline across the whole
+     sequence with a tick at every cut: forty minutes of work as a single
+     reel that was never rendered. If the viewer has pulled selects, it
+     screens their cut instead; on /reel/<code> it screens that one.
+
+     The player is spoken to in its own postMessage protocol rather than by
+     loading Vimeo's SDK — this site has no dependencies and is not about to
+     take one for four messages. Where the protocol is blocked, the transport
+     stays visible and the viewer steps the reel by hand. */
+
+  var VIMEO = 'https://player.vimeo.com';
+  var run = null, hud = null, projecting = false, patrol = null;
+
+  function mmss(s) {
+    s = Math.max(0, Math.round(s));
+    return Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + (s % 60);
+  }
+
+  // Every clip that can actually play here. Three films live on X and
+  // Facebook with no Vimeo copy; a reel that stalled on them would be a
+  // broken promise, so they stay in the deck and out of the run.
+  function reelClips(order) {
+    var all = [].slice.call(document.querySelectorAll('article.tile')).map(function (t) {
+      var a = t.querySelector('.tile__link[data-video]');
+      if (!a) return null;
+      var d = t.querySelector('.tile__dur'), n = t.querySelector('.tile__name');
+      var p = (d ? d.textContent.trim() : '0:00').split(':');
+      return { link: a, id: a.getAttribute('data-video'),
+               title: a.getAttribute('data-title') || (n ? n.textContent.trim() : ''),
+               portrait: a.getAttribute('data-portrait') === 'true',
+               secs: (+p[0]) * 60 + (+p[1]) };
+    });
+    if (order && order.length) {
+      var picked = order.map(function (i) { return all[i]; }).filter(Boolean);
+      if (picked.length) return picked;
+    }
+    return all.filter(Boolean);
+  }
+
+  function buildHud() {
+    if (hud) return hud;
+    hud = document.createElement('div');
+    hud.className = 'lb__hud';
+    hud.innerHTML =
+      '<div class="lb__track" data-track><span class="lb__head" data-head></span></div>' +
+      '<div class="lb__bar">' +
+        '<span data-sc></span><span class="screening__sep">·</span>' +
+        '<span><b data-at>0:00</b> / <span data-trt></span></span>' +
+        '<p class="lb__title" data-title></p>' +
+        '<span class="lb__hint">Tap &rsaquo; for the next clip</span>' +
+        '<span class="lb__nav">' +
+          '<span class="lb__next" data-next></span>' +
+          '<button type="button" class="lb__step" data-step="-1" aria-label="Previous clip">&lsaquo;</button>' +
+          '<button type="button" class="lb__step" data-step="1" aria-label="Next clip">&rsaquo;</button>' +
+        '</span>' +
+      '</div>';
+    lb.appendChild(hud);
+    hud.addEventListener('click', function (e) {
+      var b = e.target.closest('.lb__step');
+      if (b) { step(run ? run.i + (+b.getAttribute('data-step')) : 0); return; }
+      // The track is the sequence, so clicking it cuts to that clip — the
+      // same gesture as scrubbing a timeline, quantized to the cut before.
+      var t = e.target.closest('.lb__track');
+      if (!t || !run) return;
+      var r = t.getBoundingClientRect();
+      var want = (e.clientX - r.left) / r.width * run.total;
+      var i = 0;
+      run.offs.forEach(function (o, n) { if (o <= want) i = n; });
+      step(i);
+    });
+    return hud;
+  }
+
+  function paintHud(sec) {
+    if (!run || !hud || run.i < 0) return;
+    var c = run.list[run.i], at = run.offs[run.i] + Math.min(sec || 0, c.secs);
+    hud.querySelector('[data-head]').style.width = (at / run.total * 100) + '%';
+    hud.querySelector('[data-at]').textContent = mmss(at);
+    hud.querySelector('[data-sc]').textContent = 'SC ' + (run.i + 1 < 10 ? '0' : '') + (run.i + 1) + '/' + run.list.length;
+    hud.querySelector('[data-title]').textContent = c.title;
+    var nx = run.list[run.i + 1];
+    hud.querySelector('[data-next]').textContent = nx ? 'Next · ' + nx.title : 'Last clip';
+  }
+
+  function post(msg) {
+    var f = frame && frame.querySelector('iframe');
+    if (f && f.contentWindow) { try { f.contentWindow.postMessage(JSON.stringify(msg), VIMEO); } catch (e) {} }
+  }
+
+  function step(i) {
+    if (!run) return;
+    if (i >= run.list.length) return finish();
+    if (i < 0) i = 0;
+    run.i = i; run.seen = 0; run.last = 0; run.lastAt = Date.now();
+    var c = run.list[i];
+    lb.classList.add('is-running');
+    lb.classList.remove('is-manual');
+    var mount = function () {
+      projecting = true;
+      opener = c.link;              // so the tile's own still paints behind the player
+      open(c.id, c.title, c.portrait);
+      projecting = false;
+      hud.hidden = false;
+      lb.appendChild(hud);          // keep it above the freshly mounted frame
+      paintHud(0);
+    };
+    // Between clips the picture breaks up rather than cutting: the dither
+    // veil tips pixel by pixel to black, the next clip is mounted behind it,
+    // and it tips back. Eight frames each way, on the same 24fps grid.
+    if (motionOK && lb.classList.contains('is-open')) {
+      dissolve(mount);
+    } else mount();
+  }
+
+  // A dithered dissolve across the source monitor. The canvas is re-attached
+  // after the mount, because mounting replaces the frame's contents.
+  function dissolve(mid) {
+    var veil = bitmap(160, 90);
+    veil.el.className = 'bmp bmp--veil';
+    frame.appendChild(veil.el);
+    var STEPS = 8, f = 0;
+    (function tip() {
+      f++;
+      veil.veil(f / STEPS);
+      if (f < STEPS) { setTimeout(tip, FRAME); return; }
+      mid();
+      frame.appendChild(veil.el);
+      (function clear() {
+        f--;
+        veil.veil(f / STEPS);
+        if (f > 0) { setTimeout(clear, FRAME); return; }
+        if (veil.el.parentNode) veil.el.parentNode.removeChild(veil.el);
+      })();
+    })();
+  }
+
+  function finish() {
+    if (!run) return;
+    var total = run.total, n = run.list.length;
+    frame.innerHTML = '';
+    frame.style.backgroundImage = '';
+    var out = document.createElement('div');
+    out.className = 'lb__out';
+    out.innerHTML =
+      '<p class="lb__outslate">OUT &middot; ' + n + ' CLIPS &middot; TRT ' + mmss(total) + ' &middot; 24 FPS</p>' +
+      '<p class="lb__outhead">That was the reel.</p>' +
+      '<p class="lb__outsub">Some of it was a brief. Some of it was my country.</p>' +
+      '<div class="lb__outacts">' +
+        '<a class="btn btn--solid" href="mailto:ahmed@alnimeri.com">Send the brief</a>' +
+        '<button type="button" class="btn btn--ghost" data-again>Run it again</button>' +
+        '<button type="button" class="btn btn--ghost" data-back>Back to the deck</button>' +
+      '</div>';
+    frame.appendChild(out);
+    caption.textContent = '';
+    hud.hidden = true;
+    out.querySelector('[data-again]').addEventListener('click', function () { step(0); });
+    out.querySelector('[data-back]').addEventListener('click', close);
+  }
+
+  function endRun() {
+    run = null;
+    if (patrol) { clearInterval(patrol); patrol = null; }
+    if (hud) hud.hidden = true;
+    lb.classList.remove('is-running', 'is-manual');
+  }
+
+  function startRun(order) {
+    if (!lb) return;
+    var list = reelClips(order);
+    if (list.length < 2) return;
+    var offs = [], total = 0;
+    list.forEach(function (c) { offs.push(total); total += c.secs; });
+    run = { list: list, offs: offs, total: total, i: -1, seen: 0, last: 0, lastAt: Date.now() };
+    buildHud();
+    hud.querySelector('[data-trt]').textContent = mmss(total);
+    var track = hud.querySelector('[data-track]');
+    track.innerHTML = '<span class="lb__head" data-head></span>' +
+      list.map(function (c, i) {
+        return i ? '<span class="lb__tick" style="left:' + (offs[i] / total * 100) + '%"></span>' : '';
+      }).join('');
+    if (patrol) clearInterval(patrol);
+    patrol = setInterval(function () {
+      if (!run || !lb.classList.contains('is-open')) return;
+      // Nothing from the player at all: the protocol is blocked, so say so
+      // rather than guessing when a clip ended.
+      if (!run.seen) {
+        if (Date.now() - run.lastAt > 4000) lb.classList.add('is-manual');
+        return;
+      }
+      lb.classList.remove('is-manual');
+      // Belt and braces for players that report progress but not the end.
+      var c = run.list[run.i];
+      if (run.last >= c.secs - 1.5 && Date.now() - run.lastAt > 2500) step(run.i + 1);
+    }, 1000);
+
+    // Roll the leader, then the first clip. Reduced motion gets the picture
+    // straight away — a countdown is motion for its own sake.
+    if (!motionOK) { step(0); return; }
+    lb.classList.add('is-open', 'is-visible', 'is-running');
+    lb.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('is-locked');
+    caption.textContent = '';
+    hud.hidden = false;
+    lb.appendChild(hud);
+    paintHud(0);
+    var label = (document.body.classList.contains('is-reel') ? 'PULLED CUT' : 'SELECTS') +
+                ' · ' + list.length + ' CLIPS · TRT ' + mmss(total);
+    leader(label, function () { step(0); });
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!run || e.origin !== VIMEO) return;
+    var d = e.data;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch (x) { return; } }
+    if (!d || !d.event) return;
+    if (d.event === 'ready') {
+      ['ended', 'finish', 'timeupdate', 'playProgress'].forEach(function (ev) {
+        post({ method: 'addEventListener', value: ev });
+      });
+      post({ method: 'play' });
+      return;
+    }
+    if (d.event === 'ended' || d.event === 'finish') { step(run.i + 1); return; }
+    var s = d.data && typeof d.data.seconds === 'number' ? d.data.seconds : null;
+    if (s === null) return;
+    run.seen++; run.last = s; run.lastAt = Date.now();
+    paintHud(s);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (!run || !lb.classList.contains('is-open')) return;
+    if (e.key === 'ArrowRight' || e.key === 'n') { e.preventDefault(); step(run.i + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'p') { e.preventDefault(); step(run.i - 1); }
+  });
+
+  // R runs the reel, the way E exports it.
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'r' || e.metaKey || e.ctrlKey || e.altKey) return;
+    var t = e.target;
+    if (t && (/^(INPUT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable)) return;
+    if (lb && lb.classList.contains('is-open')) return;
+    startRun(null);
+  });
+
+  // The bin lives in another module; it asks for a screening by event.
+  document.addEventListener('reel:run', function (e) {
+    startRun(e.detail && e.detail.order);
+  });
+
+  // Entry points: one on the sequence's own slate, one in the reel page's
+  // hero. Injected rather than authored — without JavaScript there is no
+  // player to run, so the control should not exist either.
+  (function () {
+    var list = reelClips(null);
+    if (list.length < 2) return;
+    var trt = 0;
+    list.forEach(function (c) { trt += c.secs; });
+    var isCut = document.body.classList.contains('is-reel');
+    var label = (isCut ? 'Run this cut' : 'Run the reel') + ' · ' + list.length + ' clips · ' + mmss(trt);
+
+    var grid = document.querySelector('.grid');
+    var slate = grid && grid.closest('section') && grid.closest('section').querySelector('.slate');
+    if (slate) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'slate__run';
+      b.innerHTML = '<span class="slate__runmark" aria-hidden="true"></span>' + label + ' <span aria-hidden="true">→</span>';
+      b.addEventListener('click', function () { startRun(null); });
+      slate.appendChild(b);
+    }
+    var cta = document.querySelector('.pagehead--reel .hero__cta');
+    if (cta) {
+      var h = document.createElement('button');
+      h.type = 'button'; h.className = 'btn btn--solid';
+      h.textContent = 'Run this cut ▸';
+      h.addEventListener('click', function () { startRun(null); });
+      cta.insertBefore(h, cta.firstChild);
+      var share = cta.querySelector('.reel__share');
+      if (share) { share.classList.remove('btn--solid'); share.classList.add('btn--ghost'); }
+    }
+  })();
 
   /* ---- silent video ------------------------------------------------
      Vimeo background mode: no chrome, muted, looping. Requires a Plus
@@ -847,6 +1261,8 @@
   bin.innerHTML = '<span class="bin__word">Bin</span><span class="bin__sep bin__word">·</span>' +
     '<span><b data-n>0</b> selects</span><span class="bin__sep">·</span><span>TRT <b data-trt>0:00</b></span>' +
     '<button type="button" class="bin__clear" aria-label="Clear the bin">Clear</button>' +
+    '<span class="bin__break" aria-hidden="true"></span>' +
+    '<button type="button" class="btn btn--ghost bin__screen">Screen it</button>' +
     '<button type="button" class="btn btn--solid bin__pull">Pull reel →</button>';
   document.body.appendChild(bin);
 
@@ -885,6 +1301,7 @@
     bin.querySelector('[data-n]').textContent = sel.length;
     bin.querySelector('[data-trt]').textContent = mmss(trt());
     bin.classList.toggle('is-up', sel.length > 0);
+    lift();
     if (!sel.length) closeSheet();
   }
 
@@ -914,7 +1331,28 @@
     document.body.classList.remove('is-locked');
   }
 
+  // The timeline transport already owns the bottom edge. The bin is a tray,
+  // so it stacks above it — measured, because the transport's height changes
+  // with the viewport and a guessed offset would overlap on some phone.
+  var tl = document.querySelector('.tl');
+  function lift() {
+    var up = tl && tl.classList.contains('is-up');
+    bin.style.bottom = up
+      ? 'calc(clamp(0.75rem, 2vw, 1.4rem) + env(safe-area-inset-bottom, 0px) + ' +
+        Math.round(tl.getBoundingClientRect().height + 10) + 'px)'
+      : '';
+  }
+  if (tl && window.MutationObserver) {
+    new MutationObserver(lift).observe(tl, { attributes: true, attributeFilter: ['class'] });
+    window.addEventListener('resize', lift);
+  }
+
   bin.querySelector('.bin__pull').addEventListener('click', openSheet);
+  // Screen the cut before sending it: the projector takes DOM indices.
+  bin.querySelector('.bin__screen').addEventListener('click', function () {
+    document.dispatchEvent(new CustomEvent('reel:run', {
+      detail: { order: sel.map(function (k) { return ALPHABET.indexOf(k); }) } }));
+  });
   bin.querySelector('.bin__clear').addEventListener('click', function () { sel = []; save(); render(); });
   sheet.querySelector('.sheet__close').addEventListener('click', closeSheet);
   sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });

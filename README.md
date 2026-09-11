@@ -65,8 +65,11 @@ Then in **Porkbun DNS** — leave the nameservers alone:
 
 ## Known gaps
 
-- **No showreel.** The hero is built around a featured film because no cut reel
-  exists on the Vimeo profile. When one is made, it slots into the same spot.
+- ~~**No showreel.**~~ Closed 11 Sep 2026: the deck assembles one at runtime.
+  "Run the reel" plays every Vimeo-hosted clip back to back behind a 1-bit
+  countdown leader, advancing on the player's own `ended` event, with a single
+  timeline across the whole sequence. A cut reel on the Vimeo profile would
+  still be worth having as a file; the site no longer waits for it.
 - **`assets/og.jpg`** is a crop of a still. A purpose-made 1200×630 card would
   be better.
 - Five of the highest-performing pieces (Solana x ALLIn, Breakpoint London,
