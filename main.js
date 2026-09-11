@@ -756,6 +756,20 @@
       p.innerHTML = '<span>Resume</span><span class="screening__sep">\u00b7</span>' +
         '<a href="#' + saved.id + '">SC ' + pad(saved.sc) + ' \u00b7 ' + saved.name + ' \u2192</a>';
       host.insertAdjacentElement('afterend', p);
+      // A tile's offsetTop is relative to its section, so the deck's generic
+      // #anchor cut would land on the section. Cut to the tile's true position
+      // with the same one-frame overlay.
+      p.querySelector('a').addEventListener('click', function (e) {
+        e.preventDefault();
+        var t = document.getElementById(saved.id), cut = document.querySelector('.cut');
+        var mast = document.querySelector('.masthead');
+        var pad = mast ? mast.getBoundingClientRect().height + 24 : 24;
+        var y = Math.max(0, t.getBoundingClientRect().top + window.scrollY - pad);
+        if (!cut) { window.scrollTo(0, y); return; }
+        cut.classList.add('is-cutting');
+        setTimeout(function () { window.scrollTo(0, y); }, 42);
+        setTimeout(function () { cut.classList.remove('is-cutting'); }, 125);
+      });
     }
   }
 
