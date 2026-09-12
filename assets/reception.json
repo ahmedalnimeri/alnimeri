@@ -570,17 +570,15 @@
     "ar": "",
     "en": "Gotta say, I watched this video like 5 times. I really enjoyed it.",
     "by": "Lesha Mansukhani, COO, Nas Company",
-    "where": "Internal message",
     "feature": true
    },
    {
     "ar": "",
     "en": "Man, I loooove the cinematography on this so much.",
     "by": "Jonnie, CMO, deBridge",
-    "where": "Direct message",
     "feature": true
    }
   ],
-  "_published": "The two named-executive quotes came from private channels (an internal Nas thread and a DM). Ahmed was told that republishing them unasked can cost a relationship, and decided to publish them as they are on 2026-09-12. That was his call, taken knowingly. A quote carrying \"feature\": true always renders as a card and leads the section, whatever its length."
+  "_published": "The two named-executive quotes reached Ahmed privately; he decided on 2026-09-12 to publish them as they are, and asked for the channel label to come off. A quote carrying \"feature\": true always renders as a card and leads the section, whatever its length."
  }
 }

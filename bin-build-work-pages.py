@@ -183,19 +183,17 @@ for i, f in enumerate(films):
     if rec and rec.get('quotes'):
         items = []
         for q in rec['quotes']:
-            ar = q.get('ar', '').strip()
             en = q.get('en', '').strip()
-            # An English original is printed once, not twice.
-            same = (not ar) or ar == en
-            arline = '' if same else f'<p class="said__ar" lang="ar" dir="rtl">{html.escape(ar)}</p>'
+            # Translation only on the page; the Arabic original stays in
+            # assets/reception.json for the record.
             items.append(
-                f'<figure class="said">{arline}'
+                f'<figure class="said">'
                 f'<blockquote class="said__en">{html.escape(en)}</blockquote>'
                 f'<figcaption class="said__by">{html.escape(q.get("by", ""))}</figcaption></figure>')
         reception = f'''<section class="reception" aria-labelledby="said-{f['slug']}">
     <h2 class="reception__head" id="said-{f['slug']}">What people said</h2>
     <p class="reception__sub">Unedited comments on the <a href="{rec['url']}" target="_blank" rel="noopener">original post</a>
-      &mdash; {rec['stat']}. Arabic as written, with a translation.</p>
+      &mdash; {rec['stat']}. Comments written in Arabic are shown in translation.</p>
     <div class="reception__grid">{''.join(items)}</div>
   </section>'''
 

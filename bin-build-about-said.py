@@ -37,20 +37,19 @@ long_ = feature + long_
 if len(short) < 8:
     sys.exit(f'only {len(short)} short quotes — the strips need more than that')
 
+# The site shows the translation only. The Arabic stays in reception.json,
+# where the applications document reads it — it is the original, and losing it
+# would lose the evidence.
 def pill(q):
-    ar = q.get('ar', '').strip()
-    mark = '<span class="say__ar" aria-hidden="true">ع</span>' if ar and ar != q['en'] else ''
     return (f'<span class="say"><span class="say__t">{html.escape(q["en"])}</span>'
-            f'{mark}<span class="say__u">{html.escape(q["by"])}</span></span>')
+            f'<span class="say__u">{html.escape(q["by"])}</span></span>')
 
 def card(q):
-    ar, en, by = q.get('ar', '').strip(), q['en'].strip(), q['by']
+    en, by = q['en'].strip(), q['by']
     where = q.get('where', '')
     cls = ' said--lead' if q.get('feature') else ''
-    arline = '' if (not ar or ar == en) else \
-        f'<p class="said__ar" lang="ar" dir="rtl">{html.escape(ar)}</p>'
     meta = html.escape(by) + (f' &middot; {html.escape(where)}' if where else '')
-    return (f'<figure class="said{cls}">{arline}'
+    return (f'<figure class="said{cls}">'
             f'<blockquote class="said__en">{html.escape(en)}</blockquote>'
             f'<figcaption class="said__by">{meta}</figcaption></figure>')
 
@@ -77,7 +76,7 @@ block = f'''{START}
       <span class="slate__meta">006 &middot; {len(quotes)} comments</span>
     </div>
     <p class="reception__sub">Public comments, unedited, from {', '.join(wheres)}. Nothing here was asked for.
-      Comments written in Arabic are marked <span class="say__ar" aria-hidden="true">ع</span> and translated.</p>
+      Comments written in Arabic are shown in translation.</p>
     <div class="says" aria-label="What people say">
       {strip(a, '')}
       {strip(b, ' says__row--back')}
