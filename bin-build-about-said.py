@@ -18,9 +18,13 @@ END = '<!-- SAID:END -->'
 SHORT = 58          # an English line short enough to read while it moves
 
 rec = json.load(open('assets/reception.json'))
-quotes = rec.get('about', {}).get('quotes', [])
+all_quotes = rec.get('about', {}).get('quotes', [])
+# A quote on hold came from a private channel and has not been cleared by the
+# person who wrote it. It stays in the file, and off the site, until it has.
+quotes = [q for q in all_quotes if not q.get('hold')]
+held = len(all_quotes) - len(quotes)
 if not quotes:
-    sys.exit('no quotes under "about" in assets/reception.json')
+    sys.exit('no publishable quotes under "about" in assets/reception.json')
 
 short = [q for q in quotes if len(q['en']) <= SHORT]
 long_ = [q for q in quotes if len(q['en']) > SHORT]
@@ -85,4 +89,5 @@ else:
         sys.exit('could not find the contact section to insert before')
     page = page.replace(anchor, block + '\n\n' + anchor, 1)
 open('about.html', 'w').write(page)
-print(f'about.html: {len(short)} on the strips, {len(long_)} as cards, {len(quotes)} in total')
+print(f'about.html: {len(short)} on the strips, {len(long_)} as cards, {len(quotes)} published'
+      + (f', {held} HELD pending permission' if held else ''))

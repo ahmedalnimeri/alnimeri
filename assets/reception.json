@@ -565,7 +565,24 @@
     "en": "beautiful",
     "by": "It's Baya",
     "where": "TikTok"
+   },
+   {
+    "ar": "",
+    "en": "Gotta say, I watched this video like 5 times. I really enjoyed it.",
+    "by": "Lesha Mansukhani, COO, Nas Company",
+    "where": "Internal message",
+    "hold": true,
+    "_note": "Hearted by Ahmed El-Nimeri, Nuseir Yassin (founder, Nas Daily) and three others. Private workplace channel — needs Lesha's OK before it goes public."
+   },
+   {
+    "ar": "",
+    "en": "Man, I loooove the cinematography on this so much.",
+    "by": "Jonnie, CMO, deBridge",
+    "where": "Direct message",
+    "hold": true,
+    "_note": "Client-side CMO, in a DM thread. Needs Jonnie's OK before it goes public."
    }
-  ]
+  ],
+  "_hold": "A quote carrying \"hold\": true is NOT rendered on the site. These came from private channels — a workplace thread and a DM — and republishing a named executive's private words without asking is the kind of thing that costs a relationship. Get a yes, delete the flag, re-run the builder."
  }
 }
