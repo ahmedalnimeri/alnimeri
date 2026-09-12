@@ -18,6 +18,14 @@ WORDS = {14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen',
 
 SRC = open('index.html').read()
 
+# Audience comments on the original posts, harvested by hand. Only what is in
+# this file is ever published, and only comments about the work itself — the
+# threads also carry grief and politics that are not this site's to reprint.
+try:
+    RECEPTION = json.load(open('assets/reception.json'))
+except Exception:
+    RECEPTION = {}
+
 VER = re.search(r'styles\.css\?v=(\d+)', SRC).group(1)
 MARK = re.search(r'src="(assets/logo-96\.png\?h=[a-f0-9]+)"', SRC).group(1)
 
@@ -169,6 +177,28 @@ for i, f in enumerate(films):
     facts.append(('Role', 'Directed, shot and edited'))
     facts_html = ''.join(f'<div><dt>{k}</dt><dd>{v}</dd></div>' for k, v in facts)
 
+    # What the audience said, in their own words, off the original post.
+    rec = RECEPTION.get(f['slug'])
+    reception = ''
+    if rec and rec.get('quotes'):
+        items = []
+        for q in rec['quotes']:
+            ar = q.get('ar', '').strip()
+            en = q.get('en', '').strip()
+            # An English original is printed once, not twice.
+            same = (not ar) or ar == en
+            arline = '' if same else f'<p class="said__ar" lang="ar" dir="rtl">{html.escape(ar)}</p>'
+            items.append(
+                f'<figure class="said">{arline}'
+                f'<blockquote class="said__en">{html.escape(en)}</blockquote>'
+                f'<figcaption class="said__by">{html.escape(q.get("by", ""))}</figcaption></figure>')
+        reception = f'''<section class="reception" aria-labelledby="said-{f['slug']}">
+    <h2 class="reception__head" id="said-{f['slug']}">What people said</h2>
+    <p class="reception__sub">Unedited comments on the <a href="{rec['url']}" target="_blank" rel="noopener">original post</a>
+      &mdash; {rec['stat']}. Arabic as written, with a translation.</p>
+    <div class="reception__grid">{''.join(items)}</div>
+  </section>'''
+
     nav = []
     if prev_f: nav.append(f'<a class="film__nav-prev" href="/work/{prev_f["slug"]}">&larr; {html.escape(html.unescape(prev_f["title"]))}</a>')
     nav.append('<a class="film__nav-all" href="/work/">All films</a>')
@@ -182,6 +212,7 @@ for i, f in enumerate(films):
   </div>
   {player}
   <dl class="film__facts">{facts_html}</dl>
+  {reception}
   <p class="film__note">One of {COUNT} films in the <a href="/">selected work</a> of Ahmed El-Nimeri,
     a film director and Associate Creative Director based in Dubai. Every figure on this site links
     to the published post it came from.</p>
