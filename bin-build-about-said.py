@@ -26,9 +26,14 @@ held = len(all_quotes) - len(quotes)
 if not quotes:
     sys.exit('no publishable quotes under "about" in assets/reception.json')
 
-short = [q for q in quotes if len(q['en']) <= SHORT]
-long_ = [q for q in quotes if len(q['en']) > SHORT]
+# A featured quote always gets a card and always leads, whatever its length —
+# a named person with a title at a real company carries further than a handle.
+feature = [q for q in quotes if q.get('feature')]
+rest = [q for q in quotes if not q.get('feature')]
+short = [q for q in rest if len(q['en']) <= SHORT]
+long_ = [q for q in rest if len(q['en']) > SHORT]
 long_.sort(key=lambda q: -len(q['en']))
+long_ = feature + long_
 if len(short) < 8:
     sys.exit(f'only {len(short)} short quotes — the strips need more than that')
 
@@ -41,10 +46,11 @@ def pill(q):
 def card(q):
     ar, en, by = q.get('ar', '').strip(), q['en'].strip(), q['by']
     where = q.get('where', '')
+    cls = ' said--lead' if q.get('feature') else ''
     arline = '' if (not ar or ar == en) else \
         f'<p class="said__ar" lang="ar" dir="rtl">{html.escape(ar)}</p>'
     meta = html.escape(by) + (f' &middot; {html.escape(where)}' if where else '')
-    return (f'<figure class="said">{arline}'
+    return (f'<figure class="said{cls}">{arline}'
             f'<blockquote class="said__en">{html.escape(en)}</blockquote>'
             f'<figcaption class="said__by">{meta}</figcaption></figure>')
 
@@ -90,4 +96,5 @@ else:
     page = page.replace(anchor, block + '\n\n' + anchor, 1)
 open('about.html', 'w').write(page)
 print(f'about.html: {len(short)} on the strips, {len(long_)} as cards, {len(quotes)} published'
-      + (f', {held} HELD pending permission' if held else ''))
+      + (f', {held} held' if held else '')
+      + (f', {len(feature)} featured' if feature else ''))

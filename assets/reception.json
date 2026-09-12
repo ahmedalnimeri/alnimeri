@@ -571,18 +571,16 @@
     "en": "Gotta say, I watched this video like 5 times. I really enjoyed it.",
     "by": "Lesha Mansukhani, COO, Nas Company",
     "where": "Internal message",
-    "hold": true,
-    "_note": "Hearted by Ahmed El-Nimeri, Nuseir Yassin (founder, Nas Daily) and three others. Private workplace channel — needs Lesha's OK before it goes public."
+    "feature": true
    },
    {
     "ar": "",
     "en": "Man, I loooove the cinematography on this so much.",
     "by": "Jonnie, CMO, deBridge",
     "where": "Direct message",
-    "hold": true,
-    "_note": "Client-side CMO, in a DM thread. Needs Jonnie's OK before it goes public."
+    "feature": true
    }
   ],
-  "_hold": "A quote carrying \"hold\": true is NOT rendered on the site. These came from private channels — a workplace thread and a DM — and republishing a named executive's private words without asking is the kind of thing that costs a relationship. Get a yes, delete the flag, re-run the builder."
+  "_published": "The two named-executive quotes came from private channels (an internal Nas thread and a DM). Ahmed was told that republishing them unasked can cost a relationship, and decided to publish them as they are on 2026-09-12. That was his call, taken knowingly. A quote carrying \"feature\": true always renders as a card and leads the section, whatever its length."
  }
 }

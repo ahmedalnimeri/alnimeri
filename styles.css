@@ -1868,3 +1868,9 @@ body.is-locked { overflow: hidden; }
   .says__track { flex-wrap: wrap; justify-content: center; }
 }
 @media print { .says { display: none; } }
+
+/* A named voice with a title at a real company leads the wall, and is given
+   the weight to match. */
+.said--lead { border-color: var(--line); background: #17171c; }
+.said--lead .said__en { font-size: 1.1rem; line-height: 1.5; color: var(--fg); letter-spacing: -0.015em; }
+.said--lead .said__by { color: var(--fg-dim); }
