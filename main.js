@@ -1238,3 +1238,335 @@
     else prompt('Copy this link', url);
   });
 })();
+
+
+// ---- 006 On Set: the gate ---------------------------------------------------
+/* 006 On Set — gate. No dependencies. One rAF-throttled path for scroll and
+   resize; motion is driven by native scroll position, never by wheel or
+   touch, so trackpads, keyboards and thumbs all behave. */
+(function () {
+  'use strict';
+
+  var stage = document.querySelector('.os-stage');
+  if (!stage || !window.matchMedia) return;
+
+  var docEl   = document.documentElement;
+  var pin     = stage.querySelector('.os-pin');
+  var figs    = stage.querySelectorAll('.os-fr');
+  var imgs    = stage.querySelectorAll('.os-fr__img');
+  var ticks   = stage.querySelectorAll('.os-tick');
+  var fills   = stage.querySelectorAll('.os-tick__fill');
+  var tickRow = stage.querySelector('.os-ticks');
+  var reelNo  = stage.querySelector('[data-os-reel="no"]');
+  var reelYr  = stage.querySelector('[data-os-reel="yr"]');
+  var N = figs.length;
+  if (!N || !pin) return;
+  var F = 1000 / 24; // one frame, as the site's --f
+
+  // Year reel position for each frame, read once from the markup.
+  var yrIdx = [];
+  var yrCells = reelYr ? reelYr.children : [];
+  for (var a = 0; a < N; a++) {
+    var y = figs[a].getAttribute('data-os-yr'), k = 0;
+    for (var b = 0; b < yrCells.length; b++) { if (yrCells[b].textContent === y) { k = b; break; } }
+    yrIdx.push(k);
+  }
+  // Pre-built transform strings: the scroll path only indexes, never builds.
+  var reelT = [], yrT = [], fillT = [], Q = 400;
+  for (a = 0; a < N; a++) {
+    reelT.push('translate3d(0,' + (-a) + 'em,0)');
+    yrT.push('translate3d(0,' + (-yrIdx[a]) + 'em,0)');
+  }
+  for (a = 0; a <= Q; a++) fillT.push('scaleX(' + (a / Q) + ')');
+
+  var hasIO    = 'IntersectionObserver' in window;
+  var hasRO    = 'ResizeObserver' in window;
+  var mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var mqGate   = window.matchMedia('(min-width: 901px) and (min-height: 600px)');
+
+  var mode = 'static';
+  var near = false, armed = false, ticking = false, needMeasure = true, warmed = false;
+  var cur = -1, seek = -1, seekT = 0, lastQ = -1;
+  var vh = 0, stageTop = 0, run = 0;
+  var riseIO = null, settleTimer = 0;
+
+  function sy() { return window.pageYOffset || docEl.scrollTop || 0; }
+
+  function indexOf(el) {
+    for (var i = 0; i < N; i++) { if (figs[i] === el) return i; }
+    return -1;
+  }
+
+  function clearStates() {
+    clearTimeout(settleTimer);
+    for (var i = 0; i < N; i++) {
+      figs[i].classList.remove('os-on', 'os-out', 'os-in');
+      figs[i].style.removeProperty('--os-d');
+      if (ticks[i]) {
+        ticks[i].classList.remove('os-on', 'os-past');
+        ticks[i].removeAttribute('aria-current');
+        if (fills[i]) fills[i].style.transform = '';
+      }
+    }
+    if (reelNo) reelNo.style.transform = '';
+    if (reelYr) reelYr.style.transform = '';
+    cur = -1; seek = -1; armed = false; lastQ = -1;
+  }
+
+  /* ---- images ---------------------------------------------------------- */
+
+  // Anything not yet decoded when motion arms eases in on load (CSS scopes
+  // .os-wait to the motion modes, so no-JS and reduced motion never hide).
+  function landed() { this.parentNode.parentNode.classList.remove('os-wait'); }
+  for (a = 0; a < imgs.length; a++) {
+    if (!imgs[a].complete) {
+      imgs[a].parentNode.parentNode.classList.add('os-wait');
+      imgs[a].addEventListener('load', landed);
+      imgs[a].addEventListener('error', landed);
+    }
+  }
+
+  // Frames stacked in the gate are all "near" at once, so ask for them early
+  // rather than letting an aperture open onto a picture still on the wire.
+  function noop() {}
+  function warm() {
+    if (warmed) return;
+    warmed = true;
+    for (var i = 0; i < imgs.length; i++) {
+      if (imgs[i].loading === 'lazy') imgs[i].loading = 'eager';
+      if (imgs[i].decode) imgs[i].decode().then(noop, noop);
+    }
+  }
+
+  /* ---- the gate -------------------------------------------------------- */
+
+  // Once the incoming frame covers the gate, the one it replaced is invisible:
+  // drop it from the stack so it stops animating and gives back its layer.
+  function settle() {
+    for (var j = 0; j < N; j++) { if (j !== cur) figs[j].classList.remove('os-out'); }
+  }
+
+  function show(i) {
+    if (i === cur) return;
+    var old = cur;
+    for (var j = 0; j < N; j++) {
+      var c = figs[j].classList;
+      if (j === i)        { c.remove('os-out'); c.add('os-on'); }
+      else if (j === old) { c.remove('os-on');  c.add('os-out'); }
+      else                { c.remove('os-on', 'os-out'); }
+      var t = ticks[j];
+      if (!t) continue;
+      t.classList.toggle('os-on', j === i);
+      t.classList.toggle('os-past', j < i);
+      if (j === i) t.setAttribute('aria-current', 'true');
+      else t.removeAttribute('aria-current');
+      if (fills[j]) fills[j].style.transform = j < i ? fillT[Q] : fillT[0];
+    }
+    if (reelNo) reelNo.style.transform = reelT[i];
+    if (reelYr) reelYr.style.transform = yrT[i];
+    cur = i;
+    lastQ = 0;
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(settle, Math.round(F * 28));
+  }
+
+  // Layout reads live here, not in the scroll path. ResizeObserver on the
+  // body flags a re-measure whenever anything above the section changes
+  // height (fonts, late images); without it we measure every frame.
+  function measure() {
+    vh = window.innerHeight;
+    var r = stage.getBoundingClientRect();
+    stageTop = r.top + sy();
+    run = r.height - pin.offsetHeight;
+    needMeasure = !hasRO;
+  }
+
+  function update() {
+    ticking = false;
+    if (mode !== 'gate' || !near) return;
+    if (needMeasure) measure();
+    if (run <= 0) return;
+
+    var top = stageTop - sy();
+
+    // The projector starts once most of the gate is on screen.
+    if (!armed) {
+      if (top > vh * 0.35) return;
+      armed = true;
+    }
+
+    var p = -top / run;
+    p = p < 0 ? 0 : (p > 1 ? 1 : p);
+    var f = p * N;
+    var idx = f >= N ? N - 1 : Math.floor(f);
+    var local = f - idx;
+    if (local > 1) local = 1;
+
+    // A tick click owns the gate until the smooth scroll lands on it.
+    if (seek >= 0) {
+      if (idx === seek || performance.now() - seekT > 1600) seek = -1;
+      else { show(seek); return; }
+    }
+
+    show(idx);
+    var q = Math.round(local * Q);
+    if (q !== lastQ && fills[idx]) {
+      fills[idx].style.transform = fillT[q];
+      lastQ = q;
+    }
+  }
+
+  function schedule() {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(update);
+  }
+
+  function onScroll() { if (mode === 'gate') schedule(); }
+  function onResize() { needMeasure = true; if (mode === 'gate') schedule(); }
+
+  function go(i) {
+    if (mode !== 'gate') return;
+    measure();
+    if (run <= 0) return;
+    armed = true;
+    seek = i;
+    seekT = performance.now();
+    show(i);
+    window.scrollTo({ top: Math.round(stageTop + ((i + 0.5) / N) * run), behavior: 'smooth' });
+  }
+
+  for (var t = 0; t < ticks.length; t++) {
+    ticks[t].addEventListener('click', (function (i) {
+      return function () { go(i); };
+    })(t));
+  }
+
+  // Left/right (and Home/End) step through the ticks; up and down stay the page's.
+  if (tickRow) {
+    tickRow.addEventListener('keydown', function (e) {
+      var key = e.key;
+      if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') return;
+      var at = -1;
+      for (var i = 0; i < ticks.length; i++) { if (ticks[i] === document.activeElement) { at = i; break; } }
+      if (at < 0) return;
+      var next = key === 'Home' ? 0 : key === 'End' ? ticks.length - 1 : at + (key === 'ArrowRight' ? 1 : -1);
+      if (next < 0 || next >= ticks.length || next === at) return;
+      e.preventDefault();
+      ticks[next].focus();
+      go(next);
+    });
+  }
+
+  /* ---- rise ------------------------------------------------------------ */
+
+  function open(i, d) {
+    var fg = figs[i];
+    if (fg.classList.contains('os-in')) return;
+    fg.style.setProperty('--os-d', d);
+    fg.classList.add('os-in');
+    if (riseIO) riseIO.unobserve(fg);
+  }
+
+  function onRise(entries) {
+    var n = 0, reach = -1;
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i], at = indexOf(e.target);
+      if (at < 0) continue;
+      if (e.isIntersecting) {
+        // Frames arriving together open in turn, on the 24fps grid.
+        open(at, Math.round(n++ * 6 * F) + 'ms');
+        if (at > reach) reach = at;
+      } else if (e.boundingClientRect.bottom < 0 && at > reach) {
+        reach = at;
+      }
+    }
+    // Everything before the furthest frame reached is above or already on
+    // screen. A jump (End key, scrollbar drag) fires no callback for frames it
+    // skips, so open them here rather than leave them shut.
+    for (var j = 0; j < reach; j++) open(j, '0ms');
+  }
+
+  /* ---- mode ------------------------------------------------------------ */
+
+  // Which photograph the reader is on, if the section fills the window.
+  function anchorIndex() {
+    var r = stage.getBoundingClientRect();
+    if (r.top >= 0 || r.bottom <= 0) return -1;
+    if (mode === 'gate') return cur;
+    var h = window.innerHeight;
+    for (var i = 0; i < N; i++) { if (figs[i].getBoundingClientRect().bottom > h * 0.4) return i; }
+    return N - 1;
+  }
+
+  // After a rotation or resize swaps layouts, put that photograph back in view
+  // instead of dropping the reader thousands of pixels away.
+  function restore(i) {
+    if (mode === 'gate') {
+      measure();
+      if (run <= 0) return;
+      window.scrollTo(0, Math.round(stageTop + ((i + 0.5) / N) * run));
+      armed = true;
+      show(i);
+    } else {
+      var top = figs[i].getBoundingClientRect().top + sy();
+      window.scrollTo(0, Math.max(0, Math.round(top - window.innerHeight * 0.15)));
+    }
+  }
+
+  function setMode(ev) {
+    var next = (!hasIO || mqReduce.matches) ? 'static' : (mqGate.matches ? 'gate' : 'rise');
+    if (next === mode) return;
+    // Not on the first call: the browser may still be restoring scroll.
+    var keep = ev ? anchorIndex() : -1;
+    if (riseIO) { riseIO.disconnect(); riseIO = null; }
+    stage.classList.remove('os-is-gate', 'os-is-rise');
+    clearStates();
+    mode = next;
+    if (mode === 'gate') {
+      stage.classList.add('os-is-gate');
+      needMeasure = true;
+      if (near) warm();
+    } else if (mode === 'rise') {
+      stage.classList.add('os-is-rise');
+      riseIO = new IntersectionObserver(onRise, { rootMargin: '0px', threshold: 0.05 });
+      for (var i = 0; i < N; i++) riseIO.observe(figs[i]);
+    }
+    if (keep >= 0) restore(keep);
+    if (mode === 'gate') schedule();
+  }
+
+  function listen(mq, fn) {
+    if (mq.addEventListener) mq.addEventListener('change', fn);
+    else if (mq.addListener) mq.addListener(fn);
+  }
+
+  if (hasIO) {
+    new IntersectionObserver(function (entries) {
+      var e = entries[entries.length - 1];
+      near = e.isIntersecting;
+      stage.classList.toggle('os-far', !near);
+      if (near) {
+        if (mode === 'gate') { warm(); schedule(); }
+      } else if (mode === 'gate' && e.boundingClientRect.top > 0) {
+        // Left upward past the section: the next arrival replays the opening.
+        clearStates();
+      }
+    }, { rootMargin: '25% 0px 25% 0px' }).observe(stage);
+  }
+
+  if (hasRO) {
+    new ResizeObserver(function () {
+      needMeasure = true;
+      if (mode === 'gate') schedule();
+    }).observe(document.body);
+  }
+
+  listen(mqReduce, setMode);
+  listen(mqGate, setMode);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onResize, { passive: true });
+  window.addEventListener('orientationchange', onResize, { passive: true });
+
+  setMode();
+})();

@@ -1876,38 +1876,239 @@ body.is-locked { overflow: hidden; }
   margin: -1.25rem 0 clamp(1.75rem, 4vh, 2.5rem);
   max-width: 58ch; font-size: 0.9rem; color: var(--fg-faint);
 }
-.proof {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 2px; max-width: 1320px; margin: 0 auto;
-  background: var(--line-soft); padding: 2px;
-  border-radius: var(--card); overflow: hidden;
-}
-@media (max-width: 900px) { .proof { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .proof { grid-template-columns: 1fr; } }
 
-.frame { margin: 0; position: relative; background: #000; overflow: hidden; }
-.frame__img {
-  display: block; width: 100%; height: auto; aspect-ratio: 3 / 2;
-  object-fit: cover;
-  /* Held a shade back so the sheet reads as one surface; the frame you are
-     looking at comes up to full. A cut, like every other state here. */
-  opacity: 0.82;
-}
-.frame:hover .frame__img, .frame:focus-within .frame__img { opacity: 1; }
+/* =========================================================================
+   006 ON SET — "GATE"
+   One projector gate. The section pins and shows one photograph at a time;
+   native scroll advances the reel. Every class and variable is os-prefixed.
 
-.frame__cap {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  display: flex; align-items: baseline; gap: 0.55rem;
-  padding: 1.6rem 0.85rem 0.6rem;
-  background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
-  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em;
+   Three states, decided by JS (no class = the no-JS / reduced-motion page):
+     (none)        static: lead frame full width, then two columns
+     .os-is-gate   desktop: pinned gate, aperture reveals, push-in, rail, ticks
+     .os-is-rise   touch / narrow / short: stacked, aperture reveal on entry
+   ========================================================================= */
+.os-stage {
+  --os-ease: cubic-bezier(0.7, 0, 0.2, 1);
+  --os-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --os-r: calc(var(--card) * 0.6);
+  --os-closed: inset(7% 50% 7% 50% round var(--os-r));
+  --os-open: inset(0% 0% 0% 0% round var(--os-r));
+  --os-vh: 1vh;
+  position: relative; max-width: 1320px; margin: 0 auto;
+}
+/* iPad Safari: 100vh is the toolbar-collapsed height, so a 100vh pin hides
+   the ticks under the toolbar. svh is the height you can actually see. */
+@supports (height: 1svh) { .os-stage { --os-vh: 1svh; } }
+
+/* ---- static (no JS, reduced motion) ------------------------------------ */
+.os-frames {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2.5rem, 5vw, 4.5rem) clamp(1.25rem, 2.4vw, 2.25rem);
+}
+.os-fr { margin: 0; min-width: 0; }
+.os-fr:first-child { grid-column: 1 / -1; }
+.os-fr__win {
+  position: relative; aspect-ratio: 3 / 2; overflow: hidden;
+  background: #000; border-radius: var(--os-r);
+}
+.os-fr__img { width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 45%; }
+.os-fr__cap {
+  display: flex; align-items: baseline; gap: 0.7rem;
+  padding-top: 0.9rem;
+  font-family: var(--mono); font-size: 0.62rem; line-height: 1.4; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--fg-faint);
 }
-.frame__no { color: var(--fg); }
-.frame__yr { color: var(--fg-dim); font-variant-numeric: tabular-nums; }
-.frame__lbl { margin-left: auto; text-align: right; }
-@media (max-width: 560px) { .frame__cap { font-size: 0.56rem; } }
+.os-fr__no { color: var(--fg); }
+.os-fr__yr { color: var(--fg-dim); font-variant-numeric: tabular-nums; }
+.os-fr__lbl { margin-left: auto; text-align: right; }
+.os-rail, .os-ticks { display: none; }
+
+@media (max-width: 900px) {
+  .os-frames { grid-template-columns: minmax(0, 1fr); gap: clamp(2.25rem, 8vw, 3.5rem); }
+}
+@media (max-width: 560px) {
+  /* Full bleed on phones: the picture takes the width, the caption stays on
+     the text column. */
+  .os-stage { --os-r: 0px; }
+  .os-fr__win { margin-left: calc(-1 * var(--gut)); margin-right: calc(-1 * var(--gut)); }
+  .os-fr__cap { font-size: 0.56rem; gap: 0.55rem; padding-top: 0.75rem; }
+}
+
+/* ---- rise (<= 900px, or short landscape) ------------------------------- */
+.os-is-rise .os-fr__win {
+  clip-path: var(--os-closed);
+  transition: clip-path calc(var(--f) * 22) var(--os-ease) var(--os-d, 0ms);
+}
+.os-is-rise .os-fr__img {
+  transform: scale(1.12);
+  transition: transform calc(var(--f) * 48) var(--os-out) var(--os-d, 0ms),
+              opacity calc(var(--f) * 10) ease-out;
+}
+.os-is-rise .os-fr__cap {
+  opacity: 0; transform: translate3d(0, 0.5rem, 0);
+  transition: opacity calc(var(--f) * 12) ease-out calc(var(--f) * 12 + var(--os-d, 0ms)),
+              transform calc(var(--f) * 16) var(--os-out) calc(var(--f) * 12 + var(--os-d, 0ms));
+}
+/* --os-d staggers frames that arrive in the same batch, 6 frames apart. */
+.os-is-rise .os-fr.os-in .os-fr__win { clip-path: var(--os-open); }
+.os-is-rise .os-fr.os-in .os-fr__img { transform: scale(1); }
+.os-is-rise .os-fr.os-in .os-fr__cap { opacity: 1; transform: none; }
+
+/* ---- gate (desktop) ---------------------------------------------------- */
+.os-is-gate {
+  --os-r: var(--card);
+  /* Scroll distance per frame. 46vh, not 64: nine long stretches read as slow,
+     and the site's timeline sizes each clip by section height, so a long pin
+     also swallows the minimap. */
+  --os-step: calc(46 * var(--os-vh));
+  --os-railw: clamp(8.5rem, 15vw, 14rem); /* rail + its gap */
+  --os-gap: clamp(1.5rem, 3vw, 3rem);
+  height: calc(100 * var(--os-vh) + 9 * var(--os-step));
+}
+@media (pointer: coarse) { .os-is-gate { --os-step: calc(40 * var(--os-vh)); } }
+
+/* Sticky is only safe because nothing between here and the viewport scrolls:
+   .section has no overflow, and body's overflow-x propagates to the viewport. */
+.os-is-gate .os-pin {
+  position: sticky; top: 0; height: calc(100 * var(--os-vh));
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+  /* The bottom keeps clear of the site's fixed timeline pill (.tl), which
+     otherwise sits directly over the tick row. Measured: pill top 830px, ticks
+     824-863px at 1440x900. */
+  padding: clamp(4.5rem, 10vh, 6.5rem) 0 calc(clamp(1rem, 3vh, 2rem) + 3.25rem);
+}
+.os-is-gate .os-gate {
+  --os-w: min(calc((100 * var(--os-vh) - 17rem) * 1.5), calc(100% - var(--os-railw)), 1180px);
+  position: relative; width: var(--os-w);
+  margin-left: calc((100% - var(--os-w) + var(--os-railw)) / 2);
+}
+.os-is-gate .os-screen {
+  position: relative; aspect-ratio: 3 / 2; border-radius: var(--card); background: #050506;
+}
+/* The gate itself: a hairline you only see when a frame eases back from it. */
+.os-is-gate .os-screen::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  border: 1px solid var(--line-soft); pointer-events: none;
+}
+.os-is-gate .os-frames { position: absolute; inset: 0; display: block; }
+.os-is-gate .os-fr { position: absolute; inset: 0; z-index: 1; }
+.os-is-gate .os-fr.os-out { z-index: 2; }
+.os-is-gate .os-fr.os-on  { z-index: 3; }
+
+.os-is-gate .os-fr__win {
+  position: absolute; inset: 0; aspect-ratio: auto; background: #000;
+  clip-path: var(--os-closed); opacity: 0; transform: scale(1.05);
+  /* Leaving the stack: fade under cover, then snap shut once invisible. */
+  transition: opacity calc(var(--f) * 5) ease-out,
+              clip-path 0s linear calc(var(--f) * 5),
+              transform 0s linear calc(var(--f) * 5);
+}
+.os-is-gate .os-fr.os-on .os-fr__win {
+  clip-path: var(--os-open); opacity: 1; transform: scale(1);
+  transition: clip-path calc(var(--f) * 22) var(--os-ease),
+              opacity calc(var(--f) * 9) ease-out,
+              transform calc(var(--f) * 26) var(--os-out);
+  will-change: transform, opacity;
+}
+.os-is-gate .os-fr.os-out .os-fr__win {
+  clip-path: var(--os-open); opacity: 0.3; transform: scale(0.94);
+  transition: clip-path calc(var(--f) * 22) var(--os-ease),
+              opacity calc(var(--f) * 22) var(--os-ease),
+              transform calc(var(--f) * 22) var(--os-ease);
+  will-change: transform, opacity;
+}
+/* Ken Burns: runs on the frame in the gate and keeps running as it leaves, so
+   the hand-off never snaps. Origins vary so no two frames push the same way. */
+.os-is-gate .os-on .os-fr__img,
+.os-is-gate .os-out .os-fr__img {
+  animation: os-push calc(var(--f) * 432) cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+  will-change: transform;
+}
+@keyframes os-push { from { transform: scale(1); } to { transform: scale(1.1); } }
+.os-is-gate .os-fr__img { transition: opacity calc(var(--f) * 10) ease-out; }
+/* A picture still on the wire eases in when it lands instead of popping. */
+.os-is-gate .os-wait .os-fr__img, .os-is-rise .os-wait .os-fr__img { opacity: 0; }
+/* Section well off screen: stop the push-in and release the GPU layers. */
+.os-stage.os-is-gate.os-far .os-fr .os-fr__img { animation-play-state: paused; will-change: auto; }
+.os-stage.os-is-gate.os-far .os-fr .os-fr__win { will-change: auto; }
+.os-fr:nth-child(1) .os-fr__img { transform-origin: 50% 38%; }
+.os-fr:nth-child(2) .os-fr__img { transform-origin: 36% 48%; }
+.os-fr:nth-child(3) .os-fr__img { transform-origin: 64% 44%; }
+.os-fr:nth-child(4) .os-fr__img { transform-origin: 44% 58%; }
+.os-fr:nth-child(5) .os-fr__img { transform-origin: 56% 36%; }
+.os-fr:nth-child(6) .os-fr__img { transform-origin: 40% 46%; }
+.os-fr:nth-child(7) .os-fr__img { transform-origin: 60% 54%; }
+.os-fr:nth-child(8) .os-fr__img { transform-origin: 50% 30%; }
+.os-fr:nth-child(9) .os-fr__img { transform-origin: 46% 50%; }
+
+.os-is-gate .os-fr__cap {
+  position: absolute; top: 100%; left: 0; right: 0; padding-top: 1rem;
+  opacity: 0; transform: translate3d(0, 0.35rem, 0);
+  transition: opacity calc(var(--f) * 4) ease-in, transform 0s linear calc(var(--f) * 4);
+}
+.os-is-gate .os-on .os-fr__cap {
+  opacity: 1; transform: none;
+  transition: opacity calc(var(--f) * 12) ease-out calc(var(--f) * 9),
+              transform calc(var(--f) * 16) var(--os-out) calc(var(--f) * 9);
+}
+
+/* Rail: the readout beside the gate. Decorative duplicate of the caption. */
+.os-is-gate .os-rail {
+  position: absolute; top: 0; bottom: 0; right: calc(100% + var(--os-gap));
+  width: calc(var(--os-railw) - var(--os-gap));
+  display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end;
+  text-align: right; pointer-events: none;
+}
+.os-rail__k {
+  display: block; font-family: var(--mono); font-size: 0.6rem; line-height: 1;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-faint);
+}
+.os-count, .os-year {
+  display: flex; justify-content: flex-end; line-height: 1;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.os-count {
+  margin: 0.7rem 0 0.8rem;
+  font-size: clamp(3.5rem, 6.2vw, 6.5rem); font-weight: 600; letter-spacing: -0.04em; color: var(--fg);
+}
+.os-year {
+  margin-top: 0.6rem;
+  font-size: clamp(1.4rem, 2.1vw, 2.1rem); font-weight: 500; letter-spacing: -0.02em; color: var(--fg-dim);
+}
+.os-win { display: block; height: 1em; overflow: hidden; text-align: left; }
+.os-reel { display: block; transition: transform calc(var(--f) * 18) var(--os-ease); }
+.os-reel > span { display: block; height: 1em; }
+
+/* Ticks: nine index marks under the gate. The one in the gate fills 1:1 with
+   scroll through its stretch; states are cuts, like everywhere else. */
+.os-is-gate .os-ticks { display: flex; gap: clamp(4px, 0.7vw, 10px); margin-top: 3rem; }
+.os-tick {
+  flex: 1 1 0; min-width: 0; margin: 0; padding: 0.45rem 0 0.8rem;
+  -webkit-appearance: none; appearance: none; background: none; border: 0; border-radius: 0;
+  font: 400 0.56rem/1 var(--mono); letter-spacing: 0.1em; color: var(--fg-faint);
+  text-align: left; cursor: pointer;
+}
+.os-tick__no { display: block; margin-bottom: 0.6rem; font-variant-numeric: tabular-nums; }
+.os-tick__bar { display: block; position: relative; height: 1px; background: var(--line); overflow: hidden; }
+.os-tick__fill {
+  position: absolute; inset: 0; background: var(--fg);
+  transform-origin: 0 50%; transform: scaleX(0);
+}
+.os-tick.os-past .os-tick__fill { background: var(--fg-faint); }
+.os-tick.os-on .os-tick__no { color: var(--fg); }
+@media (hover: hover) {
+  .os-tick:hover .os-tick__no { color: var(--fg-dim); }
+  .os-tick.os-on:hover .os-tick__no { color: var(--fg); }
+  .os-tick:hover .os-tick__bar { background: rgba(255, 255, 255, 0.22); }
+}
+.os-tick:focus-visible { outline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* JS never arms motion here; this is the belt to that brace. */
+  .os-fr__win, .os-fr__img, .os-fr__cap, .os-reel { transition: none !important; animation: none !important; }
+}
 @media print {
-  .proof { grid-template-columns: repeat(3, 1fr); gap: 4pt; background: none; padding: 0; }
-  .frame__img { opacity: 1; }
+  .os-stage { height: auto !important; }
+  .os-pin { position: static !important; height: auto !important; padding: 0 !important; }
+  .os-rail, .os-ticks { display: none !important; }
 }
