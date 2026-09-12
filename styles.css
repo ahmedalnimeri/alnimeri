@@ -1817,3 +1817,54 @@ body.is-locked { overflow: hidden; }
   .reception { break-inside: avoid; }
   .said { border: 1px solid #ccc; background: none; }
 }
+
+/* ---- the strips -------------------------------------------------------
+   Short comments are a crowd, and the force is in the number. Two strips
+   counter-run past the reader at different speeds, the same mechanism the
+   client logos use, so twenty land in the time one card would take. They
+   stop under the pointer so a name can be read. */
+.says {
+  position: relative;
+  margin: 0 calc(-1 * var(--gut)) clamp(2.25rem, 5vh, 3.25rem);
+  padding: 0.2rem 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+          mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+}
+.says__row {
+  display: flex; width: max-content;
+  animation: slide 86s linear infinite;
+}
+.says__row--back { animation-duration: 112s; animation-direction: reverse; margin-top: 0.7rem; }
+.says:hover .says__row, .says:focus-within .says__row { animation-play-state: paused; }
+.says__track { display: flex; flex: none; }
+
+.say {
+  flex: none; display: inline-flex; align-items: baseline; gap: 0.6rem;
+  margin: 0 0.35rem; padding: 0.62rem 1.15rem;
+  background: var(--bg-raised); border: 1px solid var(--line-soft);
+  border-radius: var(--pill); white-space: nowrap;
+}
+.say__t { font-size: 0.94rem; color: var(--fg); letter-spacing: -0.01em; }
+.say__ar {
+  font-size: 0.72rem; color: var(--fg-faint); line-height: 1;
+  border: 1px solid var(--line-soft); border-radius: 3px; padding: 0.1rem 0.25rem;
+}
+.say__u {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--fg-faint);
+}
+@media (max-width: 560px) {
+  .say { padding: 0.5rem 0.9rem; margin: 0 0.25rem; }
+  .say__t { font-size: 0.86rem; }
+}
+/* Motion is the point of the strips, so without it they become a plain
+   wrapped list rather than a stalled conveyor. */
+@media (prefers-reduced-motion: reduce) {
+  .says { -webkit-mask-image: none; mask-image: none; }
+  .says__row { animation: none; width: 100%; flex-wrap: wrap; justify-content: center; gap: 0.5rem 0; }
+  .says__row--back { display: none; }
+  .says__track:last-child { display: none; }
+  .says__track { flex-wrap: wrap; justify-content: center; }
+}
+@media print { .says { display: none; } }
