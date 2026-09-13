@@ -1570,3 +1570,25 @@
 
   setMode();
 })();
+
+
+// ---- 004 Match Cut (home) ---------------------------------------------------
+// Muted and looping, and it plays only while it is on screen: nothing loads
+// until it comes near, and it stops the moment it leaves. Visitors who ask for
+// reduced motion get the poster and the controls instead of an autoplay.
+(function () {
+  var v = document.querySelector('.mc__video'); if (!v) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) { v.controls = true; return; }
+  new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting && e.intersectionRatio >= 0.35) {
+        if (v.preload !== 'auto') v.preload = 'auto';
+        var p = v.play();
+        if (p && p.catch) p.catch(function () { v.controls = true; });
+      } else if (!v.paused) {
+        v.pause();
+      }
+    });
+  }, { threshold: [0, 0.35, 0.6] }).observe(v);
+})();

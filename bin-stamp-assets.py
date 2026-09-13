@@ -10,6 +10,7 @@ Covers four reference shapes, because a URL this script misses is a URL that
 can go stale behind an immutable header:
 
   src="assets/..."           in the HTML pages
+  poster="assets/..."        video posters
   href="/assets/..."         root-relative refs (the LCP preload)
   srcset="a 640w, b 1280w"   responsive posters
   url("assets/...")          backgrounds in the stylesheet
@@ -54,7 +55,7 @@ def process(text, missing):
             n += 1
         return f'{m.group(1)}="{new}"'
 
-    text = re.sub(r'\b(src|href)="(/?assets/[^"]+)"', attr, text)
+    text = re.sub(r'\b(src|href|poster)="(/?assets/[^"]+)"', attr, text)
 
     def srcset(m):
         nonlocal n
