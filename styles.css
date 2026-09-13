@@ -1957,15 +1957,17 @@ body.is-locked { overflow: hidden; }
 /* ---- gate (desktop) ---------------------------------------------------- */
 .os-is-gate {
   --os-r: var(--card);
-  /* Scroll distance per frame. 46vh, not 64: nine long stretches read as slow,
+  /* Scroll distance per frame, scaled so the whole pin stays the length of nine
+     frames at 46vh however many frames there are (--os-n is set by
+     bin-build-onset.py). 46vh, not 64: nine long stretches read as slow,
      and the site's timeline sizes each clip by section height, so a long pin
      also swallows the minimap. */
-  --os-step: calc(46 * var(--os-vh));
+  --os-step: calc(46 * 9 / var(--os-n, 9) * var(--os-vh));
   --os-railw: clamp(8.5rem, 15vw, 14rem); /* rail + its gap */
   --os-gap: clamp(1.5rem, 3vw, 3rem);
-  height: calc(100 * var(--os-vh) + 9 * var(--os-step));
+  height: calc(100 * var(--os-vh) + var(--os-n, 9) * var(--os-step));
 }
-@media (pointer: coarse) { .os-is-gate { --os-step: calc(40 * var(--os-vh)); } }
+@media (pointer: coarse) { .os-is-gate { --os-step: calc(40 * 9 / var(--os-n, 9) * var(--os-vh)); } }
 
 /* Sticky is only safe because nothing between here and the viewport scrolls:
    .section has no overflow, and body's overflow-x propagates to the viewport. */

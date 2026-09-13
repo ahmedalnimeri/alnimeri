@@ -37,9 +37,13 @@ After touching the tiles in `index.html`, regenerate everything that derives fro
 
 ```sh
 python3 bin-build-work-pages.py && python3 bin-build-edl.py && python3 bin-build-about-strip.py \
+  && python3 bin-build-onset.py \
   && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-reel.py \
   && python3 bin-stamp-assets.py
 ```
+
+`bin-build-onset.py` renders About section 006 (On Set) from `assets/onset.json`: frame count, year span,
+ticks and pin length are derived from the list. `grade SRC NAME [GRAVITY]` makes the 1200 and 700 frames.
 
 `bin-build-reel.py` compiles the film list and `reel.tpl.html` into `functions/_lib/reel.js`,
 which the `/reel/<code>` function renders at the edge. It also reads the `?v=` numbers, so run it

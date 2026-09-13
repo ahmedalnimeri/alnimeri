@@ -1,0 +1,58 @@
+{
+ "frames": [
+  {
+   "name": "2016-rolling",
+   "year": 2016,
+   "label": "In front of the lens",
+   "alt": "Behind the scenes, 2016: in front of the lens"
+  },
+  {
+   "name": "2016-profile",
+   "year": 2016,
+   "label": "Profile",
+   "alt": "Behind the scenes, 2016: profile"
+  },
+  {
+   "name": "2016-first",
+   "year": 2016,
+   "label": "Last light",
+   "alt": "Behind the scenes, 2016: last light"
+  },
+  {
+   "name": "2020-monitor",
+   "year": 2020,
+   "label": "On the monitor",
+   "alt": "Behind the scenes, 2020: on the monitor"
+  },
+  {
+   "name": "2020-crew",
+   "year": 2020,
+   "label": "Crew",
+   "alt": "Behind the scenes, 2020: crew"
+  },
+  {
+   "name": "2022-studio",
+   "year": 2022,
+   "label": "Studio",
+   "alt": "Behind the scenes, 2022: studio"
+  },
+  {
+   "name": "2022-body",
+   "year": 2022,
+   "label": "The body",
+   "alt": "Behind the scenes, 2022: the body"
+  },
+  {
+   "name": "2022-listening",
+   "year": 2022,
+   "label": "Listening",
+   "alt": "Behind the scenes, 2022: listening"
+  },
+  {
+   "name": "2023-set",
+   "year": 2023,
+   "label": "The set",
+   "alt": "Behind the scenes, 2023: the set"
+  }
+ ]
+}
