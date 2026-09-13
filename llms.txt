@@ -16,7 +16,8 @@ https://alnimeri.com/work/token-supercycle
 
 Key pages:
 - Selected work with verifiable view counts: https://alnimeri.com/
-- CV, full credits and experience: https://alnimeri.com/about
+- CV, full credits and experience: https://alnimeri.com/cv
+- About, behind the scenes and what audiences say: https://alnimeri.com/about
 - Machine-readable cut list of the selects: https://alnimeri.com/selects.edl
 - Contact: ahmed@alnimeri.com
 

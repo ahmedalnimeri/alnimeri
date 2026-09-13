@@ -67,11 +67,13 @@ strip = f'''
 
 page = open('about.html').read()
 page = re.sub(r'\n *<!-- Frames from his own films[\s\S]*?</section>\n', '\n', page)
-anchor = '''    <p class="pagehead__act"><a class="btn btn--ghost" href="assets/Ahmed_ElNimeri_CV.pdf?h=15dd1130">Download CV (PDF)</a></p>
-  </section>
-'''
-if anchor not in page:
-    sys.exit('pagehead anchor not found')
-page = page.replace(anchor, anchor + strip, 1)
+# The strip follows the opening plate. Anchor on that section's own close, not
+# on the contents of its last paragraph: those change (a CV link, a re-hashed
+# PDF), and an exact-text anchor then fails silently on every rebuild.
+m = re.search(r'<section class="pagehead pagehead--plate">[\s\S]*?\n  </section>\n', page)
+if not m:
+    sys.exit('opening plate section not found')
+page = page[:m.end()] + strip + page[m.end():]
+assert page.count('<section class="reel"') == 1, 'strip not written exactly once'
 open('about.html', 'w').write(page)
 print(f'about strip: {len(frames)} frames — ' + ', '.join(html.unescape(f['title']) for f in frames))

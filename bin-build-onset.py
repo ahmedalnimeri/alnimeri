@@ -114,7 +114,7 @@ def build():
         a = sec.index('    <div class="os-stage"')
         new = sec[:a] + block + '  '
     yrs = [f['year'] for f in frames]
-    new, k = re.subn(r'(<span class="slate__meta">006 &middot; )\d+ frames &middot; \d{4}&ndash;\d{4}(</span>)',
+    new, k = re.subn(r'(<span class="slate__meta">\d{3} &middot; )\d+ frames &middot; \d{4}&ndash;\d{4}(</span>)',
                      lambda m: f'{m.group(1)}{len(frames)} frames &middot; {min(yrs)}&ndash;{max(yrs)}{m.group(2)}', new, count=1)
     assert k == 1, 'slate meta not found'
     out = page[:s] + new + page[e:]

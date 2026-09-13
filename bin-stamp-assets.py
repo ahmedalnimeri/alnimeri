@@ -19,7 +19,7 @@ Run this after touching anything under assets/.
 """
 import re, hashlib, os, sys
 
-PAGES = ("index.html", "about.html", "privacy.html", "404.html")
+PAGES = ("index.html", "about.html", "cv.html", "privacy.html", "404.html")
 SHEETS = ("styles.css",)
 
 # Favicons and the Apple touch icon: Google and iOS cache these by URL, and a

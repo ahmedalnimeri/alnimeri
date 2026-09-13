@@ -8,7 +8,7 @@ already derived from index.html, so the sitemap should be too.
 import os, glob, datetime
 
 TODAY = datetime.date.today().isoformat()
-FIXED = [('/', '1.0', 'monthly'), ('/about', '0.8', 'monthly'),
+FIXED = [('/', '1.0', 'monthly'), ('/about', '0.8', 'monthly'), ('/cv', '0.8', 'monthly'),
          ('/work/', '0.7', 'monthly'), ('/privacy', '0.2', 'yearly')]
 
 urls = [(p, pr, cf) for p, pr, cf in FIXED]

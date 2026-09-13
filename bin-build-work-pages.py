@@ -103,6 +103,7 @@ HEAD = '''<!doctype html>
   <nav class="masthead__nav" aria-label="Primary">
     <a href="/">Work</a>
     <a href="/about">About</a>
+    <a href="/cv">CV</a>
     <a class="btn btn--solid" href="/#contact">Get in touch</a>
   </nav>
 </header>

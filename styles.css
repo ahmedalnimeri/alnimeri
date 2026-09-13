@@ -146,6 +146,7 @@ a { color: inherit; }
      section is already at the foot of the page they're scrolling. */
   .masthead__nav a:not(.btn) { display: none; }
   .masthead__nav a[href="/about"]:not([aria-current]),
+  .masthead__nav a[href="/cv"]:not([aria-current]),
   .masthead__nav a[href="./"] {
     display: inline-flex; align-items: center;
     padding: 0.72rem 1.3rem;
