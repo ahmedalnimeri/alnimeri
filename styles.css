@@ -1444,8 +1444,10 @@ body.is-locked { overflow: hidden; }
 .reel::before { top: 0; } .reel::after { bottom: 0; }
 
 .reel__track {
-  display: grid; grid-auto-flow: column;
-  grid-auto-columns: minmax(260px, 1fr);
+  /* Every film, one row: gates share a height, the width follows the film
+     (16:9, or the front page's 3:4 for verticals). */
+  --reel-h: clamp(146px, 12.5vw, 236px);
+  display: flex;
   gap: 3px;
   overflow-x: auto; overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
@@ -1456,6 +1458,7 @@ body.is-locked { overflow: hidden; }
 
 .reel__frame {
   position: relative; display: block; scroll-snap-align: start;
+  flex: none; height: var(--reel-h);
   aspect-ratio: 16 / 9; overflow: hidden;
   background: #000; text-decoration: none;
   border: 1px solid var(--line-soft);
@@ -1495,7 +1498,15 @@ body.is-locked { overflow: hidden; }
     }
   }
 }
-@media (max-width: 560px) { .reel__track { grid-auto-columns: minmax(230px, 78vw); } }
+.reel__frame--tall { aspect-ratio: 3 / 4; }
+/* Seventeen films run well past the screen. Touch and trackpads scroll it as
+   is; a mouse needs a bar to grab, so show a thin one where the pointer is fine. */
+@media (hover: hover) and (pointer: fine) {
+  .reel__track { scrollbar-width: thin; scrollbar-color: var(--line) transparent; padding-bottom: 10px; }
+  .reel__track::-webkit-scrollbar { display: block; height: 6px; }
+  .reel__track::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+}
+@media (max-width: 560px) { .reel__track { --reel-h: min(44vw, 236px); } }
 
 
 /* ---- About: one plate behind the opening -------------------------------- */
