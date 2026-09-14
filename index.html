@@ -29,7 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/poppins-600.woff2" crossorigin>
 <link rel="preload" as="image" href="/assets/posters/843280565.jpg?h=416adb93" fetchpriority="high">
 <link rel="preconnect" href="https://player.vimeo.com">
-<link rel="stylesheet" href="styles.css?v=85">
+<link rel="stylesheet" href="styles.css?v=86">
 <script type="application/ld+json">{
   "@context": "https://schema.org",
   "@graph": [
@@ -911,22 +911,33 @@
     </div>
   </section>
 
-  <section class="section" id="matchcut">
+  <section class="section mcbg" id="matchcut">
+    <div class="mcbg__media" aria-hidden="true">
+      <video class="mcbg__video mcbg__video--wide" muted loop playsinline preload="none"
+             poster="assets/matchcut/poster-wide-720.jpg?h=f46b1692" width="1280" height="720">
+        <source src="assets/matchcut/match-cut-wide-720.mp4?h=1419c61c" type="video/mp4">
+      </video>
+      <video class="mcbg__video mcbg__video--tall" muted loop playsinline preload="none"
+             poster="assets/matchcut/poster-720.jpg?h=1995f84a" width="720" height="1280">
+        <source src="assets/matchcut/match-cut-720.mp4?h=cad44209" type="video/mp4">
+      </video>
+    </div>
     <div class="slate">
       <span class="slate__tc" data-tc>TC 38:00:00</span>
       <h2 class="slate__title">Match Cut</h2>
       <span class="slate__meta">004 &middot; 18 frames &middot; 1998&ndash;2026</span>
     </div>
-    <figure class="mc reveal">
-      <div class="mc__frame">
-        <video class="mc__video" muted loop playsinline preload="none"
-               poster="assets/matchcut/poster-720.jpg?h=1995f84a" width="720" height="1280"
-               aria-label="Match cut of one face, 1998 to 2026: eighteen photographs locked on the eyes">
-          <source src="assets/matchcut/match-cut-720.mp4?h=cad44209" type="video/mp4">
-        </video>
+    <div class="mcbg__body">
+      <div class="mcbg__col">
+        <p class="mcbg__lede">One face, 1998 to 2026. <span>Eighteen photographs, locked on the eyes.</span></p>
+        <div class="mcbg__cta">
+          <a class="btn btn--solid" href="#contact">Get in touch</a>
+          <a class="btn btn--ghost" href="/work/">Watch the work</a>
+          <a class="btn btn--ghost" href="/cv">Read the CV</a>
+        </div>
+        <button class="mcbg__toggle" type="button">Pause the cut</button>
       </div>
-      <figcaption class="mc__cap"><span>1998 &rarr; 2026</span><span>18 photographs, locked on the eyes</span><span>0:20</span></figcaption>
-    </figure>
+    </div>
   </section>
 
   <section class="contact" id="contact">
@@ -964,7 +975,7 @@
   <p class="lb__cap"></p>
 </div>
 
-<script src="main.js?v=85" defer></script>
+<script src="main.js?v=86" defer></script>
 <!-- Cloudflare Web Analytics -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "031672bac7b743a990b8dfcf074f7a38"}'></script>
 <!-- End Cloudflare Web Analytics -->

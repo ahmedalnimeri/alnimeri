@@ -1577,18 +1577,30 @@
 // until it comes near, and it stops the moment it leaves. Visitors who ask for
 // reduced motion get the poster and the controls instead of an autoplay.
 (function () {
-  var v = document.querySelector('.mc__video'); if (!v) return;
+  // Match Cut as the section's ground: play the render that fits the screen
+  // (landscape or vertical) only while the section is in view; a visible
+  // control pauses it, and reduced motion starts it paused.
+  var sec = document.querySelector('.mcbg'); if (!sec) return;
+  var vids = [].slice.call(sec.querySelectorAll('.mcbg__video'));
+  var btn = sec.querySelector('.mcbg__toggle');
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce || !('IntersectionObserver' in window)) { v.controls = true; return; }
-  new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) {
-      if (e.isIntersecting && e.intersectionRatio >= 0.35) {
+  var held = !!reduce, inView = false;
+  function label() { if (btn) btn.textContent = held ? 'Play the cut' : 'Pause the cut'; }
+  function sync() {
+    vids.forEach(function (v) {
+      var shown = window.getComputedStyle(v).display !== 'none';
+      if (shown && inView && !held) {
         if (v.preload !== 'auto') v.preload = 'auto';
-        var p = v.play();
-        if (p && p.catch) p.catch(function () { v.controls = true; });
-      } else if (!v.paused) {
-        v.pause();
-      }
+        var p = v.play(); if (p && p.catch) p.catch(function () { held = true; label(); });
+      } else if (!v.paused) { v.pause(); }
     });
-  }, { threshold: [0, 0.35, 0.6] }).observe(v);
+  }
+  if (btn) btn.addEventListener('click', function () { held = !held; label(); sync(); });
+  label();
+  window.addEventListener('resize', sync);
+  if (!('IntersectionObserver' in window)) { inView = true; sync(); return; }
+  new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { inView = e.isIntersecting && e.intersectionRatio >= 0.2; });
+    sync();
+  }, { threshold: [0, 0.2, 0.5] }).observe(sec);
 })();

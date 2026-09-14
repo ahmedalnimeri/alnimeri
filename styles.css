@@ -2128,27 +2128,61 @@ body.is-locked { overflow: hidden; }
 }
 
 /* =========================================================================
-   004 MATCH CUT (home) — the last thing before Contact.
-   The frame is sized by width and holds the film's 9:16 exactly, and the video
-   is contained, never covered: Ahmed asked for nothing in these photographs to
-   be cropped, and a covering fit would crop them again at odd window sizes.
+   004 MATCH CUT (home) — the last thing before Contact, as a background.
+   Ahmed: "shouldn't be as a video but more of a background with buttons".
+   Nothing in these photographs may be cropped, so each screen gets a render
+   whose shape it can show whole: landscape behind the section on desktop,
+   the vertical cut in the flow on phones.
    ========================================================================= */
-.mc { margin: 0 auto; max-width: 1320px; display: flex; flex-direction: column; align-items: center; }
-.mc__frame {
-  /* Height is the screen less the page chrome: the slate above, and the timeline
-     pill and the reel bin fixed along the bottom of the home page, which would
-     otherwise sit over the foot of the film when the section arrives. */
-  --mc-h: min(1280px, max(360px, calc(89vh - 15rem)));
-  position: relative; width: min(100%, calc(var(--mc-h) * 9 / 16)); aspect-ratio: 9 / 16;
-  border-radius: var(--card); overflow: hidden; background: #141116;
+.mcbg { display: flex; flex-direction: column; min-height: 56.25vw; overflow: hidden; }
+.mcbg > .slate { width: 100%; }
+/* On the landscape ground the meta would sit on the photographs, and the lede
+   already says it; the vertical layout keeps it. */
+@media (min-width: 761px) and (min-aspect-ratio: 4/5) { .mcbg > .slate .slate__meta { display: none; } }
+/* The cut is the section's ground. Desktop gets the landscape render: every
+   photograph whole, right of centre, so the dark band on the left carries the
+   words and buttons. A 16:9 section never crops it. */
+.mcbg__media { position: absolute; inset: 0; z-index: -1; background: #141116; }
+.mcbg__media::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(10,10,12,0.94) 0%, rgba(10,10,12,0.86) 30%, rgba(10,10,12,0) 45%),
+    linear-gradient(to bottom, var(--bg) 0%, rgba(10,10,12,0) 9%, rgba(10,10,12,0) 91%, var(--bg) 100%);
 }
-@supports (height: 1svh) { .mc__frame { --mc-h: min(1280px, max(360px, calc(89svh - 15rem))); } }
-.mc__video { display: block; width: 100%; height: 100%; object-fit: contain; }
-.mc__cap {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 1.4rem; margin-top: 1rem;
-  font-family: var(--mono); font-size: 0.62rem; line-height: 1.4; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--fg-faint);
+.mcbg__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 50%; }
+.mcbg__video--tall { display: none; }
+.mcbg__body {
+  position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center;
+  width: 100%; max-width: 1320px; margin: 0 auto;
 }
-.mc__cap span:first-child { color: var(--fg); }
-@media (max-width: 560px) { .mc__cap { font-size: 0.56rem; } }
-@media print { .mc { display: none; } }
+.mcbg__col { max-width: min(34rem, 38vw); }
+.mcbg__lede { margin: 0; font-size: clamp(1.05rem, 1.5vw, 1.35rem); line-height: 1.5; color: var(--fg); }
+.mcbg__lede span { color: var(--fg-dim); }
+.mcbg__cta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: clamp(1.5rem, 4vh, 2.25rem); }
+.mcbg__toggle {
+  margin-top: 1.25rem; padding: 0.35rem 0; background: none; border: 0; cursor: pointer;
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.mcbg__toggle:hover, .mcbg__toggle:focus-visible { color: var(--fg); }
+/* Phones and portrait screens: the vertical cut, whole, in the flow; the words
+   and buttons sit in its dark band below the last photograph. */
+@media (max-width: 760px), (max-aspect-ratio: 4/5) {
+  .mcbg { min-height: 0; }
+  .mcbg__media {
+    --mcw: min(100vw, 48vh);
+    position: relative; inset: auto; z-index: 0; align-self: center;
+    width: var(--mcw); aspect-ratio: 9 / 16;
+  }
+  @supports (height: 1svh) { .mcbg__media { --mcw: min(100vw, 48svh); } }
+  .mcbg__media::after {
+    background: linear-gradient(to bottom, var(--bg) 0%, rgba(10,10,12,0) 8%, rgba(10,10,12,0) 84%, var(--bg) 100%);
+  }
+  .mcbg__video--wide { display: none; }
+  .mcbg__video--tall { display: block; object-position: 50% 50%; }
+  .mcbg__body { z-index: 1; margin-top: calc(var(--mcw) * -0.1778); }
+  .mcbg__col { max-width: none; }
+  /* the slate leads, then the cut */
+  .mcbg > .slate { order: -1; }
+}
+@media print { .mcbg__media, .mcbg__toggle { display: none; } }
