@@ -26,7 +26,6 @@ const BOT   = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|l
 // Dubai's. Rendered here at the edge so nothing waits on JavaScript; the
 // script only keeps the clocks ticking. Crawlers and visitors Cloudflare
 // cannot place get the page exactly as authored.
-const ARABIC = new Set(['AE','SA','EG','SD','OM','QA','KW','BH','JO','LB','MA','TN','DZ','LY','IQ','SY','YE','PS','MR']);
 const HTML_PATH = /^\/(about|index\.html)?$/;
 
 function clock(tz) {
@@ -85,17 +84,15 @@ function screening(cf, request) {
     }
   }
 
-  // Browser language → one word of greeting, unless the Arabic line applies.
-  const ar = ARABIC.has(cc);
+  // Browser language → one word of greeting.
   const lang = (request.headers.get('Accept-Language') || '').split(',')[0].trim().toLowerCase().split('-')[0];
-  const greet = (!ar && lang !== 'en' && GREET[lang]) ? GREET[lang] : null;
-  const arLang = !ar && lang === 'ar';
+  const greet = (lang !== 'en' && GREET[lang]) ? GREET[lang] : null;
 
   // Screening number: one anonymous first-party cookie, a counter and nothing else.
   const m = /(?:^|;\s*)scr=(\d{1,3})(?:;|$)/.exec(request.headers.get('Cookie') || '');
   const seen = Math.min(999, (m ? Number(m[1]) : 0) + 1);
 
-  return { city: cf.city, cc, tz: cf.timezone, local, dubai, reply, ar: ar || arLang, home,
+  return { city: cf.city, cc, tz: cf.timezone, local, dubai, reply, home,
            km, source, start, greet, seen };
 }
 
@@ -113,8 +110,7 @@ function personalise(res, sc) {
     (sc.km ? `<span class="screening__sep">·</span><span><b>${sc.km.toLocaleString('en-GB')}</b> km from Dubai</span>` : '') +
     (sc.source ? `<span class="screening__sep">·</span><span>via ${esc(sc.source)}</span>` : '') +
     (sc.seen > 1 ? `<span class="screening__sep">·</span><span>Welcome back</span>` : '') +
-    (sc.ar ? `<span class="screening__sep">·</span><span lang="ar" dir="rtl" class="screening__ar">أهلاً — العربية متاحة</span>`
-     : sc.greet ? `<span class="screening__sep">·</span><span class="screening__ar">${esc(sc.greet)}</span>` : '') +
+    (sc.greet ? `<span class="screening__sep">·</span><span class="screening__ar">${esc(sc.greet)}</span>` : '') +
     `</p>`;
   const start = sc.start
     ? `<p class="hero__start">Came in from ${esc(sc.source)}? <a href="${esc(sc.start.href)}">Start with ${esc(sc.start.label)} &rarr;</a></p>`
@@ -126,7 +122,7 @@ function personalise(res, sc) {
         `<b data-clock="local">${sc.local}</b> in ${esc(sc.city)}. ${sc.reply}</span>`);
 
   const out = new HTMLRewriter()
-    .on('html', { element(e) { e.setAttribute('data-screening', sc.ar ? 'ar' : 'on'); } })
+    .on('html', { element(e) { e.setAttribute('data-screening', 'on'); } })
     .on('p.hero__eyebrow', { element(e) { e.after(slate, { html: true }); } })
     .on('p.contact__sub', { element(e) { e.append(contact, { html: true }); } })
     .on('div.hero__cta', { element(e) { if (start) e.after(start, { html: true }); } })
