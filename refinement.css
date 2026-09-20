@@ -1,0 +1,59 @@
+/* Homepage refinement: a film-led opening with clearer professional paths. */
+@media screen {
+  .hero--editorial { --matte: 0px; min-height: 0; display: grid; grid-template-columns: 1.06fr 1fr; gap: 5%; text-align: left; align-items: center; padding: 145px var(--gut) 65px; background: #0a0a0c; }
+  .hero--editorial::before, .hero--editorial::after { display: none; }
+  .hero__copy { min-width: 0; }
+  .hero--editorial .hero__eyebrow { margin-bottom: 24px; font-size: 11px; letter-spacing: .13em; color: #fff; }
+  .hero__eyebrow span { display: block; color: #a5a3ad; font-size: 10px; margin-top: 8px; }
+  .hero--editorial .hero__name { font-size: clamp(38px, 4.5vw, 72px); max-width: 15ch; line-height: 1.08; letter-spacing: -.055em; }
+  .hero--editorial .hero__name em { color: #aaa79d; }
+  .hero--editorial .hero__lede { margin: 24px 0 0; max-width: 43ch; font-size: 14px; line-height: 1.8; }
+  .hero--editorial .hero__cta { justify-content: flex-start; margin-top: 26px; gap: 10px; }
+  .hero--editorial .hero__cta .btn { font-size: 12px; padding: 13px 20px; }
+  .hero__career { font-size: 10px; line-height: 2; color: #99979f; margin: 24px 0 0; }
+  .hero__career a { color: #ddd; text-decoration: none; border-bottom: 1px solid #555; padding-bottom: 3px; }
+  .hero__feature { position: relative; display: block; height: 490px; overflow: hidden; color: #fff; border-radius: 3px; text-decoration: none; background: #18181a; }
+  .hero__feature img { width: 100%; height: 100%; object-fit: cover; object-position: 55% center; }
+  .hero__feature::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #0006, transparent 35%, #000b); pointer-events: none; }
+  .hero__feature-top, .hero__feature-bottom { position: absolute; z-index: 1; left: 26px; right: 26px; display: flex; justify-content: space-between; }
+  .hero__feature-top { top: 24px; text-transform: uppercase; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; }
+  .hero__feature-bottom { bottom: 26px; align-items: flex-end; }
+  .hero__feature-bottom small { display: block; font: 9px var(--mono); letter-spacing: .12em; }
+  .hero__feature-bottom strong { display: block; font-size: 30px; letter-spacing: -.04em; margin-top: 6px; }
+  .hero__play { border: 1px solid #ffffff80; border-radius: 50%; width: 45px; height: 45px; display: grid; place-items: center; font-size: 22px; }
+  .hero__feature:hover .hero__play { background: white; color: black; }
+  .hero__feature:focus-visible { outline: 3px solid #fff; outline-offset: 5px; }
+  .marquee { padding-top: 24px; padding-bottom: 24px; border-block: 1px solid var(--line-soft); }
+  #numbers { padding-top: 36px; padding-bottom: 36px; }
+  #numbers .slate { display: none; }
+  #numbers .stats b { font-size: clamp(28px, 3.2vw, 48px); }
+  #numbers .stats span { font-size: 11px; }
+  #work { padding-top: 35px; }
+  #work .slate { margin-bottom: 18px; flex-wrap: wrap; }
+  #work .slate__title { font-size: clamp(28px, 3.4vw, 44px); }
+  .work__intro { max-width: 1320px; margin: 0 auto 32px; color: var(--fg-dim); font-size: 13px; }
+  #work .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 24px; }
+  #work .tile--wide { grid-column: auto; }
+  #work .tile--tall { grid-row: auto; }
+  #work .tile__link { aspect-ratio: 16 / 10; border-radius: 4px; }
+  #work .tile__img { height: 100%; width: 100%; object-fit: cover; filter: none; animation: none; }
+  #work .tile__meta { padding-top: 16px; }
+  .contact__head { font-size: clamp(36px, 5.4vw, 76px); line-height: 1.1; letter-spacing: -.045em; }
+  @media (min-width: 1500px) { .hero--editorial { padding-inline: max(var(--gut), calc((100vw - 1320px) / 2)); } }
+  @media (max-width: 760px) {
+    .hero--editorial { grid-template-columns: 1fr; gap: 30px; padding-top: 110px; padding-bottom: 32px; }
+    .hero--editorial .hero__name { font-size: clamp(40px, 8vw, 58px); max-width: 16ch; }
+    .hero--editorial .hero__eyebrow { margin-bottom: 20px; }
+    .hero__feature { height: 340px; }
+    .hero__career { margin-top: 18px; }
+    #work .grid { gap: 30px 16px; }
+    #work .slate__run { margin-left: 0; max-width: 100%; white-space: normal; }
+  }
+  @media (max-width: 560px) {
+    #work .grid { grid-template-columns: 1fr; }
+    .hero__feature { height: 300px; }
+    .hero--editorial .hero__cta .btn { padding: 12px 16px; }
+    #numbers .stats { gap: 22px; }
+  }
+}
+@media print { .hero__feature, .hero__career { display: none; } }

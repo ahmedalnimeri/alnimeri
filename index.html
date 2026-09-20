@@ -483,6 +483,7 @@
     }
   ]
 }</script>
+<link rel="stylesheet" href="refinement.css">
 </head>
 <body>
 <a class="skip" href="#work">Skip to work</a>
@@ -499,22 +500,22 @@
 
 <main id="top">
 
-  <section class="hero">
-    <div class="hero__bg" data-bg-video="843280565" aria-hidden="true"></div>
-    <div class="hero__scrim" aria-hidden="true"></div>
-    <div class="hero__grain" aria-hidden="true"></div>
-    <p class="hero__eyebrow"><strong>Ahmed El-Nimeri</strong> — Storyteller, Director &amp; Video Producer, Dubai</p>
-    <h1 class="hero__name"><span class="shot shot--1">Some of it was a brief.</span> <em class="shot shot--2">Some of it was my country.</em></h1>
-    <p class="hero__lede">Eleven years of film — commercial, documentary, institutional. Currently
-      <strong>Associate Creative Director</strong> at 1000media, part of Nas Company.
-      English and Arabic. Based in Dubai; the work travels.</p>
-    <div class="hero__cta">
-      <a class="btn btn--solid" href="#work">Watch the work</a>
-      <a class="btn btn--ghost" href="https://vimeo.com/nimeri" target="_blank" rel="noopener">The rest is on Vimeo</a>
+  <section class="hero hero--editorial">
+    <div class="hero__copy">
+      <p class="hero__eyebrow">Ahmed El-Nimeri <span>Dubai · Working worldwide</span></p>
+      <h1 class="hero__name"><span class="shot shot--1">Some of it was a brief.</span> <em class="shot shot--2">Some of it was my country.</em></h1>
+      <p class="hero__lede">Director. Storyteller. Creative leader.<br>Eleven years of commercial and documentary film, from Sudan to the world.</p>
+      <div class="hero__cta">
+        <a class="btn btn--solid" href="#work">Explore the films <span aria-hidden="true">↘</span></a>
+        <a class="btn btn--ghost" href="#contact">Let’s work together</a>
+      </div>
+      <p class="hero__career">Associate Creative Director · 1000media / Nas Company<br><a href="/cv">Experience &amp; CV <span aria-hidden="true">↗</span></a></p>
     </div>
-    <!-- Frame one, parked. The zeros are static on purpose: the timecode
-         starts running in the HUD the moment you scroll. -->
-    <p class="burnin" aria-hidden="true"><span class="tl__rec"></span>A-ROLL 001 &middot; 00:00:00:00 &middot; 24 FPS</p>
+    <a class="hero__feature" href="/work/al-doroub" aria-label="Explore Al Doroub, a feature documentary">
+      <img src="assets/posters/843280565.jpg?h=416adb93" width="1280" height="720" alt="A moment from Al Doroub" fetchpriority="high">
+      <span class="hero__feature-top">A story worth staying for <span>01 / 17</span></span>
+      <span class="hero__feature-bottom"><span><small>FEATURE DOCUMENTARY · SUDAN</small><strong>Al Doroub</strong></span><span class="hero__play" aria-hidden="true">↗</span></span>
+    </a>
   </section>
 
   <section class="marquee" aria-label="Selected clients">
@@ -562,9 +563,10 @@
   <section class="section" id="work">
     <div class="slate">
       <span class="slate__tc" data-tc>TC 07:51:00</span>
-      <h2 class="slate__title">Selects</h2>
+      <h2 class="slate__title">Selected films</h2>
       <span class="slate__meta">002 &middot; 17 clips &middot; TRT 43:12</span>
     </div>
+    <p class="work__intro">Campaigns that travel. Stories that stay. A selection across brands, culture and documentary.</p>
     <!-- The SC/IN stamps below and the TRT in the slate are derived numbers:
      each IN is the running sum of the .tile__dur chips above it, in DOM
      order, and TRT is their total (43:12 across 17 films). Adding, removing
@@ -887,7 +889,7 @@
   <section class="section" id="about">
     <div class="slate">
       <span class="slate__tc" data-tc>TC 34:42:00</span>
-      <h2 class="slate__title">About</h2>
+      <h2 class="slate__title">Behind the work</h2>
       <span class="slate__meta">003</span>
     </div>
     <div class="about__grid">
@@ -900,7 +902,7 @@
           a million and two past a million. Before that, campaign and documentary work across Sudan
           and the Gulf.</p>
         <p class="about__body">I work in English and Arabic, and I travel.</p>
-        <p class="about__body"><a class="btn btn--ghost" href="/about">The long version</a></p>
+        <p class="about__body"><a class="btn btn--ghost" href="/about">My story</a> <a class="btn btn--ghost" href="/cv">Experience &amp; CV</a></p>
       </div>
       <dl class="facts card reveal" data-delay="120">
         <div><dt>Based</dt><dd>Dubai, United Arab Emirates — working worldwide</dd></div>
@@ -951,7 +953,7 @@
            width="1100" height="1295" loading="lazy" decoding="async">
       <p class="contact__head reveal">Send the brief.</p>
       <a class="contact__mail" href="mailto:ahmed@alnimeri.com">ahmed@alnimeri.com</a>
-      <p class="contact__sub reveal" data-delay="80">Commissions, collaborations, conversations &mdash; English or Arabic. I answer my own email.</p>
+      <p class="contact__sub reveal" data-delay="80">Film commissions, creative leadership opportunities, collaborations &mdash; English or Arabic. I answer my own email.</p>
       <nav class="contact__links" aria-label="Elsewhere">
         <a class="btn btn--ghost" href="https://vimeo.com/nimeri" rel="me noopener" target="_blank">Vimeo</a>
         <a class="btn btn--ghost" href="https://www.instagram.com/by_nimeri" rel="me noopener" target="_blank">Instagram</a>
