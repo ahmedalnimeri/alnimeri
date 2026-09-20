@@ -12,6 +12,7 @@ URLs are copied already-stamped, since bin-stamp-assets.py does not reach
 into this directory.
 """
 import re, os, json, html, sys
+from urllib.parse import urlencode, quote
 
 WORDS = {14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen',
          18: 'eighteen', 19: 'nineteen', 20: 'twenty'}
@@ -162,6 +163,8 @@ for i, f in enumerate(films):
             "interactionType": {"@type": kindword},
             "userInteractionCount": int(n)}
 
+    enquiry = html.escape("mailto:ahmed@alnimeri.com?" + urlencode({"subject": "Project enquiry — " + title_txt, "body": "Hi Ahmed,\n\nI saw " + title_txt + " on your website and would like to discuss a project.\n\nWhat we’re making:\nTiming and location:\nBudget range (if known):\n\nName / company:\n"}, quote_via=quote), quote=True)
+
     # the film itself
     if f['vid']:
         player = (f'<div class="film__frame{" film__frame--portrait" if f["portrait"] else ""}">'
@@ -215,6 +218,7 @@ for i, f in enumerate(films):
   <p class="film__note">One of {COUNT} films in the <a href="/">selected work</a> of Ahmed El-Nimeri,
     a film director and Associate Creative Director based in Dubai. Every figure on this site links
     to the published post it came from.</p>
+  <div class="film__note"><h2>Have a project in mind?</h2><p>Tell me what you’re making and when you need it. A few lines are enough.</p><a class="btn btn--solid" href="{enquiry}">Send the brief ↗</a></div>
   <nav class="film__nav" aria-label="Films">{''.join(nav)}</nav>
 </section>
 '''
