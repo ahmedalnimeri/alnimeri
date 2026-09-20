@@ -74,3 +74,11 @@
 .brief-guide p { font-size: 14px; color: var(--fg-dim); line-height: 1.8; }
 .brief-guide small { display: block; font-size: 11px; color: var(--fg-dim); margin-top: 15px; }
 @media(max-width:760px) { .commission__grid { grid-template-columns: 1fr; gap: 18px; } .commission { padding-bottom: 30px; } }
+
+/* Searchable project information, available without JavaScript. */
+.tile__name a { color: inherit; text-decoration: none; }
+.tile__name a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.project-questions details { border-bottom: 1px solid var(--line); padding: 20px 0; }
+.project-questions summary { cursor: pointer; font-size: 16px; line-height: 1.5; }
+.project-questions details p { max-width: 780px; color: var(--fg-dim); font-size: 14px; line-height: 1.8; margin-top: 16px; }
+.project-questions a { color: var(--fg); text-underline-offset: 3px; }

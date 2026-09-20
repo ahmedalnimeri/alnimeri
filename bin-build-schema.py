@@ -8,6 +8,7 @@ on the page.
 import re, json
 
 s = open('index.html').read()
+METADATA = json.load(open('assets/video-metadata.json'))
 
 def iso(d):
     p = [int(x) for x in d.split(':')]
@@ -15,12 +16,10 @@ def iso(d):
     return f"PT{m}M{sec}S"
 
 videos = []
-for m in re.finditer(r'<a class="tile__link"[^>]*?data-title="([^"]*)"', s, re.S):
-    title = m.group(1)
-    head  = s[max(0, m.start()-400):m.end()]
-    vm    = re.search(r'data-video="(\d+)"', m.group(0)) or re.search(r'data-video="(\d+)"', head)
-    vid   = vm.group(1) if vm else None
-    blk  = s[m.start():m.start()+1800]
+for blk in re.findall(r'<article class="tile[\s\S]+?</article>', s):
+    title = re.search(r'data-title="([^"]*)"', blk).group(1)
+    vm = re.search(r'data-video="(\d+)"', blk)
+    vid = vm.group(1) if vm else None
     dur  = re.search(r'tile__dur">([\d:]+)<', blk)
     kind = re.search(r'tile__kind">([^<]*)<', blk)
     stat = re.search(r'tile__stat" href="([^"]*)"', blk)
@@ -32,12 +31,14 @@ for m in re.finditer(r'<a class="tile__link"[^>]*?data-title="([^"]*)"', s, re.S
     kindtxt = (kind.group(1) if kind else '').replace('&amp;', '&').replace(' · ', ' — ')
     poster = re.search(r'src="assets/(posters/[^"?]+)', blk)
     v = {
-        "@type": "VideoObject",
+        "@type": "VideoObject" if vid else "Movie",
         "name": name,
         "description": f"{kindtxt} by Ahmed El-Nimeri." if kindtxt else "Film by Ahmed El-Nimeri.",
         "creator": {"@id": "https://alnimeri.com/#person"},
         "director": {"@id": "https://alnimeri.com/#person"},
     }
+    if vid:
+        v["uploadDate"] = METADATA[vid]["uploadDate"]
     if poster: v["thumbnailUrl"] = f"https://alnimeri.com/assets/{poster.group(1)}"
     # Only films with a Vimeo master can be embedded; the rest live on X only.
     if vid: v["embedUrl"] = f"https://player.vimeo.com/video/{vid}"
@@ -61,7 +62,7 @@ person = {
   "url": "https://alnimeri.com",
   "image": "https://alnimeri.com/assets/portrait/studio-1280.jpg",
   "email": "mailto:ahmed@alnimeri.com",
-  "jobTitle": "Storyteller, Director & Video Producer",
+  "jobTitle": "Film Director & Editor",
   "description": "Storyteller and film director in Dubai. Eleven years of commercial, documentary and institutional film.",
   "address": {"@type": "PostalAddress", "addressLocality": "Dubai", "addressCountry": "AE"},
   "nationality": {"@type": "Country", "name": "Sudan"},
@@ -86,11 +87,19 @@ graph = {"@context": "https://schema.org", "@graph": [
    "publisher": {"@id": "https://alnimeri.com/#person"}, "inLanguage": "en"},
   {"@type": "ProfilePage", "@id": "https://alnimeri.com/#page",
    "url": "https://alnimeri.com",
-   "name": "Ahmed El-Nimeri — Storyteller & Film Director",
+   "name": "Ahmed El-Nimeri | Film Director & Editor in Dubai",
    "isPartOf": {"@id": "https://alnimeri.com/#website"},
    "about": {"@id": "https://alnimeri.com/#person"},
    "mainEntity": {"@id": "https://alnimeri.com/#person"}},
-] + videos}
+] + [{"@type": "Service", "@id": "https://alnimeri.com/#service-" + key,
+      "name": name, "serviceType": name, "description": description,
+      "provider": {"@id": "https://alnimeri.com/#person"},
+      "url": "https://alnimeri.com/#services", "areaServed": "Dubai, UAE"}
+     for key, name, description in [
+       ("campaign", "Brand and campaign films", "Film direction, cinematography and editing for brands and agencies."),
+       ("documentary", "Documentary and institutional films", "Documentary filmmaking in English and Arabic, with experience across Sudan and the Gulf."),
+       ("post", "Creative direction and post-production", "Creative direction, editing, motion graphics, colour and sound. Fees quoted per project.")
+     ]] + videos}
 
 block = '<script type="application/ld+json">' + json.dumps(graph, ensure_ascii=False, indent=2) + '</script>'
 s = re.sub(r'<script type="application/ld\+json">.*?</script>', block, s, count=1, flags=re.S)

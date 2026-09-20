@@ -18,6 +18,7 @@ WORDS = {14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen',
          18: 'eighteen', 19: 'nineteen', 20: 'twenty'}
 
 SRC = open('index.html').read()
+METADATA = json.load(open('assets/video-metadata.json'))
 
 # Audience comments on the original posts, harvested by hand. Only what is in
 # this file is ever published, and only comments about the work itself — the
@@ -141,7 +142,7 @@ for i, f in enumerate(films):
 
     schema = {
         "@context": "https://schema.org",
-        "@type": "VideoObject",
+        "@type": "VideoObject" if f["vid"] else "Movie",
         "name": title_txt,
         "description": f"{kind} directed, shot and edited by Ahmed El-Nimeri.",
         "duration": iso_dur(f['dur']),
@@ -151,6 +152,7 @@ for i, f in enumerate(films):
         "director": {"@type": "Person", "name": "Ahmed El-Nimeri", "@id": "https://alnimeri.com/#person"},
     }
     if f['vid']:
+        schema['uploadDate'] = METADATA[f['vid']]['uploadDate']
         schema['embedUrl'] = f"https://player.vimeo.com/video/{f['vid']}"
     if f['statref']:
         schema['sameAs'] = f['statref']
@@ -242,7 +244,7 @@ idx_schema = {
     "name": "All films — Ahmed El-Nimeri",
     "url": "https://alnimeri.com/work/",
     "about": {"@id": "https://alnimeri.com/#person"},
-    "hasPart": [{"@type": "VideoObject", "name": html.unescape(f['title']),
+    "hasPart": [{"@type": "WebPage", "name": html.unescape(f['title']),
                  "url": f"https://alnimeri.com/work/{f['slug']}"} for f in films]}
 
 idx = (HEAD.format(title='All films', slug='', poster=films[0]['poster'].split('?')[0], ver=VER, mark=MARK,

@@ -1,28 +1,37 @@
 #!/usr/bin/env python3
-"""Regenerate sitemap.xml from what actually exists on disk.
+"""Build canonical sitemap URLs with page-specific modification dates.
 
-It was hand-maintained, which is the same trap the SC/IN stamps were in: add
-a film and the sitemap silently falls a URL behind. The film pages are
-already derived from index.html, so the sitemap should be too.
+Use committed page history, or filesystem mtime for a new/modified page.
+Rebuilding an unchanged sitemap must not claim all pages changed today.
 """
-import os, glob, datetime
+from pathlib import Path
+import datetime
+import subprocess
+from xml.sax.saxutils import escape
 
-TODAY = datetime.date.today().isoformat()
-FIXED = [('/', '1.0', 'monthly'), ('/about', '0.8', 'monthly'), ('/cv', '0.8', 'monthly'),
-         ('/work/', '0.7', 'monthly'), ('/privacy', '0.2', 'yearly')]
+ROOT = Path(__file__).resolve().parent
+pages = [('/', 'index.html'), ('/about', 'about.html'), ('/cv', 'cv.html'),
+         ('/work/', 'work/index.html'), ('/privacy', 'privacy.html')]
+pages += [(f'/work/{f.stem}', str(f.relative_to(ROOT)))
+          for f in sorted((ROOT / 'work').glob('*.html')) if f.stem != 'index']
 
-urls = [(p, pr, cf) for p, pr, cf in FIXED]
-urls += [(f"/work/{os.path.basename(f)[:-5]}", '0.6', 'yearly')
-         for f in sorted(glob.glob('work/*.html'))
-         if os.path.basename(f) != 'index.html']
+def lastmod(filename):
+    path = ROOT / filename
+    try:
+        dirty = subprocess.check_output(['git', 'status', '--porcelain', '--', filename], cwd=ROOT, text=True).strip()
+        if not dirty:
+            stamp = subprocess.check_output(['git', 'log', '-1', '--format=%cs', '--', filename], cwd=ROOT, text=True).strip()
+            if stamp:
+                return stamp
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    return datetime.datetime.fromtimestamp(path.stat().st_mtime, datetime.timezone.utc).date().isoformat()
 
-out = ['<?xml version="1.0" encoding="UTF-8"?>',
-       '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-for path, pr, cf in urls:
-    out += ['  <url>', f'    <loc>https://alnimeri.com{path}</loc>',
-            f'    <lastmod>{TODAY}</lastmod>',
-            f'    <changefreq>{cf}</changefreq>',
-            f'    <priority>{pr}</priority>', '  </url>']
+out = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+for url, filename in pages:
+    assert (ROOT / filename).is_file(), filename
+    out += ['  <url>', f'    <loc>https://alnimeri.com{escape(url)}</loc>',
+            f'    <lastmod>{lastmod(filename)}</lastmod>', '  </url>']
 out.append('</urlset>')
-open('sitemap.xml', 'w').write('\n'.join(out) + '\n')
-print(f'sitemap.xml: {len(urls)} URLs')
+(ROOT / 'sitemap.xml').write_text('\n'.join(out) + '\n')
+print(f'sitemap.xml: {len(pages)} canonical URLs')
