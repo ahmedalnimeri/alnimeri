@@ -366,7 +366,7 @@ idx_schema = {
     "hasPart": [{"@type": "WebPage", "name": html.unescape(f['title']),
                  "url": f"https://alnimeri.com/work/{f['slug']}"} for f in films]}
 
-idx = (HEAD.format(title='All films', slug='', poster=films[0]['poster'].split('?')[0], ver=VER, mark=MARK,
+idx = (HEAD.format(title='All films', slug='', poster='assets/og-work.jpg', ver=VER, mark=MARK,
                    desc=f'Every film by Ahmed El-Nimeri on this site — {COUNT} pieces, {TRT} total running time, each with its published view count and source.',
                    schema=json.dumps(idx_schema, ensure_ascii=False))
        .replace('<link rel="canonical" href="https://alnimeri.com/work/">',
