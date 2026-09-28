@@ -2186,3 +2186,37 @@ body.is-locked { overflow: hidden; }
   .mcbg > .slate { order: -1; }
 }
 @media print { .mcbg__media, .mcbg__toggle { display: none; } }
+
+/* ---------- /work/ index: browse by the kind of film ----------
+   A client arrives knowing what they need made. The list was text only, so
+   the only way to judge seventeen films was to open seventeen pages. */
+.filmcats { display: flex; flex-wrap: wrap; gap: 0.5rem 0.6rem; margin: 0 0 clamp(2rem, 5vh, 3rem); }
+.filmcats a {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.9rem; border: 1px solid var(--line); border-radius: var(--pill);
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-dim); text-decoration: none;
+}
+.filmcats a:hover, .filmcats a:focus-visible { color: var(--fg); background: rgba(255,255,255,0.07); }
+.filmcats span { color: var(--fg-faint); }
+.filmcat { margin: 0 0 clamp(2.5rem, 6vh, 4rem); scroll-margin-top: 6rem; }
+.filmcat__head {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem 0.9rem;
+  margin: 0 0 1.25rem; padding-top: 0.7rem; border-top: 1px solid var(--line);
+  font-size: clamp(1.05rem, 2vw, 1.45rem); letter-spacing: -0.02em; font-weight: 600;
+}
+.filmcat__head span { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint); font-weight: 400; }
+.filmcards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 1.6rem 1.25rem; }
+.filmcard a { display: block; color: inherit; text-decoration: none; }
+.filmcard img {
+  /* height: auto matters — the width/height attributes act as a style hint,
+     and without it the attribute height wins over the aspect ratio. */
+  display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover;
+  border: 1px solid var(--line-soft); border-radius: 3px; background: #000;
+  filter: grayscale(1) contrast(1.04); transition: filter calc(var(--f) * 8) steps(8, end);
+}
+.filmcard a:hover img, .filmcard a:focus-visible img { filter: none; }
+.filmcard__name { display: block; margin-top: 0.7rem; font-size: 0.95rem; letter-spacing: -0.01em; }
+.filmcard a:hover .filmcard__name { text-decoration: underline; text-underline-offset: 4px; }
+.filmcard__meta { display: block; margin-top: 0.3rem; font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-faint); }
+@media (max-width: 560px) { .filmcards { grid-template-columns: 1fr; } }

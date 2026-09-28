@@ -57,6 +57,7 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
         'statref': field(b, r'tile__stat"[^>]*href="([^"]+)"'),
         'href':    field(b, r'class="tile__link" href="([^"]+)"'),
         'poster':  field(b, r'src="(assets/posters/[^"]+)"'),
+        'srcset':  field(b, r'srcset="([^"]+)"'),
         'alt':     field(b, r'alt="([^"]+)"'),
         'portrait': field(b, r'data-portrait="(\w+)"') == 'true',
     })
@@ -231,12 +232,62 @@ for i, f in enumerate(films):
     open(f"work/{f['slug']}.html", 'w').write(page)
 
 # ---- the index -----------------------------------------------------------
-rows = ''.join(
-    f'''<li class="filmlist__item"><a href="/work/{f['slug']}">
-      <span class="filmlist__idx">{f['idx']}</span>
-      <span class="filmlist__name">{f['title']}</span>
-      <span class="filmlist__kind">{f['kind']}</span>
-      <span class="filmlist__dur">{f['dur']}</span></a></li>''' for f in films)
+# A client arrives knowing the KIND of film they need. The index groups the
+# work the same way the commission cards on the front page do, server-rendered
+# so it works without JavaScript and every group is its own indexable anchor.
+CATEGORIES = [
+    ('brand',       'Brand &amp; campaign films',     ('Campaign film', 'Brand film', 'Explainer')),
+    ('events',      'Event &amp; conference films',   ('Event promo', 'Event film')),
+    ('documentary', 'Documentary &amp; human stories',('Documentary', 'Feature documentary')),
+    ('motion',      'Motion, animation &amp; post',   ('Animation', 'Motion graphics', 'Visuals')),
+]
+
+def category_of(kind):
+    k = html.unescape(kind).lower()
+    for cid, _label, needles in CATEGORIES:
+        if any(n.lower() in k for n in needles):
+            return cid
+    return 'brand'
+
+def rooted(url):
+    """Tiles on the front page use relative asset URLs; inside /work/ those
+    resolve to /work/assets/... and 404. Root them."""
+    u = url.strip()
+    return u if u.startswith(('/', 'http')) else '/' + u
+
+def rooted_srcset(ss):
+    out = []
+    for cand in ss.split(','):
+        parts = cand.strip().split(' ')
+        if not parts or not parts[0]:
+            continue
+        out.append(rooted(parts[0]) + (' ' + ' '.join(parts[1:]) if len(parts) > 1 else ''))
+    return ', '.join(out)
+
+def card(f):
+    alt = html.escape(html.unescape(f['title']), quote=True)
+    img = ''
+    if f['srcset']:
+        img = ('<img srcset="' + rooted_srcset(f['srcset']) + '" sizes="(max-width: 560px) 92vw, (max-width: 900px) 46vw, 31vw"'
+               ' src="' + rooted(f['poster']) + '" alt="Still from ' + alt + '"'
+               ' width="1280" height="720" loading="lazy" decoding="async">')
+    stat = (' &middot; ' + f['stat']) if f['stat'] else ''
+    return ('<li class="filmcard"><a href="/work/' + f['slug'] + '">' + img
+            + '<span class="filmcard__name">' + f['title'] + '</span>'
+            + '<span class="filmcard__meta">' + f['kind'] + ' &middot; ' + f['dur'] + stat + '</span></a></li>')
+
+groups = {cid: [f for f in films if category_of(f['kind']) == cid] for cid, _l, _n in CATEGORIES}
+nav = ''.join('<a href="#' + cid + '">' + label + ' <span>' + str(len(groups[cid])) + '</span></a>'
+              for cid, label, _n in CATEGORIES if groups[cid])
+sections = []
+for cid, label, _n in CATEGORIES:
+    if not groups[cid]:
+        continue
+    count = str(len(groups[cid])) + (' film' if len(groups[cid]) == 1 else ' films')
+    sections.append('<section class="filmcat" id="' + cid + '">'
+                    '<h2 class="filmcat__head">' + label + ' <span>' + count + '</span></h2>'
+                    '<ol class="filmcards">' + ''.join(card(f) for f in groups[cid]) + '</ol></section>')
+rows = '<nav class="filmcats" aria-label="Kinds of film">' + nav + '</nav>' + ''.join(sections)
 
 total = sum(int(f['dur'].split(':')[0]) * 60 + int(f['dur'].split(':')[1]) for f in films)
 idx_schema = {
@@ -258,7 +309,7 @@ idx = (HEAD.format(title='All films', slug='', poster=films[0]['poster'].split('
     <h1 class="slate__title">All films</h1>
     <span class="slate__meta">{len(films)} clips &middot; TRT {total // 60}:{total % 60:02d}</span>
   </div>
-  <ol class="filmlist">{rows}</ol>
+  {rows}
   <p class="film__note">The same {COUNT} films as the <a href="/">front page</a>, as a list.
     Each page carries the film, its running time and the published post its view count came from.
     The machine-readable cut list is at <a href="/selects.edl">/selects.edl</a>.</p>
