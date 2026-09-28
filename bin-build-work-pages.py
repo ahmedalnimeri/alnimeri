@@ -195,13 +195,19 @@ def year_of(f):
     return time.strftime('%Y', time.gmtime(secs))
 
 
-def card(f):
+_card_n = [0]
+
+def card(f, eager_first=0):
+    """The first cards on /work/ are on screen when the page opens; lazy-loading
+    them delays the very thing the visitor came to look at."""
     alt = html.escape(html.unescape(f['title']), quote=True)
+    n = _card_n[0]; _card_n[0] += 1
+    eager = n < eager_first
     img = ''
     if f['srcset']:
         img = ('<img srcset="' + rooted_srcset(f['srcset']) + '" sizes="(max-width: 560px) 92vw, (max-width: 900px) 46vw, 31vw"'
                ' src="' + rooted(f['poster']) + '" alt="Still from ' + alt + '"'
-               ' width="1280" height="720" loading="lazy" decoding="async">')
+               ' width="1280" height="720" ' + ('loading="eager"' + (' fetchpriority="high"' if n == 0 else '') if eager else 'loading="lazy"') + ' decoding="async">')
     yr = year_of(f)
     bits = [f['kind'], f['dur']] + ([yr] if yr else []) + ([f['stat']] if f['stat'] else [])
     return ('<li class="filmcard"><a href="/work/' + f['slug'] + '">' + img
@@ -337,6 +343,7 @@ for i, f in enumerate(films):
     open(f"work/{f['slug']}.html", 'w').write(page)
 
 # ---- the index -----------------------------------------------------------
+_card_n[0] = 0   # the film pages' related blocks ran first; the index starts fresh
 groups = {cid: [f for f in films if category_of(f['kind']) == cid] for cid, _l, _n in CATEGORIES}
 nav = ''.join('<a href="#' + cid + '">' + label + ' <span>' + str(len(groups[cid])) + '</span></a>'
               for cid, label, _n in CATEGORIES if groups[cid])
@@ -347,7 +354,7 @@ for cid, label, _n in CATEGORIES:
     count = str(len(groups[cid])) + (' film' if len(groups[cid]) == 1 else ' films')
     sections.append('<section class="filmcat" id="' + cid + '">'
                     '<h2 class="filmcat__head">' + label + ' <span>' + count + '</span></h2>'
-                    '<ol class="filmcards">' + ''.join(card(f) for f in groups[cid]) + '</ol></section>')
+                    '<ol class="filmcards">' + ''.join(card(f, eager_first=4) for f in groups[cid]) + '</ol></section>')
 rows = '<nav class="filmcats" aria-label="Kinds of film">' + nav + '</nav>' + ''.join(sections)
 
 total = sum(int(f['dur'].split(':')[0]) * 60 + int(f['dur'].split(':')[1]) for f in films)

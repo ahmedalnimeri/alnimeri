@@ -80,6 +80,24 @@ person = {
              "https://www.linkedin.com/in/ahmedalnimeri"],
 }
 
+# The questions already answered in the page's own Q&A block, as data. Derived
+# from the DOM: an answer edited on the page must not leave stale schema behind.
+import html as _html
+def _clean(x):
+    return re.sub(r'\s+', ' ', _html.unescape(re.sub(r'<[^>]+>', '', x))).strip()
+
+faq_items = []
+for d in re.findall(r'<details[\s\S]*?</details>', s):
+    q = re.search(r'<summary[^>]*>([\s\S]*?)</summary>', d)
+    a = re.search(r'<p[^>]*>([\s\S]*?)</p>', d)
+    if q and a:
+        faq_items.append({"@type": "Question", "name": _clean(q.group(1)),
+                          "acceptedAnswer": {"@type": "Answer", "text": _clean(a.group(1))}})
+faq = ([{"@type": "FAQPage", "@id": "https://alnimeri.com/#faq",
+         "url": "https://alnimeri.com/#questions",
+         "isPartOf": {"@id": "https://alnimeri.com/#website"},
+         "mainEntity": faq_items}] if faq_items else [])
+
 graph = {"@context": "https://schema.org", "@graph": [
   person,
   {"@type": "WebSite", "@id": "https://alnimeri.com/#website",
@@ -97,9 +115,10 @@ graph = {"@context": "https://schema.org", "@graph": [
       "url": "https://alnimeri.com/#services", "areaServed": "Dubai, UAE"}
      for key, name, description in [
        ("campaign", "Brand and campaign films", "Film direction, cinematography and editing for brands and agencies."),
+       ("events", "Event and conference films", "Speaker films, multi-camera event coverage and recaps cut on site, for conferences, launches and summits."),
        ("documentary", "Documentary and institutional films", "Documentary filmmaking in English and Arabic, with experience across Sudan and the Gulf."),
        ("post", "Creative direction and post-production", "Creative direction, editing, motion graphics, colour and sound. Fees quoted per project.")
-     ]] + videos}
+     ]] + faq + videos}
 
 block = '<script type="application/ld+json">' + json.dumps(graph, ensure_ascii=False, indent=2) + '</script>'
 s = re.sub(r'<script type="application/ld\+json">.*?</script>', block, s, count=1, flags=re.S)
