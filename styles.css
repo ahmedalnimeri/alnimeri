@@ -1391,6 +1391,10 @@ body.is-locked { overflow: hidden; }
   color: var(--fg-dim); font-size: 0.95rem;
 }
 .film__note a { color: var(--fg); text-underline-offset: 3px; }
+/* `.film__note a` (0,1,1) outranks `.btn--solid` (0,1,0), so the enquiry
+   button on every film page rendered white text on a white pill. */
+.film__note a.btn--solid { color: #0a0a0c; }
+.film__note a.btn--ghost { color: var(--fg); }
 
 .film__nav {
   margin-top: clamp(2.5rem, 6vh, 4rem);

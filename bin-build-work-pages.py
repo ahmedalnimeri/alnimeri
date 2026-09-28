@@ -127,6 +127,88 @@ _secs = sum(int(f['dur'].split(':')[0]) * 60 + int(f['dur'].split(':')[1]) for f
 COUNT = WORDS.get(len(films), str(len(films)))
 TRT   = f'{_secs // 60}:{_secs % 60:02d}'
 
+# ---- categories, shared by the film pages and the index ----------------
+# A client arrives knowing the KIND of film they need. Both the index and the
+# "more like this" block at the foot of every film page group the work the same
+# way the commission cards on the front page do.
+CATEGORIES = [
+    ('brand',       'Brand &amp; campaign films',      ('Campaign film', 'Brand film', 'Explainer')),
+    ('events',      'Event &amp; conference films',    ('Event promo', 'Event film')),
+    ('documentary', 'Documentary &amp; human stories', ('Documentary', 'Feature documentary')),
+    ('motion',      'Motion, animation &amp; post',    ('Animation', 'Motion graphics', 'Visuals')),
+]
+
+def category_of(kind):
+    k = html.unescape(kind).lower()
+    for cid, _label, needles in CATEGORIES:
+        if any(n.lower() in k for n in needles):
+            return cid
+    return 'brand'
+
+def label_of(cid):
+    return next(label for c, label, _n in CATEGORIES if c == cid)
+
+def rooted(url):
+    """Tiles on the front page use relative asset URLs; under /work/ those
+    resolve to /work/assets/... and 404. Root them."""
+    u = url.strip()
+    return u if u.startswith(('/', 'http')) else '/' + u
+
+def rooted_srcset(ss):
+    out = []
+    for cand in ss.split(','):
+        parts = cand.strip().split(' ')
+        if not parts or not parts[0]:
+            continue
+        out.append(rooted(parts[0]) + (' ' + ' '.join(parts[1:]) if len(parts) > 1 else ''))
+    return ', '.join(out)
+
+def year_of(f):
+    """The year the film was PUBLISHED, and only when the post the view count
+    links to proves it: X snowflakes, Instagram shortcodes and TikTok ids all
+    carry their own timestamp. Vimeo's uploadDate is when the file was put on
+    Vimeo, which is not the same thing — The Greatest Sudanese Sit-In is about
+    2019 and was uploaded in 2025 — so it is never used for a printed year."""
+    import time
+    ref = f.get('statref') or ''
+    secs = None
+    try:
+        m = re.search(r'x\.com/[^/]+/status/(\d+)', ref)
+        if m:
+            secs = ((int(m.group(1)) >> 22) + 1288834974657) / 1000
+        if secs is None:
+            m = re.search(r'instagram\.com/(?:p|reel)/([A-Za-z0-9_-]+)', ref)
+            if m:
+                A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+                mid = 0
+                for ch in m.group(1)[:11]:
+                    mid = mid * 64 + A.index(ch)
+                secs = ((mid >> 23) + 1314220021721) / 1000
+        if secs is None:
+            m = re.search(r'tiktok\.com/[^/]+/video/(\d+)', ref)
+            if m:
+                secs = int(m.group(1)) >> 32
+    except Exception:
+        return ''
+    if not secs or not (1.2e9 < secs < 2.2e9):
+        return ''
+    return time.strftime('%Y', time.gmtime(secs))
+
+
+def card(f):
+    alt = html.escape(html.unescape(f['title']), quote=True)
+    img = ''
+    if f['srcset']:
+        img = ('<img srcset="' + rooted_srcset(f['srcset']) + '" sizes="(max-width: 560px) 92vw, (max-width: 900px) 46vw, 31vw"'
+               ' src="' + rooted(f['poster']) + '" alt="Still from ' + alt + '"'
+               ' width="1280" height="720" loading="lazy" decoding="async">')
+    yr = year_of(f)
+    bits = [f['kind'], f['dur']] + ([yr] if yr else []) + ([f['stat']] if f['stat'] else [])
+    return ('<li class="filmcard"><a href="/work/' + f['slug'] + '">' + img
+            + '<span class="filmcard__name">' + f['title'] + '</span>'
+            + '<span class="filmcard__meta">' + ' &middot; '.join(bits) + '</span></a></li>')
+
+
 for i, f in enumerate(films):
     prev_f = films[i - 1] if i else None
     next_f = films[i + 1] if i + 1 < len(films) else None
@@ -166,6 +248,14 @@ for i, f in enumerate(films):
             "interactionType": {"@type": kindword},
             "userInteractionCount": int(n)}
 
+    schema = {"@context": "https://schema.org", "@graph": [schema, {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Ahmed El-Nimeri", "item": "https://alnimeri.com/"},
+            {"@type": "ListItem", "position": 2, "name": "All films", "item": "https://alnimeri.com/work/"},
+            {"@type": "ListItem", "position": 3, "name": title_txt}]}]}
+    schema["@graph"][0].pop("@context", None)
+
     enquiry = html.escape("mailto:ahmed@alnimeri.com?" + urlencode({"subject": "Project enquiry — " + title_txt, "body": "Hi Ahmed,\n\nI saw " + title_txt + " on your website and would like to discuss a project.\n\nWhat we’re making:\nTiming and location:\nBudget range (if known):\n\nName / company:\n"}, quote_via=quote), quote=True)
 
     # the film itself
@@ -179,6 +269,9 @@ for i, f in enumerate(films):
                   f'width="1280" height="720" fetchpriority="high"></div>')
 
     facts = [('Type', kind), ('Running time', f['dur'])]
+    _yr = year_of(f)
+    if _yr:
+        facts.append(('Year', _yr))
     if stat_txt and f['statref']:
         facts.append(('Published', f'<a href="{f["statref"]}" target="_blank" rel="noopener">{stat_txt} <span aria-hidden="true">&#8599;</span></a>'))
     facts.append(('Role', 'Directed, shot and edited'))
@@ -209,6 +302,17 @@ for i, f in enumerate(films):
     nav.append('<a class="film__nav-all" href="/work/">All films</a>')
     if next_f: nav.append(f'<a class="film__nav-next" href="/work/{next_f["slug"]}">{html.escape(html.unescape(next_f["title"]))} &rarr;</a>')
 
+    # More of the same kind of work: a client who liked this one is asking
+    # whether there are others like it, and the answer is one click away.
+    _cid = category_of(f['kind'])
+    _siblings = [g for g in films if category_of(g['kind']) == _cid and g['slug'] != f['slug']][:3]
+    related = ''
+    if _siblings:
+        related = ('<section class="related" aria-labelledby="related-head">'
+                   '<h2 class="filmcat__head" id="related-head">More ' + label_of(_cid).lower()
+                   + ' <span><a href="/work/#' + _cid + '">see all &#8599;</a></span></h2>'
+                   '<ol class="filmcards">' + ''.join(card(g) for g in _siblings) + '</ol></section>')
+
     body = f'''<section class="film" id="film">
   <div class="slate">
     <span class="slate__tc">{f['idx']}</span>
@@ -221,6 +325,7 @@ for i, f in enumerate(films):
   <p class="film__note">One of {COUNT} films in the <a href="/">selected work</a> of Ahmed El-Nimeri,
     a film director and Associate Creative Director based in Dubai. Every figure on this site links
     to the published post it came from.</p>
+  {related}
   <div class="film__note"><h2>Have a project in mind?</h2><p>Tell me what you’re making and when you need it. A few lines are enough.</p><a class="btn btn--solid" href="{enquiry}">Send the brief ↗</a></div>
   <nav class="film__nav" aria-label="Films">{''.join(nav)}</nav>
 </section>
@@ -232,50 +337,6 @@ for i, f in enumerate(films):
     open(f"work/{f['slug']}.html", 'w').write(page)
 
 # ---- the index -----------------------------------------------------------
-# A client arrives knowing the KIND of film they need. The index groups the
-# work the same way the commission cards on the front page do, server-rendered
-# so it works without JavaScript and every group is its own indexable anchor.
-CATEGORIES = [
-    ('brand',       'Brand &amp; campaign films',     ('Campaign film', 'Brand film', 'Explainer')),
-    ('events',      'Event &amp; conference films',   ('Event promo', 'Event film')),
-    ('documentary', 'Documentary &amp; human stories',('Documentary', 'Feature documentary')),
-    ('motion',      'Motion, animation &amp; post',   ('Animation', 'Motion graphics', 'Visuals')),
-]
-
-def category_of(kind):
-    k = html.unescape(kind).lower()
-    for cid, _label, needles in CATEGORIES:
-        if any(n.lower() in k for n in needles):
-            return cid
-    return 'brand'
-
-def rooted(url):
-    """Tiles on the front page use relative asset URLs; inside /work/ those
-    resolve to /work/assets/... and 404. Root them."""
-    u = url.strip()
-    return u if u.startswith(('/', 'http')) else '/' + u
-
-def rooted_srcset(ss):
-    out = []
-    for cand in ss.split(','):
-        parts = cand.strip().split(' ')
-        if not parts or not parts[0]:
-            continue
-        out.append(rooted(parts[0]) + (' ' + ' '.join(parts[1:]) if len(parts) > 1 else ''))
-    return ', '.join(out)
-
-def card(f):
-    alt = html.escape(html.unescape(f['title']), quote=True)
-    img = ''
-    if f['srcset']:
-        img = ('<img srcset="' + rooted_srcset(f['srcset']) + '" sizes="(max-width: 560px) 92vw, (max-width: 900px) 46vw, 31vw"'
-               ' src="' + rooted(f['poster']) + '" alt="Still from ' + alt + '"'
-               ' width="1280" height="720" loading="lazy" decoding="async">')
-    stat = (' &middot; ' + f['stat']) if f['stat'] else ''
-    return ('<li class="filmcard"><a href="/work/' + f['slug'] + '">' + img
-            + '<span class="filmcard__name">' + f['title'] + '</span>'
-            + '<span class="filmcard__meta">' + f['kind'] + ' &middot; ' + f['dur'] + stat + '</span></a></li>')
-
 groups = {cid: [f for f in films if category_of(f['kind']) == cid] for cid, _l, _n in CATEGORIES}
 nav = ''.join('<a href="#' + cid + '">' + label + ' <span>' + str(len(groups[cid])) + '</span></a>'
               for cid, label, _n in CATEGORIES if groups[cid])
