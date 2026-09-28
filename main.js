@@ -1589,6 +1589,10 @@
   function sync() {
     vids.forEach(function (v) {
       var shown = window.getComputedStyle(v).display !== 'none';
+      // Posters are held in data-poster: a hidden <video> still downloads its
+      // poster, and the section is the last thing on the page — so the image
+      // is only worth fetching once the section is actually in view.
+      if (shown && inView && !v.poster && v.getAttribute('data-poster')) v.poster = v.getAttribute('data-poster');
       if (shown && inView && !held) {
         if (v.preload !== 'auto') v.preload = 'auto';
         var p = v.play(); if (p && p.catch) p.catch(function () { held = true; label(); });
