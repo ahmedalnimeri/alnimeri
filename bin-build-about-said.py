@@ -33,7 +33,6 @@ rest = [q for q in quotes if not q.get('feature')]
 short = [q for q in rest if len(q['en']) <= SHORT]
 long_ = [q for q in rest if len(q['en']) > SHORT]
 long_.sort(key=lambda q: -len(q['en']))
-long_ = feature + long_
 if len(short) < 8:
     sys.exit(f'only {len(short)} short quotes — the strips need more than that')
 
@@ -44,12 +43,13 @@ def pill(q):
     return (f'<span class="say"><span class="say__t">{html.escape(q["en"])}</span>'
             f'<span class="say__u">{html.escape(q["by"])}</span></span>')
 
-def card(q):
+def card(q, n=0):
     en, by = q['en'].strip(), q['by']
     where = q.get('where', '')
     cls = ' said--lead' if q.get('feature') else ''
     meta = html.escape(by) + (f' &middot; {html.escape(where)}' if where else '')
-    return (f'<figure class="said{cls}">'
+    # Cards arrive with the site's own reveal, a beat apart across a row.
+    return (f'<figure class="said{cls} reveal" data-delay="{(n % 3) * 90}">'
             f'<blockquote class="said__en">{html.escape(en)}</blockquote>'
             f'<figcaption class="said__by">{meta}</figcaption></figure>')
 
@@ -68,6 +68,10 @@ for q in quotes:
     if w and w not in wheres:
         wheres.append(w)
 
+# The named voices with a title at a real company lead, in a row of their own.
+leads = (f'<div class="said-leads">{"".join(card(q, n) for n, q in enumerate(feature))}</div>'
+         if feature else '')
+
 block = f'''{START}
   <section class="section" id="said">
     <div class="slate">
@@ -79,7 +83,8 @@ block = f'''{START}
       {strip(a, '')}
       {strip(b, ' says__row--back')}
     </div>
-    <div class="reception__grid">{''.join(card(q) for q in long_)}</div>
+    {leads}
+    <div class="said-wall">{''.join(card(q, n) for n, q in enumerate(long_))}</div>
   </section>
   {END}'''
 
@@ -92,6 +97,6 @@ else:
         sys.exit('could not find the contact section to insert before')
     page = page.replace(anchor, block + '\n\n' + anchor, 1)
 open('about.html', 'w').write(page)
-print(f'about.html: {len(short)} on the strips, {len(long_)} as cards, {len(quotes)} published'
+print(f'about.html: {len(short)} on the strips, {len(feature) + len(long_)} as cards, {len(quotes)} published'
       + (f', {held} held' if held else '')
       + (f', {len(feature)} featured' if feature else ''))
