@@ -253,18 +253,6 @@ def kind_and_client(kind):
     return ' · '.join(kinds), ' · '.join(clients)
 
 
-def client_of(f):
-    """Who the film was made for, only where the site already says so: the
-    tile names the client, or the post its views link to is on Solana's own
-    account (the site: 'Since 2023 I have made films for Solana')."""
-    c = kind_and_client(f['kind'])[1]
-    if c:
-        return c
-    if re.search(r'x\.com/(solana|SolanaFndn)/status/', f.get('statref') or ''):
-        return 'Solana'
-    return ''
-
-
 for i, f in enumerate(films):
     prev_f = films[i - 1] if i else None
     next_f = films[i + 1] if i + 1 < len(films) else None
@@ -342,24 +330,18 @@ for i, f in enumerate(films):
               f'<div class="fp-light" aria-hidden="true">{_light}</div>'
               f'<div class="fp-frame">{_still}{play}</div></div>')
 
-    meta = [f'<span>{html.escape(_kind)}</span>']
+    # One line of facts under the title, in the tile's own words (kind, and
+    # the client where the tile names one), then year, running time and the
+    # published figure with its source. Nothing is inferred.
+    meta = [f'<span>{html.escape(part.strip())}</span>' for part in html.unescape(f['kind']).split('·') if part.strip()]
     if _yr:
         meta.append(f'<span>{_yr}</span>')
     meta.append(f'<span>{f["dur"]}</span>')
     if stat_txt and f['statref']:
         meta.append(f'<a href="{f["statref"]}" target="_blank" rel="noopener">{stat_txt} <span aria-hidden="true">&#8599;</span></a>')
 
-    # the credits: what he did, who it was for, and the facts as published
-    facts = [('Directed, shot and edited by', '<a href="/about">Ahmed El-Nimeri</a>')]
-    if client_of(f):
-        facts.append(('For', html.escape(client_of(f))))
-    facts.append(('Kind', html.escape(_kind)))
-    if _yr:
-        facts.append(('Year', _yr))
-    facts.append(('Running time', f['dur']))
-    if stat_txt and f['statref']:
-        facts.append(('Published', f'<a href="{f["statref"]}" target="_blank" rel="noopener">{stat_txt} <span aria-hidden="true">&#8599;</span></a>'))
-    facts_html = ''.join(f'<div><dt>{k}</dt><dd>{v}</dd></div>' for k, v in facts)
+    # and under the picture, the one credit, the way a film ends
+    credit = '<span>Directed, shot and edited by</span> <a href="/about">Ahmed El-Nimeri</a>'
 
     # What the audience said, in their own words, off the original post.
     rec = RECEPTION.get(f['slug'])
@@ -388,19 +370,18 @@ for i, f in enumerate(films):
 
     # More of the same kind of work: a client who liked this one is asking
     # whether there are others like it, and the answer is one click away.
-    # Hung as a wall, not listed: every still at its own shape and a different
-    # size, all centred on one line, the way a gallery hangs a room. A kind
-    # with fewer than three others is topped up from the rest of the work.
+    # Hung on one line at one height, every still at its own shape, so a
+    # vertical film stands as a vertical film. A kind with fewer than three
+    # others is topped up from the rest of the work.
     _cid = category_of(f['kind'])
     _siblings = [g for g in films if category_of(g['kind']) == _cid and g['slug'] != f['slug']]
     _more = (_siblings + [g for g in films[i + 1:] + films[:i] if g not in _siblings])[:3]
     _head = ('More ' + label_of(_cid).lower()) if len(_siblings) >= 3 else 'More films'
     _all = (f'<a href="/work/#{_cid}">All {label_of(_cid).lower()} <span aria-hidden="true">&#8599;</span></a>'
             if _siblings else '<a href="/work/">All films <span aria-hidden="true">&#8599;</span></a>')
-    _scale = (1.0, 0.72, 0.86)
     _hang = []
     for k, g in enumerate(_more):
-        grow = (9 / 16 if g['portrait'] else 16 / 9) * _scale[k]
+        grow = 9 / 16 if g['portrait'] else 16 / 9
         _hang.append(card(g, short=True, delay=k * 125,
                           sizes='(max-width: 700px) 60vw, 300px' if g['portrait'] else '(max-width: 700px) 88vw, 520px')
                      .replace('<li class="fp-card', f'<li style="--g:{grow:.3f}" class="fp-card', 1))
@@ -416,7 +397,7 @@ for i, f in enumerate(films):
       <p class="fp-meta reveal" data-delay="160">{''.join(meta)}</p>
     </header>
     {player}
-    <dl class="fp-credits reveal" data-delay="120">{facts_html}</dl>
+    <p class="fp-credit reveal" data-delay="120">{credit}</p>
   </div>
   {reception}
   {related}
@@ -460,12 +441,20 @@ for cid, label, _n in CATEGORIES:
     if not groups[cid]:
         continue
     count = str(len(groups[cid])) + (' film' if len(groups[cid]) == 1 else ' films')
-    sections.append('<section class="fp-cat" id="' + cid + '">'
+    # a kind of four films or fewer is hung large, as many to a row as make
+    # it whole (three in a row for three, two for two or four), instead of
+    # leaving most of a four-column wall empty (data-few)
+    few = ' data-few="' + str(len(groups[cid])) + '"' if len(groups[cid]) <= 4 else ''
+    sections.append('<section class="fp-cat" id="' + cid + '"' + few + '>'
                     '<h2 class="fp-cat__head">' + label + ' <span>' + count + '</span></h2>'
                     '<ol class="fp-cards">' + ''.join(card(f, eager_first=4, delay=_delay()) for f in groups[cid]) + '</ol></section>')
-# the first film on the wall is hung large; the script moves this with the tabs
+# the first film on the wall is hung large (and asks for a picture that size);
+# the script moves this with the tabs
+LEAD_SIZES = '(max-width: 700px) 92vw, (max-width: 1100px) 64vw, 660px'
+_wall = ''.join(sections).replace('<li class="fp-card"', '<li class="fp-card is-lead"', 1)
+_wall = re.sub(r'sizes="[^"]*"', 'sizes="' + LEAD_SIZES + '"', _wall, count=1)
 rows = ('<nav class="fp-tabs" aria-label="Kinds of film"><div class="fp-tabs__row">' + nav + '</div></nav>'
-        + '<div class="fp-wall fp-lights" id="all">' + ''.join(sections).replace('<li class="fp-card"', '<li class="fp-card is-lead"', 1) + '</div>')
+        + '<div class="fp-wall fp-lights" id="all" data-lead-sizes="' + LEAD_SIZES + '">' + _wall + '</div>')
 
 total = sum(int(f['dur'].split(':')[0]) * 60 + int(f['dur'].split(':')[1]) for f in films)
 idx_schema = {

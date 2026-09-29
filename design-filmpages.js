@@ -81,7 +81,7 @@
         var r = frame.getBoundingClientRect(), pw = play.offsetWidth / 2 + 16, ph = play.offsetHeight / 2 + 16;
         var cx = Math.max(pw, Math.min(r.width - pw, e.clientX - r.left));
         var cy = Math.max(ph, Math.min(r.height - ph, e.clientY - r.top));
-        aim(cx - r.width / 2, cy - r.height / 2);
+        aim(cx - r.width / 2, cy - play.offsetTop);   // from where the control rests
       });
       frame.addEventListener('pointerleave', function () { aim(0, 0); });
     }
@@ -137,6 +137,7 @@
   var tabs = [].slice.call(row.querySelectorAll('a[data-cat]'));
   var cards = [].slice.call(wall.querySelectorAll('.fp-card'));
   var cats = tabs.map(function (t) { return t.getAttribute('data-cat'); });
+  var lead_sizes = wall.getAttribute('data-lead-sizes');
 
   // the lit copy of the row that the pill reveals
   var ink = d.createElement('div');
@@ -159,7 +160,7 @@
 
   var shown = function () { return cards.filter(function (c) { return c.getClientRects().length > 0; }); };
 
-  var apply = function (cat, animate) {
+  var apply = function (cat, animate, to) {
     if (cat === current) return;
     var first = new Map();
     var before = animate ? shown() : [];
@@ -177,12 +178,24 @@
 
     current = cat;
     wall.setAttribute('data-filter', cat);
+    // a kind of four films or fewer hangs two to a row, all large; otherwise
     // the first landscape film of what is showing is hung large
-    var lead = cards.filter(function (c) {
-      return (cat === 'all' || c.getAttribute('data-cat') === cat) && !c.classList.contains('fp-card--portrait');
-    })[0];
+    var mine = cards.filter(function (c) { return cat === 'all' || c.getAttribute('data-cat') === cat; });
+    var few = mine.length <= 4;
+    if (few) wall.setAttribute('data-few', mine.length); else wall.removeAttribute('data-few');
+    var lead = few ? null : mine.filter(function (c) { return !c.classList.contains('fp-card--portrait'); })[0];
     cards.forEach(function (c) { c.classList.toggle('is-lead', c === lead); });
+    // a card hung large asks for a picture that size (the browser only ever
+    // trades up, so going back to small costs nothing)
+    mine.forEach(function (c) {
+      if (!(few || c === lead)) return;
+      var im = c.querySelector('img');
+      if (im && lead_sizes && im.getAttribute('sizes') !== lead_sizes) im.setAttribute('sizes', lead_sizes);
+    });
     pill(cat);
+    // the wall's top back under the tabs, in the same frame as the re-hang
+    // (the leavers are re-anchored below, the rest measured after it)
+    if (to != null) scrollTo({ top: to, behavior: 'instant' });
     if (!animate) return;
 
     wall.classList.add('is-rehanging');
@@ -192,12 +205,13 @@
       // re-anchor against the wall's new top, then let it go
       var r = first.get(c);
       c.style.top = (r.top - wr2.top) + 'px'; c.style.left = (r.left - wr2.left) + 'px';
-      var an = c.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.94)' }],
-                         { duration: 300, easing: 'ease-out', fill: 'forwards' });
+      var an = c.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.96)' }],
+                         { duration: 280, easing: 'ease-out', fill: 'forwards' });
       an.onfinish = function () { c.classList.remove('is-leaving'); c.style.left = c.style.top = c.style.width = c.style.height = ''; an.cancel(); };
     });
-    shown().forEach(function (c, i) {
-      if (c.classList.contains('is-leaving')) return;
+    // stagger by place on the new wall (the leavers are still in the DOM and
+    // must not push the newcomers' turn back)
+    shown().filter(function (c) { return !c.classList.contains('is-leaving'); }).forEach(function (c, i) {
       var a = first.get(c), b = c.getBoundingClientRect();
       // a card that changed size (hung large, or no longer) cross-fades in
       // place rather than stretching on its way there
@@ -211,8 +225,10 @@
         c.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }],
                   { duration: 760, easing: EASE, delay: Math.min(i, 8) * 22, fill: 'backwards' });
       } else {
-        c.animate([{ opacity: 0, transform: 'translateY(18px) scale(.98)' }, { opacity: 1, transform: 'none' }],
-                  { duration: 620, easing: 'cubic-bezier(.16,1,.3,1)', delay: 90 + Math.min(i, 8) * 36, fill: 'backwards' });
+        // arrivals start while the leavers are still fading, so the wall is
+        // never empty between one hang and the next
+        c.animate([{ opacity: 0, transform: 'translateY(14px) scale(.98)' }, { opacity: 1, transform: 'none' }],
+                  { duration: 560, easing: 'cubic-bezier(.16,1,.3,1)', delay: 40 + Math.min(i, 8) * 30, fill: 'backwards' });
       }
     });
   };
@@ -229,11 +245,10 @@
     e.stopPropagation();   // main.js would jump to the section; here the wall re-hangs instead
     var cat = t.getAttribute('data-cat');
     history.replaceState(null, '', cat === 'all' ? location.pathname + location.search : '#' + cat);
-    // if the wall's top has scrolled away, bring it back under the tabs first
+    // if the wall's top has scrolled away, it comes back under the tabs as
+    // the wall re-hangs: the answer to a click starts on the next frame
     var top = wall.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(bar).top) || 0) - bar.offsetHeight - 16;
-    var go = function () { apply(cat, !still.matches); };
-    if (scrollY > top + 4) { scrollTo({ top: top, behavior: still.matches ? 'auto' : 'smooth' }); setTimeout(go, still.matches ? 0 : 320); }
-    else go();
+    apply(cat, !still.matches, scrollY > top + 4 ? top : null);
   });
   window.addEventListener('hashchange', function () { apply(fromHash(), !still.matches); });
 
