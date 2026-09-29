@@ -257,22 +257,30 @@
   .set__cap { padding-top: 0.7rem; }
 }
 
+/* Each print opens top-down as it arrives, like a blind being raised, and
+   the picture settles inside it; the caption follows. Time-based, once, on
+   arrival (design-about.js adds .ab-armed and .is-open) — a scroll-linked
+   version left prints half-open wherever the reader stopped. */
 @media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    /* Each print opens top-down as it comes up, holding its place on the
-       screen like a window being raised, and the picture settles inside. */
-    .set__win  { animation: ab-open linear both; animation-timeline: view(); animation-range: entry 0% cover 42%; }
-    .set__img  { animation: ab-inside linear both; animation-timeline: view(); animation-range: entry 0% cover 55%; }
-    .set__cap  { animation: ab-cap linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
-    @media (max-width: 700px) {
-      .set__print--wide .set__win, .set__print--half .set__win, .set__print--full .set__win { animation-name: ab-open-flat; }
-    }
+  .ab-armed .set__win {
+    clip-path: inset(0 0 100% 0 round var(--ab-r));
+    transition: clip-path 1.15s cubic-bezier(0.7, 0, 0.2, 1) var(--ab-d, 0ms), transform 0.8s var(--ease);
   }
+  .ab-armed .set__img {
+    transform: scale(1.14);
+    transition: transform 1.9s cubic-bezier(0.16, 1, 0.3, 1) var(--ab-d, 0ms);
+  }
+  .ab-armed .set__cap {
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.8s var(--ease) calc(var(--ab-d, 0ms) + 0.5s), transform 0.8s var(--ease) calc(var(--ab-d, 0ms) + 0.5s);
+  }
+  .ab-armed .set__print.is-open .set__win { clip-path: inset(0 0 0 0 round var(--ab-r)); }
+  .ab-armed .set__print.is-open .set__img { transform: none; }
+  .ab-armed .set__print.is-open .set__cap { opacity: 1; transform: none; }
 }
-@keyframes ab-open { from { clip-path: inset(0 0 100% 0 round var(--ab-r)); } to { clip-path: inset(0 0 0 0 round var(--ab-r)); } }
-@keyframes ab-open-flat { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
-@keyframes ab-inside { from { transform: scale(1.16) translateY(-5%); } to { transform: none; } }
-@keyframes ab-cap { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (max-width: 700px) {
+  .set__print--wide .set__win, .set__print--half .set__win, .set__print--full .set__win { --ab-r: 0px; }
+}
 
 /* =========================================================================
    4. What people say
@@ -350,6 +358,8 @@
    ========================================================================= */
 @media (prefers-reduced-motion: reduce) {
   .pin__media, .set__win { transform: none !important; }
+  .set__win { clip-path: none !important; }
+  .set__img, .set__cap { transform: none !important; opacity: 1 !important; }
   .pin:hover .pin__media img { transform: none; }
 }
 @media print {

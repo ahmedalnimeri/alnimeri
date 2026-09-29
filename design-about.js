@@ -2,7 +2,8 @@
    1. The pointer: a still or a print you hover leans toward the pointer and
       catches a light where it is; a comment card lights under it. One rAF per
       pointer move, only on the element under the pointer, fine pointers only.
-   2. The comment strips stop drifting while they are off screen. */
+   2. On Set prints open once, as each arrives.
+   3. The comment strips stop drifting while they are off screen. */
 (function () {
   'use strict';
   if (!window.matchMedia) return;
@@ -99,7 +100,27 @@
   listen(reduce, arm);
   arm();
 
-  /* ---- 2. strips rest off screen ------------------------------------- */
+  /* ---- 2. On Set: each print opens as it arrives ---------------------- */
+  // Prints are only hidden once this runs (.ab-armed), so without JS, IO or
+  // motion they simply stand on the page.
+  var prints = document.querySelectorAll('.set__print');
+  if (prints.length && 'IntersectionObserver' in window && !reduce.matches) {
+    document.documentElement.classList.add('ab-armed');
+    var pio = new IntersectionObserver(function (es) {
+      var n = 0;
+      for (var i = 0; i < es.length; i++) {
+        var e = es[i];
+        if (!e.isIntersecting) continue;
+        // Prints arriving together open in turn, a beat apart.
+        e.target.style.setProperty('--ab-d', (n++ * 140) + 'ms');
+        e.target.classList.add('is-open');
+        pio.unobserve(e.target);
+      }
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    for (var p = 0; p < prints.length; p++) pio.observe(prints[p]);
+  }
+
+  /* ---- 3. strips rest off screen ------------------------------------- */
   var says = document.querySelector('#said .says');
   if (says && 'IntersectionObserver' in window) {
     new IntersectionObserver(function (es) {
