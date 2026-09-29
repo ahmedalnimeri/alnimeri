@@ -1592,11 +1592,14 @@
   d.querySelector('.brief__close').addEventListener('click', close);
   d.addEventListener('click', function (e) { if (e.target === d) close(); });   // the backdrop
 
-  // Sent straight to the inbox through FormSubmit (formsubmit.co): the site has
-  // no mail server of its own. If that fails for any reason — including the
-  // one-time activation the service asks for — the email app opens with the
-  // same message, so nothing a visitor writes is ever lost.
-  var ENDPOINT = 'https://formsubmit.co/ajax/ahmed@alnimeri.com';
+  // Every brief is saved first to the site's own database (/api/brief), so it
+  // never depends on a third party staying up — FormSubmit, the first relay,
+  // answered HTTP 500 to everyone. An email notification is a second step: set
+  // NOTIFY_KEY to a Web3Forms access key (public by design) to have each brief
+  // also emailed to ahmed@alnimeri.com. Only if saving AND emailing both fail
+  // does the visitor's email app open with the same message.
+  var ENDPOINT = '/api/brief';
+  var NOTIFY_KEY = '';
   var sendBtn = f.querySelector('button[type=submit]');
   var sendLabel = sendBtn.innerHTML;
   f.addEventListener('submit', function (e) {
@@ -1616,17 +1619,27 @@
       'for': field('for').value.trim(), timing: field('when').value.trim(), email: field('email').value.trim(),
       whatsapp: field('whatsapp').value.trim(),
       film_seen: about, message: message(),
-      _subject: subject(), _replyto: field('email').value.trim() || undefined, _template: 'box', _captcha: 'false'
+      _subject: subject(), _honey: field('_honey').value
     };
     f.dataset.payload = JSON.stringify(payload);
     var sent = { first: payload.name.split(' ')[0], email: payload.email, wa: payload.whatsapp };
-    fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(payload) })
-      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    var timed = function (p, ms) { return Promise.race([p, new Promise(function (_, no) { setTimeout(function () { no(new Error('timeout')); }, ms); })]); };
+    var store = timed(fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }), 12000)
+      .then(function (r) { return r.json().then(function (j) { return !!(r.ok && j.ok); }); })
+      .catch(function () { return false; });
+    var notify = NOTIFY_KEY ? timed(fetch('https://api.web3forms.com/submit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ access_key: NOTIFY_KEY, subject: payload._subject, from_name: 'alnimeri.com', replyto: payload.email || undefined,
+          name: payload.name, company: payload.company, about: payload.about, 'for': payload['for'], timing: payload.timing,
+          email: payload.email, whatsapp: payload.whatsapp, film_seen: payload.film_seen, message: payload.message }) }), 12000)
+      .then(function (r) { return r.json().then(function (j) { return !!j.success; }); })
+      .catch(function () { return false; }) : Promise.resolve(false);
+    Promise.all([store, notify])
       .then(function (res) {
-        if (!(res.ok && String(res.j.success) === 'true')) return fallback();
+        if (!(res[0] || res[1])) return fallback();
         f.classList.add('is-sent');
         var line = f.querySelector('.brief__sentence');
-        line.textContent = 'Thank you, ' + sent.first + '. It’s in my inbox, and I’ll reply to ';
+        line.textContent = 'Thank you, ' + sent.first + '. It reached me, and I’ll reply to ';
         var b = document.createElement('b'); b.textContent = sent.email || ('your WhatsApp, ' + sent.wa); line.appendChild(b);
         line.appendChild(document.createTextNode('.'));
         f.querySelector('.brief__actions').hidden = true;

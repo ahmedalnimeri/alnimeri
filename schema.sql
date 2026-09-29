@@ -18,3 +18,22 @@ CREATE TABLE IF NOT EXISTS visits (
 
 CREATE INDEX IF NOT EXISTS idx_visits_ts     ON visits(ts DESC);
 CREATE INDEX IF NOT EXISTS idx_visits_is_bot ON visits(is_bot);
+
+-- Briefs from the "Get in touch" form. functions/api/brief.js also creates
+-- this table on first use, so applying it by hand is optional.
+CREATE TABLE IF NOT EXISTS briefs (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts        TEXT NOT NULL,
+  name      TEXT NOT NULL,
+  company   TEXT,
+  about     TEXT,
+  for_what  TEXT,
+  timing    TEXT,
+  email     TEXT,
+  whatsapp  TEXT,
+  film_seen TEXT,
+  message   TEXT,
+  ip        TEXT,
+  country   TEXT,
+  ua        TEXT
+);
