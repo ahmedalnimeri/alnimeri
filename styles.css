@@ -380,10 +380,6 @@ a { color: inherit; }
   }
 }
 @keyframes splice { from { width: 0; } to { width: 34px; } }
-.slate__tc, .slate__meta {
-  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--fg-faint); white-space: nowrap;
-}
 .slate__meta { margin-left: auto; }
 .slate__title {
   margin: 0;
@@ -420,7 +416,6 @@ a { color: inherit; }
   .tile--lead-4 { order: -1; }
   /* The sequence index is desktop furniture; with the running order changed
      it would read 01, 10, 11, 02 — and the mobile meta row is tight anyway. */
-  .tile__idx { display: none; }
 }
 
 .tile { position: relative; }
@@ -561,11 +556,6 @@ a { color: inherit; }
 }
 
 .tile__meta { display: flex; align-items: baseline; gap: 0.7rem; margin-top: 0.9rem; padding: 0 0.15rem; }
-.tile__idx {
-  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.06em;
-  color: var(--fg-faint); font-variant-numeric: tabular-nums; flex: none;
-  white-space: nowrap;
-}
 .tile__name { margin: 0; font-size: clamp(1.05rem, 1.25vw, 1.1rem); font-weight: 600; letter-spacing: -0.015em; line-height: 1.35; }
 .tile__kind { margin: 0.1rem 0 0; font-size: 0.8rem; color: var(--fg-faint); }
 
@@ -715,21 +705,7 @@ a { color: inherit; }
 .tl.is-up { opacity: 1; pointer-events: auto; }
 /* Page end: the sequence runs out. The tally parks solid and the readout
    marks the out point. */
-.tl.is-out .tl__rec { animation: none; opacity: 1; }
-.tl.is-out .tl__now::after { content: " · OUT"; color: var(--fg-dim); }
 
-.tl__tc {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 0.76rem; font-weight: 500; letter-spacing: 0.06em;
-  color: var(--fg); white-space: nowrap;
-  display: flex; align-items: center; gap: 0.55rem;
-}
-.tl__rec {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--fg); flex: none;
-  animation: pulse 2.4s ease-in-out infinite;
-}
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
 
 /* the track — also a jog strip: drag anywhere on it to scrub the page */
@@ -807,7 +783,6 @@ a { color: inherit; }
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-dim);
   font-variant-numeric: tabular-nums;
 }
-.burnin .tl__rec { width: 6px; height: 6px; }
 /* Centered via box + flex, never transform — the lift choreography owns the
    transform channel and would override it. */
 @media (max-width: 560px) {
@@ -1325,7 +1300,6 @@ body.is-locked { overflow: hidden; }
                color: #000; font-size: 8.5pt; }
   .tile__dur::before { content: "DUR "; color: #555; }
   .tile__meta { display: block; font-family: var(--mono); font-size: 8.5pt; margin: 0; }
-  .tile__idx { display: inline; color: #000; margin-right: 6pt; }
   .tile__name { display: inline; font-size: 9.5pt; margin-right: 6pt; }
   .tile__kind { display: inline; color: #555; margin: 0; }
   .tile__stat { display: block; text-decoration: none; color: #000;

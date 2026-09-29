@@ -113,10 +113,6 @@ def build():
     else:
         a = sec.index('    <div class="os-stage"')
         new = sec[:a] + block + '  '
-    yrs = [f['year'] for f in frames]
-    new, k = re.subn(r'(<span class="slate__meta">\d{3} &middot; )\d+ frames &middot; \d{4}&ndash;\d{4}(</span>)',
-                     lambda m: f'{m.group(1)}{len(frames)} frames &middot; {min(yrs)}&ndash;{max(yrs)}{m.group(2)}', new, count=1)
-    assert k == 1, 'slate meta not found'
     out = page[:s] + new + page[e:]
     # assert the RESULT, not the precondition
     sec2 = out[out.index('<section class="section" id="onset">'):]
@@ -124,6 +120,7 @@ def build():
     assert sec2.count('<figure class="os-fr"') == len(frames) and sec2.count('class="os-tick"') == len(frames)
     assert sec2.count(START) == 1 and sec2.count(END) == 1
     open(PAGE, 'w').write(out)
+    yrs = [f['year'] for f in frames]
     print(f'{PAGE}: On Set rendered — {len(frames)} frames, {min(yrs)}–{max(yrs)}')
 
 if __name__ == '__main__':

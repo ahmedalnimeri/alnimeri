@@ -321,9 +321,7 @@ for i, f in enumerate(films):
 
     body = f'''<section class="film" id="film">
   <div class="slate">
-    <span class="slate__tc">{f['idx']}</span>
     <h1 class="slate__title">{f['title']}</h1>
-    <span class="slate__meta">TRT {f['dur']}{f' &middot; {src_name}' if src_name else ''}</span>
   </div>
   {player}
   <dl class="film__facts">{facts_html}</dl>
@@ -373,9 +371,7 @@ idx = (HEAD.format(title='All films', slug='', poster='assets/og-work.jpg', ver=
                 '<link rel="canonical" href="https://alnimeri.com/work/">')
        + f'''<section class="film" id="film">
   <div class="slate">
-    <span class="slate__tc">SEQ 2026</span>
     <h1 class="slate__title">All films</h1>
-    <span class="slate__meta">{len(films)} clips &middot; TRT {total // 60}:{total % 60:02d}</span>
   </div>
   {rows}
   <p class="film__note">The same {COUNT} films as the <a href="/">front page</a>, as a list.

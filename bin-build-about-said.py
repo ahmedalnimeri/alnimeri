@@ -71,9 +71,7 @@ for q in quotes:
 block = f'''{START}
   <section class="section" id="said">
     <div class="slate">
-      <span class="slate__tc" data-tc>TC 38:00:00</span>
       <h2 class="slate__title">What people say</h2>
-      <span class="slate__meta">002 &middot; {len(quotes)} comments</span>
     </div>
     <p class="reception__sub">Public comments, unedited, from {', '.join(wheres)}. Nothing here was asked for.
       Comments written in Arabic are shown in translation.</p>

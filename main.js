@@ -183,7 +183,7 @@
     var c = run.list[run.i], at = run.offs[run.i] + Math.min(sec || 0, c.secs);
     hud.querySelector('[data-head]').style.width = (at / run.total * 100) + '%';
     hud.querySelector('[data-at]').textContent = mmss(at);
-    hud.querySelector('[data-sc]').textContent = 'SC ' + (run.i + 1 < 10 ? '0' : '') + (run.i + 1) + '/' + run.list.length;
+    hud.querySelector('[data-sc]').textContent = (run.i + 1) + ' / ' + run.list.length;
     hud.querySelector('[data-title]').textContent = c.title;
     var nx = run.list[run.i + 1];
     hud.querySelector('[data-next]').textContent = nx ? 'Next · ' + nx.title : 'Last clip';
@@ -228,7 +228,7 @@
     var out = document.createElement('div');
     out.className = 'lb__out';
     out.innerHTML =
-      '<p class="lb__outslate">OUT &middot; ' + n + ' CLIPS &middot; TRT ' + mmss(total) + ' &middot; 24 FPS</p>' +
+      '<p class="lb__outslate">' + n + ' films</p>' +
       '<p class="lb__outhead">That was the reel.</p>' +
       '<p class="lb__outsub">Some of it was a brief. Some of it was my country.</p>' +
       '<div class="lb__outacts">' +
@@ -330,7 +330,7 @@
     var trt = 0;
     list.forEach(function (c) { trt += c.secs; });
     var isCut = document.body.classList.contains('is-reel');
-    var label = (isCut ? 'Run this cut' : 'Run the reel') + ' · ' + list.length + ' clips · ' + mmss(trt);
+    var label = isCut ? 'Run this cut' : 'Run the reel';
 
     var grid = document.querySelector('.grid');
     var slate = grid && grid.closest('section') && grid.closest('section').querySelector('.slate');
@@ -594,10 +594,6 @@
     bar.setAttribute('role', 'navigation');
     bar.setAttribute('aria-label', 'Sequence');
 
-    var tc = document.createElement('div');
-    tc.className = 'tl__tc';
-    tc.innerHTML = '<span class="tl__rec" aria-hidden="true"></span><span class="tl__now">00:00:00</span>';
-
     var track = document.createElement('div');
     track.className = 'tl__track';
 
@@ -620,28 +616,8 @@
     headEl.className = 'tl__head';
     track.appendChild(headEl);
 
-    bar.appendChild(tc); bar.appendChild(track);
+    bar.appendChild(track);
     document.body.appendChild(bar);
-
-    var now = tc.querySelector('.tl__now');
-    // The timebase is real: the sequence length is the summed running time of
-    // the films actually on this page (42:18 on the index at last count).
-    // Scrolling the page plays the reel. Pages without duration chips fall
-    // back to a notional length; the maths is identical.
-    var RUNTIME = [].reduce.call(document.querySelectorAll('.tile__dur'), function (t, d) {
-      var m = d.textContent.trim().split(':');
-      return t + (parseInt(m[0], 10) || 0) * 60 + (parseInt(m[1], 10) || 0);
-    }, 0) || 154;
-    var FPS = 24;
-
-    function stamp(p) {
-      var t = RUNTIME * p;
-      var m = Math.floor(t / 60);
-      var s = Math.floor(t % 60);
-      var f = Math.floor((t * FPS) % FPS);
-      var pad = function (n) { return (n < 10 ? '0' : '') + n; };
-      return pad(m) + ':' + pad(s) + ':' + pad(f);
-    }
 
     // On a desktop with a real pointer the deck stays up once you are in the
     // sequence — an editor doesn't hide the timeline panel. On touch it still
@@ -679,13 +655,9 @@
     bar.addEventListener('focusout', function () { hovering = false; wake(); });
 
     var tick = false;
-    var lastP = 0;
     function draw() {
       var max = document.documentElement.scrollHeight - window.innerHeight;
       var p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
-      lastP = p;
-
-      now.textContent = stamp(p);
       headEl.style.left = (p * 100) + '%';
       bar.classList.toggle('is-out', p >= 0.999);
       if (window.scrollY > window.innerHeight * 0.35) wake();
@@ -730,18 +702,6 @@
         if (!wide) { c.style.flex = ''; c.style.minWidth = ''; return; }
         c.style.flex = Math.max(8, secs[n].offsetHeight / docH * 100) + ' 1 0px';
         c.style.minWidth = '44px';
-      });
-    }
-
-    /* The slates carry the same timebase: the stamp printed at each cut line
-       agrees with the HUD readout the moment you scroll past it. Hardcoded
-       defaults ship in the markup; this only refines them. */
-    function stampSlates() {
-      var max = document.documentElement.scrollHeight - window.innerHeight;
-      if (max <= 0) return;
-      secs.forEach(function (sec) {
-        var el = sec.querySelector('.slate__tc[data-tc]');
-        if (el) el.textContent = 'TC ' + stamp(Math.min(1, sec.offsetTop / max));
       });
     }
 
@@ -791,26 +751,13 @@
     window.addEventListener('resize', function () {
       draw();
       clearTimeout(settleTimer);
-      settleTimer = setTimeout(function () { layout(); stampSlates(); }, 150);
+      settleTimer = setTimeout(layout, 150);
     }, { passive: true });
 
     draw();
     layout();
-    stampSlates();
     // Poster and font arrival can shift offsets after first paint.
-    window.addEventListener('load', function () { layout(); stampSlates(); });
-
-    /* A hidden tab is a parked deck: the title becomes the timecode where
-       the playhead stopped, from the same stamp() as the HUD. A recruiter
-       triaging twelve candidate tabs sees eleven names and one timecode.
-       Never stamped on tabs that were opened in the background and never
-       engaged — same threshold the HUD uses to wake. */
-    var baseTitle = document.title;
-    document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) { document.title = baseTitle; return; }
-      if (window.scrollY <= window.innerHeight * 0.35) return;
-      document.title = 'PARKED ' + stamp(lastP) + ' \u2014 Ahmed El-Nimeri';
-    });
+    window.addEventListener('load', layout);
   })();
 
   /* ---- counters -----------------------------------------------------
@@ -1010,7 +957,7 @@
       var p = document.createElement('p');
       p.className = 'resume';
       p.innerHTML = '<span>Resume</span><span class="screening__sep">\u00b7</span>' +
-        '<a href="#' + saved.id + '">SC ' + pad(saved.sc) + ' \u00b7 ' + saved.name + ' \u2192</a>';
+        '<a href="#' + saved.id + '">' + saved.name + ' \u2192</a>';
       host.insertAdjacentElement('afterend', p);
       // A tile's offsetTop is relative to its section, so the deck's generic
       // #anchor cut would land on the section. Cut to the tile's true position
@@ -1100,7 +1047,7 @@
   var bin = document.createElement('div');
   bin.className = 'bin'; bin.setAttribute('role', 'status'); bin.setAttribute('aria-live', 'polite');
   bin.innerHTML = '<span class="bin__word">Bin</span><span class="bin__sep bin__word">·</span>' +
-    '<span><b data-n>0</b> selects</span><span class="bin__sep">·</span><span>TRT <b data-trt>0:00</b></span>' +
+    '<span><b data-n>0</b> selected</span>' +
     '<button type="button" class="bin__clear" aria-label="Clear the bin">Clear</button>' +
     '<span class="bin__break" aria-hidden="true"></span>' +
     '<button type="button" class="btn btn--ghost bin__screen">Screen it</button>' +
@@ -1113,7 +1060,7 @@
   sheet.setAttribute('aria-label', 'Your reel'); sheet.setAttribute('aria-hidden', 'true');
   sheet.innerHTML = '<div class="sheet__card">' +
     '<button type="button" class="sheet__close" aria-label="Close">✕</button>' +
-    '<p class="sheet__slate">Reel <b data-code></b> · <b data-n></b> clips · TRT <b data-trt></b></p>' +
+    '<p class="sheet__slate">Reel <b data-code></b> · <b data-n></b> films</p>' +
     '<p class="sheet__title">Your cut, as a link.</p>' +
     '<ol class="sheet__list" data-list></ol>' +
     '<code class="sheet__url" data-url></code>' +
@@ -1135,12 +1082,11 @@
       var at = sel.indexOf(ALPHABET[i]), b = t.querySelector('.tile__mark');
       t.classList.toggle('is-selected', at > -1);
       if (b) {
-        b.innerHTML = at > -1 ? 'SEL <b>' + pad(at + 1) + '</b>' : '+ Select';
+        b.innerHTML = at > -1 ? 'Selected <b>' + (at + 1) + '</b>' : '+ Select';
         b.setAttribute('aria-pressed', at > -1 ? 'true' : 'false');
       }
     });
     bin.querySelector('[data-n]').textContent = sel.length;
-    bin.querySelector('[data-trt]').textContent = mmss(trt());
     bin.classList.toggle('is-up', sel.length > 0);
     lift();
     if (!sel.length) closeSheet();
@@ -1151,14 +1097,13 @@
     var c = code(), url = location.origin + '/reel/' + c;
     sheet.querySelector('[data-code]').textContent = c.toUpperCase();
     sheet.querySelector('[data-n]').textContent = pad(sel.length);
-    sheet.querySelector('[data-trt]').textContent = mmss(trt());
     sheet.querySelector('[data-url]').textContent = url.replace(/^https?:\/\//, '');
     sheet.querySelector('[data-act="open"]').href = url;
     sheet.querySelector('[data-act="edl"]').href = url + '.edl';
     var list = sheet.querySelector('[data-list]'); list.innerHTML = '';
     sel.forEach(function (k, n) {
       var t = tiles[ALPHABET.indexOf(k)], li = document.createElement('li');
-      li.innerHTML = '<span>SC ' + pad(n + 1) + '</span><span>' + nameOf(t).replace(/[&<>]/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]; }) + '</span><span>' + mmss(secs(t)) + '</span>';
+      li.innerHTML = '<span>' + nameOf(t).replace(/[&<>]/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]; }) + '</span><span>' + mmss(secs(t)) + '</span>';
       list.appendChild(li);
     });
     sheet.querySelector('[data-act="share"]').hidden = !navigator.share;

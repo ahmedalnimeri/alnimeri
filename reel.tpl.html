@@ -55,14 +55,12 @@
       <button class="btn btn--solid reel__share" type="button" data-url="https://alnimeri.com/reel/{{CODE}}">Share this reel</button>
       <a class="btn btn--ghost" href="/#work">Pull your own &rarr;</a>
     </div>
-    <p class="burnin" aria-hidden="true"><span class="tl__rec"></span>REEL {{CODE_UP}} &middot; {{COUNT_PAD}} CLIPS &middot; TRT {{TRT}} &middot; 24 FPS</p>
   </section>
 
   <section class="section" id="selects">
     <div class="slate">
-      <span class="slate__tc" data-tc>TC 00:00:00</span>
       <h2 class="slate__title">The cut</h2>
-      <span class="slate__meta">REEL {{CODE_UP}} &middot; {{COUNT}} clips &middot; TRT {{TRT}}</span>
+      <span class="slate__meta">{{COUNT}} films</span>
     </div>
     <div class="grid">
 {{TILES}}
@@ -72,9 +70,8 @@
   <section class="contact" id="out">
     <div class="contact__inner">
       <div class="slate">
-        <span class="slate__tc" data-tc>TC {{TRT_TC}}</span>
         <h2 class="slate__title">Out</h2>
-        <span class="slate__meta">OUT</span>
+        
       </div>
       <p class="contact__head reveal">That was their cut. The rest is mine.</p>
       <a class="contact__mail" href="mailto:ahmed@alnimeri.com">ahmed@alnimeri.com</a>
@@ -84,7 +81,7 @@
         <a class="btn btn--ghost" href="/about">About Ahmed</a>
         <a class="btn btn--ghost" href="/reel/{{CODE}}.edl">This reel as an EDL</a>
       </nav>
-      <span class="colophon__seq">REEL {{CODE_UP}} &middot; {{COUNT}} clips &middot; TRT {{TRT}} &middot; 24 FPS &middot; <a href="/reel/{{CODE}}.edl">EDL &darr;</a></span>
+      <span class="colophon__seq"><a href="/reel/{{CODE}}.edl">This reel as a cut list (EDL)</a></span>
       <span class="colophon__seq colophon__seq--tell">Anyone with this link sees the same cut. Nothing about who pulled it is stored.</span>
       <div class="colophon">
         <span>© 2026 Ahmed El-Nimeri</span>

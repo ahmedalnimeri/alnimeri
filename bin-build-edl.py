@@ -18,12 +18,11 @@ for b in blocks:
     vid   = re.search(r'data-video="(\d+)"', b)
     title = re.search(r'data-title="([^"]+)"', b)
     dur   = re.search(r'class="tile__dur"[^>]*>(\d+:\d{2})<', b)
-    idx   = re.search(r'class="tile__idx">([^<]+)<', b)
     stat  = re.search(r'class="tile__stat"[^>]*>\s*([^<]+?)\s*<', b)
-    if not (href and title and dur and idx):
+    if not (href and title and dur):
         sys.exit('tile missing a required field: ' + b[:120])
     tiles.append((href.group(1), vid.group(1) if vid else 'AX',
-                  title.group(1), dur.group(1), idx.group(1),
+                  title.group(1), dur.group(1),
                   stat.group(1) if stat else ''))
 if len(tiles) < 10:
     sys.exit(f'suspiciously few tiles matched: {len(tiles)}')
@@ -33,13 +32,9 @@ def tc(sec):
 
 lines = ['TITLE: ALNIMERI_SELECTS_2026', 'FCM: NON-DROP FRAME', '']
 tot = 0
-for n, (href, vid, title, dur, idx, stat) in enumerate(tiles, 1):
+for n, (href, vid, title, dur, stat) in enumerate(tiles, 1):
     m, ss = map(int, dur.split(':'))
     d = m * 60 + ss
-    # cross-check the DOM stamp against the recomputed IN point
-    stamp_in = re.search(r'IN (\d+):(\d{2})', idx.replace('&middot;', '·'))
-    if stamp_in and (int(stamp_in.group(1)) * 60 + int(stamp_in.group(2))) != tot:
-        sys.exit(f'STAMP MISMATCH at event {n}: DOM says {idx!r}, sum says {tot}s')
     lines.append(f'{n:03d}  {vid:<10}  V  C  {tc(0)} {tc(d)} {tc(tot)} {tc(tot + d)}')
     lines.append(f'* FROM CLIP NAME: {title.upper()}')
     host = re.sub(r'^https?://(www\.)?', '', href).split('/')[0].upper()
