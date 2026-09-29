@@ -8,7 +8,13 @@ to its film and carries a small chip naming the film and its reach, exactly
 as the film's tile in #work states it (nothing is typed twice, nothing is
 invented). design-compositions.js gives every still its own response to the
 pointer: a rack focus — the still you point at sharpens and comes forward,
-the others fall soft and recede, and its chip follows the pointer.
+the others fall soft and recede, and its chip comes into focus with it.
+
+Each composition shows only films from that chapter's own group on /work/
+(the "See all" link must lead to the same films), and only stills that read
+as pictures: a white UI frame or a near-black frame is left out. Events and
+motion have two such films, so they are two-still compositions (the lead and
+the near plane); that difference is the real material, not a variation.
 
 Letterboxed films are shown at their true picture shape (a scope film as a
 scope strip, not a 16:9 poster with black bars): CROP is the picture area in
@@ -17,7 +23,7 @@ the 768x432 poster, measured from the bars.
 Writes between <!-- ART:CHAPTERS --> markers in index.html. Run
 bin-stamp-assets.py afterwards to hash the poster URLs.
 """
-import re, html
+import os, re, html
 
 SRC = open('index.html').read()
 
@@ -36,6 +42,8 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
 # picture area inside the 768x432 poster (x, y, w, h) for letterboxed films
 CROP = {
     '60 Secs of New York': (0, 54, 768, 324),              # 2.37:1 scope
+    'Solana x All In': (0, 35, 768, 362),                  # 2.12:1, bars top and bottom
+    'Solana Skyline': (12, 12, 744, 373),                  # the collage and its mark, off the wide black ground
     'The Greatest Sudanese Sit-In': (0, 52, 768, 328),     # 2.34:1 scope
 }
 
@@ -51,7 +59,7 @@ CHAPTERS = [
     ('events', 'Event &amp; conference films',
      'Conferences, launches and summits. Speaker films, multi-camera coverage and recaps cut on site, while the event is still happening.',
      ('/work/#events', 'See all event &amp; conference films'), 'Event%20%2F%20conference%20film%20enquiry',
-     ['Solana x All In', 'Solana Solstice', 'SGB — Solana Accelerate HK']),
+     ['Solana x All In', 'Solana Solstice']),
     ('documentary', 'Documentary &amp; human stories',
      'Real people, places and stories. Documentary and institutional films, with eleven years of work across Sudan and the Gulf.',
      ('/work/#documentary', 'See all documentary work'), 'Documentary%20%2F%20institutional%20film%20enquiry',
@@ -59,11 +67,11 @@ CHAPTERS = [
     ('motion', 'Creative direction &amp; post',
      'A concept to develop or footage to shape. Creative direction, editorial, motion, colour and sound for your next piece.',
      ('/work/#motion', 'See all motion &amp; post work'), 'Creative%20direction%20%2F%20post-production%20enquiry',
-     ['Solana Developer Platform', 'Assets API', 'Solana Skyline']),
+     ['Solana Developer Platform', 'Solana Skyline']),
 ]
 
-# rendered widths at 1440px, as a share of the viewport, for sizes=""
-SIZES = {1: '(max-width: 1099px) 88vw, 51vw', 2: '(max-width: 1099px) 54vw, 25vw', 3: '(max-width: 1099px) 70vw, 40vw'}
+# rendered widths, as a share of the viewport, for sizes="" (desktop from 960px)
+SIZES = {1: '(max-width: 959px) 88vw, 51vw', 2: '(max-width: 959px) 54vw, 25vw', 3: '(max-width: 959px) 70vw, 38vw'}
 DEPTH = {1: '1', 2: '.45', 3: '.72'}
 
 
@@ -74,22 +82,32 @@ def still(f, n):
         shape += f';--cw:{768 / w:.4f};--cx:{-x / w:.4f};--cy:{-y / h:.4f}'
     b = f['base']
     reach = f['stat'] or f['kind']
+    # where the hero already ships a WebP set for this film, offer the same
+    # files: the browser reuses what the slideshow loaded instead of fetching
+    # the JPEG twice
+    webp = ''
+    if os.path.exists(f'{b}-768.webp'):
+        webp = (f'<source type="image/webp" srcset="{b}-480.webp 480w, {b}-768.webp 768w, {b}-1280.webp 1280w" '
+                f'sizes="{SIZES[n]}">')
     label = html.escape(f"{f['title']} — {f['kind']}" + (f", {f['stat']}" if f['stat'] else ''), quote=True)
     return (
         f'\n        <a class="cmp__still cmp__still--{n}{" is-lead" if n == 1 else ""}" href="{f["href"]}" data-depth="{DEPTH[n]}" style="{shape}" aria-label="{label}">'
-        f'<span class="cmp__frame"><img srcset="{b}-480.jpg 480w, {b}-768.jpg 768w, {b}.jpg 1280w" sizes="{SIZES[n]}" '
-        f'src="{b}-768.jpg" alt="" width="768" height="432" loading="lazy" decoding="async"></span>'
+        f'<span class="cmp__frame">{"<picture>" + webp if webp else ""}<img srcset="{b}-480.jpg 480w, {b}-768.jpg 768w, {b}.jpg 1280w" sizes="{SIZES[n]}" '
+        f'src="{b}-768.jpg" alt="" width="768" height="432" loading="lazy" decoding="async">{"</picture>" if webp else ""}</span>'
         f'<span class="cmp__chip" aria-hidden="true"><b>{html.escape(f["title"])}</b><span>{html.escape(reach)}</span></span></a>')
 
 
 out = []
 for n, (key, title, words, (all_href, all_text), subject, names) in enumerate(CHAPTERS):
     fs = [films[x] for x in names]
-    stills = ''.join(still(f, i + 1) for i, f in enumerate(fs))
-    c3 = CROP.get(fs[2]['title'], (0, 0, 768, 432))
+    # planes: 1 = the lead, 2 = the far plane, 3 = the near plane (the lowest
+    # still). A two-still composition is the lead and the near plane.
+    planes = [1, 2, 3] if len(fs) == 3 else [1, 3]
+    stills = ''.join(still(f, n) for f, n in zip(fs, planes))
+    c3 = CROP.get(fs[-1]['title'], (0, 0, 768, 432))
     h3 = f'{c3[3] / c3[2]:.4f}'                 # the lowest still's height per unit width: the words leave it room
     out.append(f'''
-    <article class="cmp cmp--{key}{' cmp--flip' if n % 2 else ''}" style="--h3:{h3}" aria-labelledby="cmp-{key}">
+    <article class="cmp cmp--{key}{' cmp--flip' if n % 2 else ''}{' cmp--duo' if len(fs) == 2 else ''}" style="--h3:{h3}" aria-labelledby="cmp-{key}">
       <div class="cmp__text reveal">
         <h3 class="cmp__title" id="cmp-{key}">{title}</h3>
         <p class="cmp__words">{words}</p>
