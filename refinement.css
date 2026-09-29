@@ -341,3 +341,11 @@
   .twoshot__frame { aspect-ratio: auto; height: min(640px, calc(100svh - 300px)); min-height: 380px; }
   .hero--editorial { padding-top: 130px; padding-bottom: 90px; }
 }
+
+/* the films keep their own 16:9: a tall frame could only show a slice of them */
+.twoshot__frame { aspect-ratio: 16 / 9 !important; height: auto !important; min-height: 0 !important; }
+.twoshot__shot img { object-position: 50% 50% !important; }
+.twoshot__label b { font-weight: 400; }
+
+/* the caption over the client logos, in the same voice as everything else */
+.marquee__label { font-family: var(--ff); font-size: 13px; letter-spacing: -.01em; text-transform: none; color: var(--fg-faint); }

@@ -14,37 +14,41 @@
   var fine = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   /* ---- the picture follows the sentence ------------------------------- */
+  // A brief, then my country, alternating through the work. Each caption names
+  // whichever film is on screen for its clause; hovering a clause (or its
+  // caption) brings back the last film shown for it.
   var two = document.querySelector('.twoshot');
   if (two) {
     var shots = [].slice.call(two.querySelectorAll('.twoshot__shot'));
-    var labels = [].slice.call(two.querySelectorAll('.twoshot__label'));
-    var cur = 1, held = false, timer = null;
-    var show = function (n) {
-      cur = n;
-      shots.forEach(function (s) { s.classList.toggle('is-on', +s.dataset.shot === n); });
-      labels.forEach(function (l) { l.classList.toggle('is-on', +l.dataset.shot === n); });
+    var labels = {};
+    [].slice.call(two.querySelectorAll('.twoshot__label')).forEach(function (l) { labels[l.dataset.side] = l; });
+    var cur = 0, held = false, last = { '1': 0, '2': 1 }, timer = null;
+    var show = function (i) {
+      cur = i;
+      var s = shots[i], side = s.dataset.side;
+      last[side] = i;
+      shots.forEach(function (x, k) { x.classList.toggle('is-on', k === i); });
+      var l = labels[side];
+      if (l) { l.querySelector('b').textContent = s.dataset.title; l.href = s.getAttribute('href'); }
+      Object.keys(labels).forEach(function (k) { labels[k].classList.toggle('is-on', k === side); });
     };
-    var hold = function (n) { return function () { held = true; show(n); }; };
+    var hold = function (side) { return function () { held = true; show(last[side]); }; };
     var release = function () { held = false; };
-    var c1 = document.querySelector('.hero__name .shot--1');
-    var c2 = document.querySelector('.hero__name .shot--2');
-    [[c1, 1], [c2, 2]].forEach(function (p) {
+    var c1 = document.querySelector('.hero__name .shot--1'), c2 = document.querySelector('.hero__name .shot--2');
+    [[c1, '1'], [c2, '2']].forEach(function (p) {
       if (!p[0]) return;
       p[0].addEventListener('pointerenter', hold(p[1]));
       p[0].addEventListener('pointerleave', release);
     });
-    labels.forEach(function (l) {
-      l.addEventListener('pointerenter', hold(+l.dataset.shot));
-      l.addEventListener('focus', hold(+l.dataset.shot));
-      l.addEventListener('pointerleave', release);
-      l.addEventListener('blur', release);
+    Object.keys(labels).forEach(function (k) {
+      var l = labels[k];
+      l.addEventListener('pointerenter', hold(k)); l.addEventListener('focus', hold(k));
+      l.addEventListener('pointerleave', release); l.addEventListener('blur', release);
     });
-    if (!reduce) {
-      // the cut lands with the second clause, then the two films alternate
-      // like a held two-shot until someone takes over with the pointer
+    if (!reduce && shots.length > 1) {
       setTimeout(function () {
-        if (!held) show(2);
-        timer = setInterval(function () { if (!held && !document.hidden) show(cur === 1 ? 2 : 1); }, 5200);
+        if (!held) show(1);
+        timer = setInterval(function () { if (!held && !document.hidden) show((cur + 1) % shots.length); }, 3400);
       }, 1750);
     }
   }
