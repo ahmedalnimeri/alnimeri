@@ -150,14 +150,22 @@
   .ending__roll {
     --cw: min(300px, calc((100vw - 2 * var(--gut) - 14px) / 2));
     --edge: max(var(--gut), calc(50vw - var(--cw) - 7px));
-    --gap: 24px; --capH: 25px; --mid: 57%;
+    --gap: 24px; --capH: 25px;
+    /* the resting row sits just above the card, whatever the phone's height */
+    --mid: calc(100% - 66px - (var(--picH) + var(--capH)) / 2);
     position: relative; inset: auto; flex: 1 0 clamp(280px, 38svh, 460px);
     margin: 0 calc(-1 * var(--gut));
   }
-  .ending__roll::before { height: 24%; }
+  /* two rows in the light, whatever the height: everything above the upper
+     one goes to black, so on a tall screen no caption is left hanging
+     under the bar without its picture */
+  .ending__roll::before {
+    height: max(64px, calc(100% - 36px - 2 * (var(--picH) + var(--capH)) - var(--gap)));
+    background: linear-gradient(#000 0, #000 calc(100% - 40px), rgba(0,0,0,.5) calc(100% - 20px), rgba(0,0,0,0) 100%);
+  }
   .ending__roll::after {
-    height: 30%;
-    background: linear-gradient(rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 34%, rgba(0,0,0,.9) 64%, #000 90%);
+    height: 70px;
+    background: linear-gradient(rgba(0,0,0,0) 0%, rgba(0,0,0,.85) 45%, #000 70%);
   }
   .ending__col--a { --t: 34svh; }
   .ending__col--b { --t: 16svh; }
