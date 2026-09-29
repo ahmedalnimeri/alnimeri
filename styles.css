@@ -2171,9 +2171,8 @@ body.is-locked { overflow: hidden; }
 .filmcats { display: flex; flex-wrap: wrap; gap: 0.5rem 0.6rem; margin: 0 0 clamp(2rem, 5vh, 3rem); }
 .filmcats a {
   display: inline-flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 0.9rem; border: 1px solid var(--line); border-radius: var(--pill);
-  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--fg-dim); text-decoration: none;
+  padding: 0.55rem 1rem; border: 1px solid var(--line); border-radius: var(--pill);
+  font-size: 14px; letter-spacing: -0.01em; color: var(--fg-dim); text-decoration: none;
 }
 .filmcats a:hover, .filmcats a:focus-visible { color: var(--fg); background: rgba(255,255,255,0.07); }
 .filmcats span { color: var(--fg-faint); }
@@ -2183,8 +2182,8 @@ body.is-locked { overflow: hidden; }
   margin: 0 0 1.25rem; padding-top: 0.7rem; border-top: 1px solid var(--line);
   font-size: clamp(1.05rem, 2vw, 1.45rem); letter-spacing: -0.02em; font-weight: 600;
 }
-.filmcat__head span { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint); font-weight: 400; }
-.filmcards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 1.6rem 1.25rem; }
+.filmcat__head span { font-size: 14px; letter-spacing: -0.01em; color: var(--fg-faint); font-weight: 400; }
+.filmcards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 2.6rem 1.5rem; }
 .filmcard a { display: block; color: inherit; text-decoration: none; }
 .filmcard img {
   /* height: auto matters — the width/height attributes act as a style hint,
@@ -2196,7 +2195,7 @@ body.is-locked { overflow: hidden; }
 .filmcard a:hover img, .filmcard a:focus-visible img { filter: none; }
 .filmcard__name { display: block; margin-top: 0.7rem; font-size: 0.95rem; letter-spacing: -0.01em; }
 .filmcard a:hover .filmcard__name { text-decoration: underline; text-underline-offset: 4px; }
-.filmcard__meta { display: block; margin-top: 0.3rem; font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-faint); }
+.filmcard__meta { display: block; margin-top: 0.35rem; font-size: 13px; line-height: 1.5; letter-spacing: -0.01em; color: var(--fg-faint); }
 @media (max-width: 560px) { .filmcards { grid-template-columns: 1fr; } }
 
 /* ================= dark page, light bands =================
@@ -2226,3 +2225,56 @@ body.is-locked { overflow: hidden; }
 /* client logos are white artwork: invert them only on a light band */
 .on-light .logo, .on-light .marquee img { filter: invert(1) grayscale(1); opacity: .68; }
 .on-light .tile__link { background: #e7e5df; }
+
+/* ================= quiet by default =================
+   Ahmed: "smart, smooth, creative, elegant, premium, clean." So: nothing is
+   painted on top of the films, the tools wait until they are wanted, the ink
+   is warm rather than pure white, and the transitions ease instead of step. */
+:root { --fg: #f6f4ef; --ease: cubic-bezier(.22,.61,.36,1); }
+
+.tile__img, .reel__frame img, .filmcard img, .hero__feature img {
+  animation: none !important; filter: none !important;
+  transition: transform .9s var(--ease), opacity .6s var(--ease) !important;
+}
+.tile__link:hover .tile__img, .filmcard a:hover img { transform: scale(1.025); }
+.btn, .tile__link, .filmcard a, .commission__card a, .masthead a, .slate__run {
+  transition: color .35s var(--ease), background-color .35s var(--ease),
+              border-color .35s var(--ease), opacity .35s var(--ease), transform .35s var(--ease);
+}
+.reveal { transition: opacity 1s var(--ease), transform 1s var(--ease) !important; }
+
+/* the sequence bar was a tool on screen at all times; the bin arrives only
+   when something is selected, and the select chips on hover or focus */
+.tl { display: none; }
+.bin { opacity: 0; pointer-events: none; transform: translateY(12px); transition: opacity .4s var(--ease), transform .4s var(--ease); }
+.bin.is-up { opacity: 1; pointer-events: auto; transform: none; }
+.tile__mark { opacity: 0; transform: translateY(4px); }
+.tile:hover .tile__mark, .tile:focus-within .tile__mark, .tile.is-selected .tile__mark { opacity: 1; transform: none; }
+
+/* nothing painted over the frame: no veil, no permanent play badge, and the
+   running time sits with the title instead of on the picture */
+.tile__veil { display: none; }
+.tile__play { opacity: 0; }
+.tile__link:hover .tile__play, .tile__link:focus-visible .tile__play { opacity: 1; }
+.tile__dur {
+  position: static; background: none; border: 0; padding: 0; margin-left: 10px;
+  font-family: var(--ff); font-size: 13px; letter-spacing: -.01em; color: var(--fg-faint);
+}
+.tile__meta { padding-top: 18px; }
+.tile__name { font-size: 19px; font-weight: 500; letter-spacing: -.02em; }
+
+/* the reel is an invitation, not a control panel */
+.slate__run {
+  position: static; border: 0; background: none; padding: 0; margin: 14px auto 0;
+  width: fit-content; font-family: var(--ff); font-size: 15px; letter-spacing: -.01em;
+  text-transform: none; color: var(--fg-dim);
+}
+.slate__run:hover { color: var(--fg); }
+.slate__runmark { display: none; }
+
+/* display type: fewer sizes, lighter weight, tighter */
+.slate__title, .contact__head, .hero__name, .commission__heading h2 { font-weight: 500; letter-spacing: -.045em; line-height: 1.04; }
+.card, .commission__card {
+  background: transparent; box-shadow: none; border: 0;
+  border-top: 1px solid var(--line); border-radius: 0; padding: 26px 0 0;
+}
