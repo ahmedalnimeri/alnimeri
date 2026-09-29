@@ -76,7 +76,7 @@ def source_name(url):
             'www.facebook.com': 'Facebook'}.get(h, h)
 
 HEAD = '''<!doctype html>
-<html lang="en" class="no-js">
+<html lang="en" class="no-js" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

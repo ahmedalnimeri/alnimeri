@@ -2198,3 +2198,31 @@ body.is-locked { overflow: hidden; }
 .filmcard a:hover .filmcard__name { text-decoration: underline; text-underline-offset: 4px; }
 .filmcard__meta { display: block; margin-top: 0.3rem; font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-faint); }
 @media (max-width: 560px) { .filmcards { grid-template-columns: 1fr; } }
+
+/* ================= dark page, light bands =================
+   Ahmed: "I generally prefer the dark vibe but I want a smart mix within the
+   page." So the site keeps its cinema ground, and the chapters that are words
+   rather than film — what he makes, and who he is — sit on a light band, the
+   way Apple alternates black and white down a page. Both sides are the same
+   components; only these tokens change. */
+:root {
+  --btn-fg: #0a0a0c;
+  --card-bg: rgba(255, 255, 255, 0.022);
+  --glass: rgba(18, 18, 22, 0.72); --glass-line: rgba(255, 255, 255, 0.10);
+  --mark-filter: none;
+  --card-shadow: none;
+}
+.on-light {
+  --bg: #f4f3ef; --bg-raised: #ffffff; --fg: #131417;
+  --fg-dim: #4a4a52; --fg-faint: #6f6f78;
+  --line: rgba(0, 0, 0, 0.14); --line-soft: rgba(0, 0, 0, 0.075);
+  --btn-fg: #ffffff;
+  --card-bg: #ffffff;
+  --card-shadow: 0 1px 2px rgba(0,0,0,.05), 0 10px 34px rgba(0,0,0,.05);
+  background: var(--bg); color: var(--fg);
+}
+.btn--solid { background: var(--fg); color: var(--btn-fg); }
+.card, .commission__card { background: var(--card-bg); box-shadow: var(--card-shadow); }
+/* client logos are white artwork: invert them only on a light band */
+.on-light .logo, .on-light .marquee img { filter: invert(1) grayscale(1); opacity: .68; }
+.on-light .tile__link { background: #e7e5df; }
