@@ -13,6 +13,7 @@
  *
  * Guards: same-origin only, a honeypot field, field-length caps, a name plus a
  * valid email or WhatsApp number, and at most five briefs per sender per hour.
+ * One database round trip per brief; the page does not wait for it anyway.
  * Kept for a year, as the privacy page says.
  */
 
@@ -66,25 +67,30 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   const ip = request.headers.get('CF-Connecting-IP') || null;
   const cf = request.cf || {};
+  // One round trip: the rate limit (five briefs per sender per hour) rides
+  // inside the INSERT, so a limited sender simply changes no rows. The table is
+  // created only the first time an insert finds it missing.
+  const insert = () => env.DB.prepare(
+    `INSERT INTO briefs (ts, name, company, about, for_what, timing, email, whatsapp, film_seen, message, ip, country, ua)
+     SELECT datetime('now'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+     WHERE (SELECT COUNT(*) FROM briefs WHERE ip = ? AND ts > datetime('now', '-1 hour')) < 5`
+  ).bind(f.name, f.company, f.about, f.for, f.timing, f.email, f.whatsapp, f.film_seen, f.message,
+         ip, cf.country || null, clean(request.headers.get('User-Agent'), 300), ip).run();
   try {
-    await env.DB.prepare(TABLE).run();
-    if (ip) {
-      const recent = await env.DB.prepare(
-        `SELECT COUNT(*) AS n FROM briefs WHERE ip = ? AND ts > datetime('now', '-1 hour')`
-      ).bind(ip).first();
-      if (recent && recent.n >= 5) return json({ ok: false, error: 'rate' }, 429);
+    let res;
+    try { res = await insert(); }
+    catch (e) {
+      if (!/no such table/i.test(e.message)) throw e;
+      await env.DB.prepare(TABLE).run();
+      res = await insert();
     }
-    const res = await env.DB.prepare(
-      `INSERT INTO briefs (ts, name, company, about, for_what, timing, email, whatsapp, film_seen, message, ip, country, ua)
-       VALUES (datetime('now'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(f.name, f.company, f.about, f.for, f.timing, f.email, f.whatsapp, f.film_seen, f.message,
-           ip, cf.country || null, clean(request.headers.get('User-Agent'), 300)).run();
+    if (!res.meta || !res.meta.changes) return json({ ok: false, error: 'rate' }, 429);
 
-    // a year, as promised; checked on roughly one brief in twenty
+    // a year, as promised; checked on roughly one brief in twenty, after replying
     if (Math.random() < 0.05) {
       waitUntil(env.DB.prepare(`DELETE FROM briefs WHERE ts < datetime('now', '-365 days')`).run().catch(() => {}));
     }
-    return json({ ok: true, id: res.meta && res.meta.last_row_id });
+    return json({ ok: true, id: res.meta.last_row_id });
   } catch (e) {
     console.log('brief-store-failed: ' + e.message);
     return json({ ok: false, error: 'storage' }, 500);

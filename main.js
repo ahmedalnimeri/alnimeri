@@ -1597,23 +1597,14 @@
   // answered HTTP 500 to everyone. An email notification is a second step: set
   // NOTIFY_KEY to a Web3Forms access key (public by design) to have each brief
   // also emailed to ahmed@alnimeri.com. Only if saving AND emailing both fail
-  // does the visitor's email app open with the same message.
+  // is the visitor offered their email app, with the same message ready.
   var ENDPOINT = '/api/brief';
   var NOTIFY_KEY = '';
-  var sendBtn = f.querySelector('button[type=submit]');
-  var sendLabel = sendBtn.innerHTML;
   f.addEventListener('submit', function (e) {
     e.preventDefault();
     if (!valid()) return;
     if (field('_honey').value) return;                          // only a bot fills the hidden field
     var note = d.querySelector('.brief__note');
-    sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
-    var fallback = function () {
-      sendBtn.disabled = false; sendBtn.innerHTML = sendLabel;
-      var href = mailto(); f.dataset.mailto = href;
-      note.textContent = 'That didn’t go through, so your email app is opening with the message instead.';
-      window.location.href = href;
-    };
     var payload = {
       name: field('name').value.trim(), company: field('org').value.trim(), about: kindLabel(),
       'for': field('for').value.trim(), timing: field('when').value.trim(), email: field('email').value.trim(),
@@ -1622,30 +1613,42 @@
       _subject: subject(), _honey: field('_honey').value
     };
     f.dataset.payload = JSON.stringify(payload);
+    var href = mailto(); f.dataset.mailto = href;
     var sent = { first: payload.name.split(' ')[0], email: payload.email, wa: payload.whatsapp };
-    var timed = function (p, ms) { return Promise.race([p, new Promise(function (_, no) { setTimeout(function () { no(new Error('timeout')); }, ms); })]); };
-    var store = timed(fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }), 12000)
-      .then(function (r) { return r.json().then(function (j) { return !!(r.ok && j.ok); }); })
-      .catch(function () { return false; });
-    var notify = NOTIFY_KEY ? timed(fetch('https://api.web3forms.com/submit', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ access_key: NOTIFY_KEY, subject: payload._subject, from_name: 'alnimeri.com', replyto: payload.email || undefined,
-          name: payload.name, company: payload.company, about: payload.about, 'for': payload['for'], timing: payload.timing,
-          email: payload.email, whatsapp: payload.whatsapp, film_seen: payload.film_seen, message: payload.message }) }), 12000)
-      .then(function (r) { return r.json().then(function (j) { return !!j.success; }); })
-      .catch(function () { return false; }) : Promise.resolve(false);
-    Promise.all([store, notify])
-      .then(function (res) {
-        if (!(res[0] || res[1])) return fallback();
-        f.classList.add('is-sent');
-        var line = f.querySelector('.brief__sentence');
-        line.textContent = 'Thank you, ' + sent.first + '. It reached me, and I’ll reply to ';
-        var b = document.createElement('b'); b.textContent = sent.email || ('your WhatsApp, ' + sent.wa); line.appendChild(b);
-        line.appendChild(document.createTextNode('.'));
-        f.querySelector('.brief__actions').hidden = true;
-        note.textContent = 'I answer my own email, usually the same day.';
-      })
-      .catch(function () { if (!f.classList.contains('is-sent')) fallback(); });
+
+    // The guest never waits. The thank-you shows the moment they press send,
+    // and the brief travels in the background — keepalive lets it finish even
+    // if they close the tab straight away. It is saved to the site's own list
+    // (/api/brief), with one retry, and emailed if NOTIFY_KEY is set. Only if
+    // neither lands does the note change, offering their email app instead.
+    f.classList.add('is-sent');
+    var line = f.querySelector('.brief__sentence');
+    line.textContent = 'Thank you, ' + sent.first + '. I’ll reply to ';
+    var b = document.createElement('b'); b.textContent = sent.email || ('your WhatsApp, ' + sent.wa); line.appendChild(b);
+    line.appendChild(document.createTextNode('.'));
+    f.querySelector('.brief__actions').hidden = true;
+    note.textContent = 'I answer my own email, usually the same day.';
+
+    var post = function (url, body, ok) {
+      return fetch(url, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(body) })
+        .then(function (r) { return r.json().then(function (j) { return ok(r, j); }); })
+        .catch(function () { return false; });
+    };
+    var store = function (retry) {
+      return post(ENDPOINT, payload, function (r, j) { return !!(r.ok && j.ok); })
+        .then(function (done) { return done || !retry ? done : new Promise(function (go) { setTimeout(go, 1500); }).then(function () { return store(false); }); });
+    };
+    var notify = NOTIFY_KEY ? post('https://api.web3forms.com/submit', { access_key: NOTIFY_KEY, subject: payload._subject, from_name: 'alnimeri.com',
+        replyto: payload.email || undefined, name: payload.name, company: payload.company, about: payload.about, 'for': payload['for'],
+        timing: payload.timing, email: payload.email, whatsapp: payload.whatsapp, film_seen: payload.film_seen, message: payload.message },
+        function (r, j) { return !!j.success; }) : Promise.resolve(false);
+    Promise.all([store(true), notify]).then(function (res) {
+      if (res[0] || res[1]) { f.dataset.delivered = 'yes'; return; }
+      f.dataset.delivered = 'no';
+      note.textContent = 'The connection dropped before it reached me. ';
+      var a = document.createElement('a'); a.href = href; a.textContent = 'Send it from your email app instead';
+      note.appendChild(a); note.appendChild(document.createTextNode('.'));
+    });
   });
   d.querySelector('.brief__copy').addEventListener('click', function () {
     if (!valid()) return;
