@@ -18,7 +18,7 @@ N = len(films)
 WORDS = {14: 'Fourteen', 15: 'Fifteen', 16: 'Sixteen', 17: 'Seventeen', 18: 'Eighteen', 19: 'Nineteen', 20: 'Twenty'}
 
 CARDS = [
-    ('og-home', '/assets/posters/843280565.jpg', 'Some of it was a brief.', 'Some of it was my country.',
+    ('og-home', '/assets/posters/843280565.jpg', 'I tell stories', 'through visuals.',
      'Ahmed El-Nimeri &middot; Film director &amp; editor &middot; Dubai'),
     ('og-work', '/assets/posters/1058181870.jpg', f'{WORDS.get(N, N)} films.', 'Brand, event, documentary, motion.',
      'Ahmed El-Nimeri &middot; Selected work &middot; Dubai'),

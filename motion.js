@@ -1,7 +1,7 @@
 /* motion.js — motion that carries an idea, never motion for its own sake.
 
-   The picture follows the sentence: "Some of it was a brief" shows a brief,
-   "Some of it was my country" cuts to Sudan. Words resolve from blur. A light
+   The films follow one another beside the opening line. Words resolve from
+   blur. A light
    follows the eye across the work. Films open like a letterbox and keep a
    little depth in the frame. At the foot of the page, beside "I answer my own
    email", the match cut is the face of the person who does.
@@ -13,42 +13,29 @@
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var fine = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-  /* ---- the picture follows the sentence ------------------------------- */
-  // A brief, then my country, alternating through the work. Each caption names
-  // whichever film is on screen for its clause; hovering a clause (or its
-  // caption) brings back the last film shown for it.
+  /* ---- the films beside the line --------------------------------------- */
+  // One after another, with the caption naming the one on screen. Hovering
+  // the picture holds it.
   var two = document.querySelector('.twoshot');
   if (two) {
     var shots = [].slice.call(two.querySelectorAll('.twoshot__shot'));
-    var labels = {};
-    [].slice.call(two.querySelectorAll('.twoshot__label')).forEach(function (l) { labels[l.dataset.side] = l; });
-    var cur = 0, held = false, last = { '1': 0, '2': 1 }, timer = null;
+    var cap = two.querySelector('.twoshot__label');
+    var cur = 0, held = false;
     var show = function (i) {
       cur = i;
-      var s = shots[i], side = s.dataset.side;
-      last[side] = i;
+      var s = shots[i];
       shots.forEach(function (x, k) { x.classList.toggle('is-on', k === i); });
-      var l = labels[side];
-      if (l) { l.querySelector('b').textContent = s.dataset.title; l.href = s.getAttribute('href'); }
-      Object.keys(labels).forEach(function (k) { labels[k].classList.toggle('is-on', k === side); });
+      if (cap) { cap.querySelector('b').textContent = s.dataset.title; cap.querySelector('span').textContent = s.dataset.kind; cap.href = s.getAttribute('href'); }
     };
-    var hold = function (side) { return function () { held = true; show(last[side]); }; };
-    var release = function () { held = false; };
-    var c1 = document.querySelector('.hero__name .shot--1'), c2 = document.querySelector('.hero__name .shot--2');
-    [[c1, '1'], [c2, '2']].forEach(function (p) {
-      if (!p[0]) return;
-      p[0].addEventListener('pointerenter', hold(p[1]));
-      p[0].addEventListener('pointerleave', release);
-    });
-    Object.keys(labels).forEach(function (k) {
-      var l = labels[k];
-      l.addEventListener('pointerenter', hold(k)); l.addEventListener('focus', hold(k));
-      l.addEventListener('pointerleave', release); l.addEventListener('blur', release);
+    var frame = two.querySelector('.twoshot__frame');
+    [frame, cap].forEach(function (el) {
+      if (!el) return;
+      el.addEventListener('pointerenter', function () { held = true; });
+      el.addEventListener('pointerleave', function () { held = false; });
     });
     if (!reduce && shots.length > 1) {
       setTimeout(function () {
-        if (!held) show(1);
-        timer = setInterval(function () { if (!held && !document.hidden) show((cur + 1) % shots.length); }, 3400);
+        setInterval(function () { if (!held && !document.hidden) show((cur + 1) % shots.length); }, 3400);
       }, 1750);
     }
   }

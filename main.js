@@ -230,7 +230,7 @@
     out.innerHTML =
       '<p class="lb__outslate">' + n + ' films</p>' +
       '<p class="lb__outhead">That was the reel.</p>' +
-      '<p class="lb__outsub">Some of it was a brief. Some of it was my country.</p>' +
+      '<p class="lb__outsub">I tell stories through visuals.</p>' +
       '<div class="lb__outacts">' +
         '<a class="btn btn--solid" href="mailto:ahmed@alnimeri.com">Send the brief</a>' +
         '<button type="button" class="btn btn--ghost" data-again>Run it again</button>' +
@@ -1517,14 +1517,16 @@
         '</select> ' +
         'for <input name="for" placeholder="who it’s for" aria-label="Who it is for, or where it will run">. ' +
         'We’re hoping to have it by <input name="when" placeholder="a date or a month" aria-label="Timing">. ' +
-        'You can reach me at <input name="email" type="email" placeholder="your email" aria-label="Your email" autocomplete="email" required>.' +
+        'You can reach me at <input name="email" type="email" placeholder="your email" aria-label="Your email" autocomplete="email"> ' +
+        'or <input name="whatsapp" type="tel" placeholder="your WhatsApp" aria-label="Your WhatsApp number" autocomplete="tel">.' +
       '</p>' +
+      '<input class="brief__trap" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">' +
       '<p class="brief__error" role="alert" hidden></p>' +
       '<div class="brief__actions">' +
         '<button class="btn btn--solid" type="submit">Send to Ahmed <span aria-hidden="true">↗</span></button>' +
         '<button class="brief__copy" type="button">Copy the message</button>' +
       '</div>' +
-      '<p class="brief__note">Opens your email app with this message, addressed to ahmed@alnimeri.com. I answer my own email.</p>' +
+      '<p class="brief__note">It comes straight to my inbox. I answer my own email.</p>' +
     '</form>';
   document.body.appendChild(d);
 
@@ -1541,7 +1543,8 @@
     ruler.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
     var text = el.tagName === 'SELECT' ? el.options[el.selectedIndex].text : (el.value || el.placeholder);
     var pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-    el.style.width = Math.ceil(ruler.measureText(text).width + pad + 6) + 'px';
+    var icon = el.tagName === 'INPUT' ? 26 : 0;          // Chrome draws its autofill icon inside the field
+    el.style.width = Math.ceil(ruler.measureText(text).width + pad + icon + 6) + 'px';
   };
   var fitAll = function () { [].forEach.call(f.querySelectorAll('input, select'), fit); };
   [].forEach.call(f.querySelectorAll('input, select'), function (el) {
@@ -1549,26 +1552,36 @@
   });
 
   var kindLabel = function () { var k = field('kind'); return k.options[k.selectedIndex].text; };
+  var reach = function (email, wa) {
+    if (email && wa) return 'You can reach me at ' + email + ', or on WhatsApp at ' + wa + '.';
+    if (wa) return 'You can reach me on WhatsApp at ' + wa + '.';
+    return 'You can reach me at ' + email + '.';
+  };
   var message = function () {
     var s = 'Hi Ahmed, I’m ' + field('name').value.trim() +
       (field('org').value.trim() ? ' from ' + field('org').value.trim() : '') + '. ' +
       'I’d like to talk about ' + kindLabel() + (about ? ' (I saw ' + about + ')' : '') +
       (field('for').value.trim() ? ' for ' + field('for').value.trim() : '') + '. ' +
       (field('when').value.trim() ? 'We’re hoping to have it by ' + field('when').value.trim() + '. ' : '') +
-      'You can reach me at ' + field('email').value.trim() + '.';
+      reach(field('email').value.trim(), field('whatsapp').value.trim());
     return s;
   };
-  var mailto = function () {
-    var subject = kindLabel().replace(/^(a|an) /, '');
-    subject = subject.charAt(0).toUpperCase() + subject.slice(1) + ' — ' + field('name').value.trim() +
+  var subject = function () {
+    var k = kindLabel().replace(/^(a|an) /, '');
+    return k.charAt(0).toUpperCase() + k.slice(1) + ' — ' + field('name').value.trim() +
       (field('org').value.trim() ? ', ' + field('org').value.trim() : '');
-    return 'mailto:ahmed@alnimeri.com?subject=' + encodeURIComponent(subject) +
+  };
+  var mailto = function () {
+    return 'mailto:ahmed@alnimeri.com?subject=' + encodeURIComponent(subject()) +
       '&body=' + encodeURIComponent(message() + '\n\n—\nSent from alnimeri.com');
   };
   var valid = function () {
-    var name = field('name').value.trim(), email = field('email').value.trim();
-    if (!name) { err.textContent = 'Add your name, so Ahmed knows who is writing.'; err.hidden = false; field('name').focus(); return false; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = 'Add an email address Ahmed can reply to.'; err.hidden = false; field('email').focus(); return false; }
+    var name = field('name').value.trim(), email = field('email').value.trim(), wa = field('whatsapp').value.trim();
+    var say = function (t, el) { err.textContent = t; err.hidden = false; el.focus(); return false; };
+    if (!name) return say('Add your name, so Ahmed knows who is writing.', field('name'));
+    if (!email && !wa) return say('Add an email or a WhatsApp number Ahmed can reply to.', field('email'));
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return say('That email address doesn’t look complete.', field('email'));
+    if (wa && (wa.replace(/\D/g, '').length < 7)) return say('That WhatsApp number looks too short — include the country code.', field('whatsapp'));
     return true;
   };
 
@@ -1591,13 +1604,47 @@
   d.querySelector('.brief__close').addEventListener('click', close);
   d.addEventListener('click', function (e) { if (e.target === d) close(); });   // the backdrop
 
+  // Sent straight to the inbox through FormSubmit (formsubmit.co): the site has
+  // no mail server of its own. If that fails for any reason — including the
+  // one-time activation the service asks for — the email app opens with the
+  // same message, so nothing a visitor writes is ever lost.
+  var ENDPOINT = 'https://formsubmit.co/ajax/ahmed@alnimeri.com';
+  var sendBtn = f.querySelector('button[type=submit]');
+  var sendLabel = sendBtn.innerHTML;
   f.addEventListener('submit', function (e) {
     e.preventDefault();
     if (!valid()) return;
-    var href = mailto();
-    f.dataset.mailto = href;
-    window.location.href = href;
-    d.querySelector('.brief__note').textContent = 'Your email app should open with the message. If it didn’t, copy it and send it to ahmed@alnimeri.com.';
+    if (field('_honey').value) return;                          // only a bot fills the hidden field
+    var note = d.querySelector('.brief__note');
+    sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+    var fallback = function () {
+      sendBtn.disabled = false; sendBtn.innerHTML = sendLabel;
+      var href = mailto(); f.dataset.mailto = href;
+      note.textContent = 'That didn’t go through, so your email app is opening with the message instead.';
+      window.location.href = href;
+    };
+    var payload = {
+      name: field('name').value.trim(), company: field('org').value.trim(), about: kindLabel(),
+      'for': field('for').value.trim(), timing: field('when').value.trim(), email: field('email').value.trim(),
+      whatsapp: field('whatsapp').value.trim(),
+      film_seen: about, message: message(),
+      _subject: subject(), _replyto: field('email').value.trim() || undefined, _template: 'box', _captcha: 'false'
+    };
+    f.dataset.payload = JSON.stringify(payload);
+    var sent = { first: payload.name.split(' ')[0], email: payload.email, wa: payload.whatsapp };
+    fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!(res.ok && String(res.j.success) === 'true')) return fallback();
+        f.classList.add('is-sent');
+        var line = f.querySelector('.brief__sentence');
+        line.textContent = 'Thank you, ' + sent.first + '. It’s in my inbox, and I’ll reply to ';
+        var b = document.createElement('b'); b.textContent = sent.email || ('your WhatsApp, ' + sent.wa); line.appendChild(b);
+        line.appendChild(document.createTextNode('.'));
+        f.querySelector('.brief__actions').hidden = true;
+        note.textContent = 'I answer my own email, usually the same day.';
+      })
+      .catch(function () { if (!f.classList.contains('is-sent')) fallback(); });
   });
   d.querySelector('.brief__copy').addEventListener('click', function () {
     if (!valid()) return;
@@ -1616,17 +1663,18 @@
     if (/creative|post/.test(s)) return 'post';
     return '';
   };
-  document.addEventListener('click', function (e) {
+  window.addEventListener('click', function (e) {        // window capture runs before the deck's document-level jump
     var a = e.target.closest && e.target.closest('a');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var href = a.getAttribute('href') || '';
-    if (href === '#contact' || href === '/#contact') { e.preventDefault(); open(); return; }
-    if (/^mailto:ahmed@alnimeri\.com/i.test(href)) {
+    if (href === '#contact' || href === '/#contact') { e.preventDefault(); e.stopPropagation(); open(); return; }
+    // only the project links (they carry a subject); a bare address stays an email link
+    if (/^mailto:ahmed@alnimeri\.com\?.*subject=/i.test(href)) {
       if (a.classList.contains('contact__mail')) return;       // the plain address stays a plain address
-      e.preventDefault();
+      e.preventDefault(); e.stopPropagation();
       var subj = decodeURIComponent((href.split('subject=')[1] || '').split('&')[0]);
       var film = (subj.match(/Project enquiry — (.+)$/) || [])[1];
       open(kindFrom(subj), film && film !== 'alnimeri.com' ? film : '');
     }
-  });
+  }, true);
 })();

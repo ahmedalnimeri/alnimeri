@@ -2433,3 +2433,16 @@ body { background: var(--bg); color: var(--fg); }
 .has-brief { overflow: hidden; }
 @media (max-width: 560px) { .brief__sentence { font-size: 19px; line-height: 1.7; } }
 @media (prefers-reduced-motion: reduce) { .brief[open] { animation: none; } }
+
+.brief__trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.brief__form.is-sent .brief__sentence { color: var(--fg); }
+.brief__form.is-sent .brief__sentence b { font-weight: 500; }
+
+/* smaller: a note, not a poster */
+.brief { width: min(780px, calc(100vw - 2 * var(--gut))); }
+.brief__form { padding: clamp(24px, 4vw, 44px); }
+.brief__eyebrow { margin-bottom: 18px; }
+.brief__sentence { font-size: clamp(19px, 2.1vw, 27px); line-height: 1.7; }
+.brief__actions { margin-top: 28px; }
+.brief__close { top: 14px; right: 14px; width: 36px; height: 36px; font-size: 20px; }
+@media (max-width: 560px) { .brief__sentence { font-size: 18px; } }
