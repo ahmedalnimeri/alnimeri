@@ -1616,18 +1616,28 @@
     var href = mailto(); f.dataset.mailto = href;
     var sent = { first: payload.name.split(' ')[0], email: payload.email, wa: payload.whatsapp };
 
-    // The guest never waits. The thank-you shows the moment they press send,
-    // and the brief travels in the background — keepalive lets it finish even
-    // if they close the tab straight away. It is saved to the site's own list
-    // (/api/brief), with one retry, and emailed if NOTIFY_KEY is set. Only if
-    // neither lands does the note change, offering their email app instead.
-    f.classList.add('is-sent');
+    // The button reads Sending… and then Sent — the moment the site's own list
+    // (/api/brief) confirms it, usually well under a second, and never more
+    // than a beat later: keepalive lets the brief finish travelling even if the
+    // guest closes the tab. One quick retry; emailed too if NOTIFY_KEY is set.
+    // Only if nothing lands does the button read Not sent, with the email app
+    // offered instead.
+    var btn = f.querySelector('button[type=submit]');
     var line = f.querySelector('.brief__sentence');
-    line.textContent = 'Thank you, ' + sent.first + '. I’ll reply to ';
-    var b = document.createElement('b'); b.textContent = sent.email || ('your WhatsApp, ' + sent.wa); line.appendChild(b);
-    line.appendChild(document.createTextNode('.'));
-    f.querySelector('.brief__actions').hidden = true;
-    note.textContent = 'I answer my own email, usually the same day.';
+    btn.disabled = true; btn.classList.add('is-busy'); btn.textContent = 'Sending…';
+    var shown = false;
+    var thank = function () {
+      if (shown) return; shown = true;
+      btn.classList.remove('is-busy'); btn.classList.add('is-done');
+      btn.innerHTML = 'Sent <span aria-hidden="true">✓</span>';
+      f.classList.add('is-sent');
+      line.textContent = 'Thank you, ' + sent.first + '. I’ll reply to ';
+      var b = document.createElement('b'); b.textContent = sent.email || ('your WhatsApp, ' + sent.wa); line.appendChild(b);
+      line.appendChild(document.createTextNode('.'));
+      f.querySelector('.brief__copy').hidden = true;
+      note.textContent = 'I answer my own email, usually the same day.';
+    };
+    var beat = setTimeout(thank, 1200);
 
     var post = function (url, body, ok) {
       return fetch(url, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(body) })
@@ -1636,18 +1646,25 @@
     };
     var store = function (retry) {
       return post(ENDPOINT, payload, function (r, j) { return !!(r.ok && j.ok); })
-        .then(function (done) { return done || !retry ? done : new Promise(function (go) { setTimeout(go, 1500); }).then(function () { return store(false); }); });
+        .then(function (done) {
+          if (done) { clearTimeout(beat); thank(); }
+          return done || !retry ? done : new Promise(function (go) { setTimeout(go, 800); }).then(function () { return store(false); });
+        });
     };
     var notify = NOTIFY_KEY ? post('https://api.web3forms.com/submit', { access_key: NOTIFY_KEY, subject: payload._subject, from_name: 'alnimeri.com',
         replyto: payload.email || undefined, name: payload.name, company: payload.company, about: payload.about, 'for': payload['for'],
         timing: payload.timing, email: payload.email, whatsapp: payload.whatsapp, film_seen: payload.film_seen, message: payload.message },
         function (r, j) { return !!j.success; }) : Promise.resolve(false);
     Promise.all([store(true), notify]).then(function (res) {
-      if (res[0] || res[1]) { f.dataset.delivered = 'yes'; return; }
+      if (res[0] || res[1]) { f.dataset.delivered = 'yes'; clearTimeout(beat); thank(); return; }
+      clearTimeout(beat); thank();
       f.dataset.delivered = 'no';
-      note.textContent = 'The connection dropped before it reached me. ';
+      btn.classList.remove('is-done'); btn.textContent = 'Not sent';
+      f.querySelector('.brief__copy').hidden = false;
+      line.textContent = 'Sorry, ' + sent.first + ' — that didn’t reach me.';
+      note.textContent = 'The connection dropped. ';
       var a = document.createElement('a'); a.href = href; a.textContent = 'Send it from your email app instead';
-      note.appendChild(a); note.appendChild(document.createTextNode('.'));
+      note.appendChild(a); note.appendChild(document.createTextNode(' — it’s written out for you.'));
     });
   });
   d.querySelector('.brief__copy').addEventListener('click', function () {

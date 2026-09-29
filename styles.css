@@ -2437,6 +2437,10 @@ body { background: var(--bg); color: var(--fg); }
 .brief__trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .brief__form.is-sent .brief__sentence { color: var(--fg); }
 .brief__form.is-sent .brief__sentence b { font-weight: 500; }
+/* Sending… then Sent: the pill keeps its colour; only the words change */
+.brief__actions .btn:disabled { cursor: default; }
+.brief__actions .btn.is-busy { opacity: .72; }
+.brief__note a { color: var(--fg); text-underline-offset: 3px; }
 
 /* smaller: a note, not a poster */
 .brief { width: min(780px, calc(100vw - 2 * var(--gut))); }
