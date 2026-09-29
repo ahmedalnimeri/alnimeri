@@ -2386,3 +2386,50 @@ body { background: var(--bg); color: var(--fg); }
   justify-content: flex-start; max-width: 1320px; margin-inline: auto;
   animation: none;
 }
+
+/* ================= the brief: a sentence to finish =================
+   Opened by every contact link. The blanks are set in the sentence's own
+   type, so filling them in reads as writing, not as a form. */
+.brief {
+  width: min(1100px, calc(100vw - 2 * var(--gut))); max-width: none; max-height: calc(100svh - 48px);
+  margin: auto; padding: 0; overflow: auto;
+  border: 1px solid var(--line); border-radius: 16px;
+  background: #0d0e10; color: var(--fg);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, .6);
+}
+.brief::backdrop { background: rgba(4, 5, 6, .72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.brief[open] { animation: brief-in .6s var(--ease) both; }
+@keyframes brief-in { from { opacity: 0; transform: translateY(18px); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+.brief__form { position: relative; padding: clamp(28px, 5vw, 64px); }
+.brief__close {
+  position: absolute; top: 18px; right: 18px; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--line); background: none; color: var(--fg-dim); font-size: 22px; line-height: 1; cursor: pointer;
+}
+.brief__close:hover { color: var(--fg); border-color: rgba(255, 255, 255, .24); }
+.brief__eyebrow { margin: 0 0 28px; font-size: 14px; color: var(--fg-faint); }
+.brief__sentence {
+  margin: 0; font-size: clamp(22px, 3vw, 40px); line-height: 1.55; letter-spacing: -.02em; font-weight: 500; color: var(--fg-dim);
+}
+.brief__sentence input, .brief__sentence select {
+  font: inherit; letter-spacing: inherit; color: var(--fg); background: none;
+  border: 0; border-bottom: 1px solid rgba(255, 255, 255, .28); border-radius: 0;
+  padding: 0 4px 2px; margin: 0 2px; max-width: 100%; vertical-align: baseline;
+  transition: border-color .3s var(--ease);
+}
+.brief__sentence input::placeholder { color: #737883; }
+.brief__sentence input:focus, .brief__sentence select:focus { outline: none; border-bottom-color: #fff; }
+.brief__sentence select {
+  appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: .95em;
+  /* a small caret, so the blank reads as a choice */
+  background: no-repeat right 4px center / .42em auto
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239aa0a9' stroke-width='1.4'/%3E%3C/svg%3E");
+}
+.brief__sentence select option { color: #131417; font-size: 16px; }
+.brief__error { margin: 20px 0 0; font-size: 15px; color: #f2b8a0; }
+.brief__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 40px; }
+.brief__copy { background: none; border: 0; padding: 8px 0; font: inherit; font-size: 15px; color: var(--fg-dim); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+.brief__copy:hover { color: var(--fg); }
+.brief__note { margin: 18px 0 0; font-size: 13px; color: var(--fg-faint); }
+.has-brief { overflow: hidden; }
+@media (max-width: 560px) { .brief__sentence { font-size: 19px; line-height: 1.7; } }
+@media (prefers-reduced-motion: reduce) { .brief[open] { animation: none; } }

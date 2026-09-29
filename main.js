@@ -1483,3 +1483,150 @@
     sync();
   }, { threshold: [0, 0.2, 0.5] }).observe(sec);
 })();
+
+
+// ---- The brief, as a sentence to finish ------------------------------------
+// Ahmed: "Get in touch" should open a form the visitor builds, "as if filling
+// the blanks: Hi, I'm… I want to ask about…". Every contact link on the site
+// opens it: #contact, /#contact and the mailto:ahmed@ links (the commission
+// cards pre-select their kind of film; a film page names its film). It writes
+// the email for them and opens their email app; there is no mail server yet,
+// so a copy button covers a machine with no email app. Without JavaScript,
+// the links still go to the contact section and the plain address.
+(function () {
+  if (!window.HTMLDialogElement) return;
+  var KINDS = [
+    ['brand', 'a brand or campaign film'],
+    ['events', 'an event or conference film'],
+    ['documentary', 'a documentary'],
+    ['post', 'creative direction or post-production'],
+    ['other', 'something else']
+  ];
+  var d = document.createElement('dialog');
+  d.className = 'brief';
+  d.setAttribute('aria-labelledby', 'brief-title');
+  d.innerHTML =
+    '<form class="brief__form" novalidate>' +
+      '<button class="brief__close" type="button" aria-label="Close">×</button>' +
+      '<p class="brief__eyebrow" id="brief-title">Send the brief</p>' +
+      '<p class="brief__sentence">' +
+        'Hi Ahmed, I’m <input name="name" placeholder="your name" aria-label="Your name" autocomplete="name" required> ' +
+        'from <input name="org" placeholder="your company" aria-label="Company or organisation" autocomplete="organization">. ' +
+        'I’d like to talk about <select name="kind" aria-label="What it is about">' +
+          KINDS.map(function (k) { return '<option value="' + k[0] + '">' + k[1] + '</option>'; }).join('') +
+        '</select> ' +
+        'for <input name="for" placeholder="who it’s for" aria-label="Who it is for, or where it will run">. ' +
+        'We’re hoping to have it by <input name="when" placeholder="a date or a month" aria-label="Timing">. ' +
+        'You can reach me at <input name="email" type="email" placeholder="your email" aria-label="Your email" autocomplete="email" required>.' +
+      '</p>' +
+      '<p class="brief__error" role="alert" hidden></p>' +
+      '<div class="brief__actions">' +
+        '<button class="btn btn--solid" type="submit">Send to Ahmed <span aria-hidden="true">↗</span></button>' +
+        '<button class="brief__copy" type="button">Copy the message</button>' +
+      '</div>' +
+      '<p class="brief__note">Opens your email app with this message, addressed to ahmed@alnimeri.com. I answer my own email.</p>' +
+    '</form>';
+  document.body.appendChild(d);
+
+  var f = d.querySelector('form'), err = d.querySelector('.brief__error');
+  var field = function (n) { return f.elements[n]; };
+  var about = '';   // a film named by the page the visitor came from
+
+  // blanks grow with what is typed, so the sentence stays a sentence
+  // measured in the sentence's own typeface: Poppins is proportional, so a
+  // character count left a gap before every full stop
+  var ruler = document.createElement('canvas').getContext('2d');
+  var fit = function (el) {
+    var cs = getComputedStyle(el);
+    ruler.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+    var text = el.tagName === 'SELECT' ? el.options[el.selectedIndex].text : (el.value || el.placeholder);
+    var pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    el.style.width = Math.ceil(ruler.measureText(text).width + pad + 6) + 'px';
+  };
+  var fitAll = function () { [].forEach.call(f.querySelectorAll('input, select'), fit); };
+  [].forEach.call(f.querySelectorAll('input, select'), function (el) {
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', function () { fit(el); err.hidden = true; });
+  });
+
+  var kindLabel = function () { var k = field('kind'); return k.options[k.selectedIndex].text; };
+  var message = function () {
+    var s = 'Hi Ahmed, I’m ' + field('name').value.trim() +
+      (field('org').value.trim() ? ' from ' + field('org').value.trim() : '') + '. ' +
+      'I’d like to talk about ' + kindLabel() + (about ? ' (I saw ' + about + ')' : '') +
+      (field('for').value.trim() ? ' for ' + field('for').value.trim() : '') + '. ' +
+      (field('when').value.trim() ? 'We’re hoping to have it by ' + field('when').value.trim() + '. ' : '') +
+      'You can reach me at ' + field('email').value.trim() + '.';
+    return s;
+  };
+  var mailto = function () {
+    var subject = kindLabel().replace(/^(a|an) /, '');
+    subject = subject.charAt(0).toUpperCase() + subject.slice(1) + ' — ' + field('name').value.trim() +
+      (field('org').value.trim() ? ', ' + field('org').value.trim() : '');
+    return 'mailto:ahmed@alnimeri.com?subject=' + encodeURIComponent(subject) +
+      '&body=' + encodeURIComponent(message() + '\n\n—\nSent from alnimeri.com');
+  };
+  var valid = function () {
+    var name = field('name').value.trim(), email = field('email').value.trim();
+    if (!name) { err.textContent = 'Add your name, so Ahmed knows who is writing.'; err.hidden = false; field('name').focus(); return false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = 'Add an email address Ahmed can reply to.'; err.hidden = false; field('email').focus(); return false; }
+    return true;
+  };
+
+  var opener = null;
+  var open = function (kind, film) {
+    opener = document.activeElement;
+    if (kind) field('kind').value = kind;
+    about = film || '';
+    err.hidden = true;
+    d.showModal();
+    fitAll();
+    document.documentElement.classList.add('has-brief');
+    setTimeout(function () { field('name').focus(); }, 60);
+  };
+  var close = function () { d.close(); };
+  d.addEventListener('close', function () {
+    document.documentElement.classList.remove('has-brief');
+    if (opener && opener.focus) opener.focus();
+  });
+  d.querySelector('.brief__close').addEventListener('click', close);
+  d.addEventListener('click', function (e) { if (e.target === d) close(); });   // the backdrop
+
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!valid()) return;
+    var href = mailto();
+    f.dataset.mailto = href;
+    window.location.href = href;
+    d.querySelector('.brief__note').textContent = 'Your email app should open with the message. If it didn’t, copy it and send it to ahmed@alnimeri.com.';
+  });
+  d.querySelector('.brief__copy').addEventListener('click', function () {
+    if (!valid()) return;
+    var b = this, text = message();
+    var done = function () { b.textContent = 'Copied — paste it into an email to ahmed@alnimeri.com'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () {});
+    else { var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (x) {} t.remove(); }
+  });
+
+  // every way into contact on the site opens the sentence instead
+  var kindFrom = function (s) {
+    s = (s || '').toLowerCase();
+    if (/brand|campaign/.test(s)) return 'brand';
+    if (/event|conference/.test(s)) return 'events';
+    if (/documentary|institutional/.test(s)) return 'documentary';
+    if (/creative|post/.test(s)) return 'post';
+    return '';
+  };
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var href = a.getAttribute('href') || '';
+    if (href === '#contact' || href === '/#contact') { e.preventDefault(); open(); return; }
+    if (/^mailto:ahmed@alnimeri\.com/i.test(href)) {
+      if (a.classList.contains('contact__mail')) return;       // the plain address stays a plain address
+      e.preventDefault();
+      var subj = decodeURIComponent((href.split('subject=')[1] || '').split('&')[0]);
+      var film = (subj.match(/Project enquiry — (.+)$/) || [])[1];
+      open(kindFrom(subj), film && film !== 'alnimeri.com' ? film : '');
+    }
+  });
+})();
