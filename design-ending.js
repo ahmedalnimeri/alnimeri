@@ -3,7 +3,7 @@
    The roll is built from the films already on the page (#work), so it can
    never drift from the grid, and each frame reuses the exact file its tile
    has already fetched. Built only as the ending comes near. While the ending
-   is on screen one passive scroll listener writes --p on the roll (0 as the
+   is on screen one passive scroll listener writes --p on the section (0 as the
    section enters, 1 at the end of the page) and the columns rise with it;
    off screen the listener is gone. Under reduced motion --p is never written and the
    frames simply hold in their last position. */
@@ -67,7 +67,7 @@
     ticking = false;
     var r = sec.getBoundingClientRect();
     var p = (innerHeight - r.top) / r.height;
-    roll.style.setProperty('--p', Math.max(0, Math.min(1, p)).toFixed(4));
+    sec.style.setProperty('--p', Math.max(0, Math.min(1, p)).toFixed(4));
   };
   var onScroll = function () { if (!ticking) { ticking = true; requestAnimationFrame(paint); } };
 
