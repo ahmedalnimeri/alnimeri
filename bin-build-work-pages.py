@@ -234,8 +234,11 @@ def card(f, eager_first=0, sizes='(max-width: 700px) 46vw, (max-width: 1100px) 3
         bits = [f['kind'], f['dur']] + ([yr] if yr else []) + ([f['stat']] if f['stat'] else [])
     shape = ' fp-card--portrait' if f['portrait'] else ''
     return ('<li class="fp-card' + shape + '" data-cat="' + category_of(f['kind']) + '">'
-            '<a class="reveal" data-delay="' + str(delay) + '" href="/work/' + f['slug'] + '">'
-            '<span class="fp-card__still">' + img + '</span>'
+            # the cards on screen when the page opens are there from the first
+            # frame: the picture a visitor came for never waits on a script
+            + ('<a href="/work/' + f['slug'] + '">' if eager else
+               '<a class="reveal" data-delay="' + str(delay) + '" href="/work/' + f['slug'] + '">')
+            + '<span class="fp-card__still">' + img + '</span>'
             '<span class="fp-card__name">' + f['title'] + '</span>'
             '<span class="fp-card__meta">' + ' &middot; '.join(bits) + '</span></a></li>')
 
@@ -392,12 +395,12 @@ for i, f in enumerate(films):
     body = f'''<section class="fp fp-film{shape}" id="film">
   <div class="fp-hero">
     <header class="fp-head">
-      <p class="fp-crumbs reveal"><a href="/work/">All films</a><span aria-hidden="true">/</span><a href="/work/#{_cid}">{label_of(_cid)}</a></p>
-      <h1 class="fp-title reveal" data-delay="80">{f['title']}</h1>
-      <p class="fp-meta reveal" data-delay="160">{''.join(meta)}</p>
+      <p class="fp-crumbs"><a href="/work/">All films</a><span aria-hidden="true">/</span><a href="/work/#{_cid}">{label_of(_cid)}</a></p>
+      <h1 class="fp-title">{f['title']}</h1>
+      <p class="fp-meta">{''.join(meta)}</p>
     </header>
     {player}
-    <p class="fp-credit reveal" data-delay="120">{credit}</p>
+    <p class="fp-credit">{credit}</p>
   </div>
   {reception}
   {related}
@@ -447,7 +450,7 @@ for cid, label, _n in CATEGORIES:
     few = ' data-few="' + str(len(groups[cid])) + '"' if len(groups[cid]) <= 4 else ''
     sections.append('<section class="fp-cat" id="' + cid + '"' + few + '>'
                     '<h2 class="fp-cat__head">' + label + ' <span>' + count + '</span></h2>'
-                    '<ol class="fp-cards">' + ''.join(card(f, eager_first=4, delay=_delay()) for f in groups[cid]) + '</ol></section>')
+                    '<ol class="fp-cards">' + ''.join(card(f, eager_first=5, delay=_delay()) for f in groups[cid]) + '</ol></section>')
 # the first film on the wall is hung large (and asks for a picture that size);
 # the script moves this with the tabs
 LEAD_SIZES = '(max-width: 700px) 92vw, (max-width: 1100px) 64vw, 660px'
@@ -472,8 +475,8 @@ idx = (HEAD.format(title='All films', slug='', poster='assets/og-work.jpg', ver=
                 '<link rel="canonical" href="https://alnimeri.com/work/">')
        + f'''<section class="fp fp-index" id="film">
   <header class="fp-head">
-    <h1 class="fp-title reveal">All films</h1>
-    <p class="fp-lede reveal" data-delay="80">The same {COUNT} films as the <a href="/">front page</a>, by kind.
+    <h1 class="fp-title">All films</h1>
+    <p class="fp-lede">The same {COUNT} films as the <a href="/">front page</a>, by kind.
       Each page carries the film, its running time and the published post its view count came from.</p>
   </header>
   {rows}
