@@ -1,0 +1,358 @@
+/* design-about.css — /about only.
+
+   The page as four boards, each with one idea in its motion:
+     1. the opening racks focus onto him, and "Mostly I listen." lands a beat
+        after the rest of the sentence;
+     2. every film is pinned to a board whose columns sit at different depths;
+     3. On Set is laid out by year — the year holds while its photographs pass;
+     4. what people say lights up under the reader's pointer.
+   Scroll-linked pieces use CSS scroll timelines (compositor, no JS); browsers
+   without them get the same boards standing still. Colours are the site's own. */
+
+:root { --ab-r: 10px; --ab-gap: clamp(14px, 1.8vw, 26px); }
+
+/* =========================================================================
+   1. Opening
+   ========================================================================= */
+
+/* The four facts were a counter band under the lede; they become one quiet
+   line along the foot of the picture, with the CV buttons back above the fold. */
+.pagehead--plate .stats {
+  margin: clamp(2.25rem, 5vh, 3.25rem) 0 0;
+  padding: 1.1rem 0 0; gap: 1.1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pagehead--plate .stats > div { display: flex; align-items: baseline; gap: 0.6rem; min-width: 0; }
+.pagehead--plate .stats b {
+  display: inline; flex: none;
+  font-size: 1.15rem; font-weight: 500; letter-spacing: -0.02em; color: var(--fg);
+}
+.pagehead--plate .stats span { margin: 0; font-size: 13px; line-height: 1.35; color: var(--fg-dim); }
+
+@media (min-width: 901px) {
+  .pagehead--plate {
+    display: flex; flex-direction: column; align-items: flex-start;
+    min-height: 100vh; min-height: 100svh;
+    padding: 6.5rem var(--gut) 0;
+  }
+  .pagehead--plate > .hero__eyebrow { margin-top: auto; }
+  .pagehead--plate > .pagehead__act { margin-bottom: auto; padding-bottom: 2rem; }
+  .pagehead--plate .pagehead__title { max-width: min(14ch, 54vw); }
+  .pagehead--plate .pagehead__lede { max-width: min(52ch, 46vw); }
+  .pagehead--plate .stats {
+    order: 1; align-self: stretch; max-width: none;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0; padding: 1.15rem 0 1.6rem;
+  }
+}
+@media (max-width: 900px) {
+  .pagehead--plate .stats { max-width: none; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pagehead--plate .stats > div { flex-direction: column; gap: 0.15rem; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* A rack focus: the plate arrives soft and a touch close, and settles
+     sharp — the first thing the page does is pay attention. */
+  .pagehead__plate { animation: ab-rack 2.2s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .pagehead__plate img { animation: ab-settle-in 2.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+  /* The sentence arrives, then — a held beat — "Mostly I listen." */
+  .pagehead--plate > .hero__eyebrow,
+  .pagehead--plate .pagehead__title,
+  .pagehead--plate .pagehead__lede,
+  .pagehead--plate .pagehead__grace,
+  .pagehead--plate .pagehead__act,
+  .pagehead--plate .stats { animation: ab-rise 1.1s var(--ease) both; }
+  .pagehead--plate > .hero__eyebrow   { animation-delay: 0.15s; }
+  .pagehead--plate .pagehead__title   { animation-delay: 0.3s; }
+  .pagehead--plate .pagehead__title em { display: inline-block; animation: ab-listen 1.3s var(--ease) 1.05s both; }
+  .pagehead--plate .pagehead__lede    { animation-delay: 1.4s; }
+  .pagehead--plate .pagehead__grace   { animation-delay: 1.5s; }
+  .pagehead--plate .pagehead__act     { animation-delay: 1.6s; }
+  .pagehead--plate .stats             { animation-delay: 1.75s; }
+
+  /* Leaving the opening, the picture falls behind the page. It moves inside
+     its frame (the translate property, so it composes with the settle), and
+     the frame's fade to the ground stays where it is. */
+  @supports (animation-timeline: scroll()) {
+    @media (min-width: 901px) {
+      .pagehead__plate img {
+        animation: ab-settle-in 2.6s cubic-bezier(0.2, 0.7, 0.2, 1) both, ab-recede linear both;
+        animation-timeline: auto, scroll(root);
+        animation-range: normal, 0 100vh;
+      }
+    }
+  }
+}
+@keyframes ab-rack { from { filter: blur(16px); } to { filter: blur(0); } }
+@keyframes ab-settle-in { from { opacity: 0.35; transform: scale(1.1); } to { opacity: 1; transform: none; } }
+@keyframes ab-recede { from { translate: 0 0; } to { translate: 0 20%; } }
+@keyframes ab-rise {
+  from { opacity: 0; transform: translateY(16px); filter: blur(8px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes ab-listen {
+  from { opacity: 0; filter: blur(14px); transform: translateY(0.12em); }
+  to   { opacity: 1; filter: blur(0); transform: none; }
+}
+
+/* =========================================================================
+   2. Every film, pinned
+   ========================================================================= */
+.pins {
+  position: relative; z-index: 1;
+  padding: clamp(3rem, 9vh, 6.5rem) var(--gut) clamp(1rem, 3vh, 2rem);
+  view-timeline-name: --pins;
+}
+.pins__board {
+  max-width: 1320px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(28px, 4vw, 48px) var(--ab-gap); align-items: start;
+}
+.pins__col { display: flex; flex-direction: column; gap: clamp(24px, 2.8vw, 38px); min-width: 0; }
+
+.pin { display: block; color: inherit; text-decoration: none; outline: none; }
+.pin__media {
+  position: relative; display: block; overflow: hidden;
+  aspect-ratio: 16 / 9; border-radius: var(--ab-r);
+  background: var(--surface, #0f1011); border: 1px solid var(--line);
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  /* Opacity comes back after a short hold, so crossing the gap between two
+     stills does not flash the whole board. */
+  transition: transform 0.7s var(--ease), border-color 0.4s var(--ease), opacity 0.5s var(--ease) 0.18s;
+}
+.pin--tall .pin__media { aspect-ratio: 3 / 4; }
+.pin__media img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 1.1s var(--ease) !important;
+}
+/* The light on the print follows the pointer. */
+.pin__media::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(520px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.13), transparent 42%);
+  opacity: 0; transition: opacity 0.5s var(--ease);
+}
+.pin__cap { display: flex; flex-direction: column; gap: 1px; padding: 0.8rem 2px 0; transition: opacity 0.5s var(--ease) 0.18s; }
+.pin__t { font-size: 14px; font-weight: 500; letter-spacing: -0.012em; line-height: 1.35; color: var(--fg); }
+.pin__k { font-size: 13px; line-height: 1.4; letter-spacing: -0.005em; color: var(--fg-faint); }
+
+.pin:focus-visible .pin__media { outline: 2px solid var(--fg); outline-offset: 3px; }
+.pin:hover .pin__media, .pin:focus-visible .pin__media { border-color: rgba(255, 255, 255, 0.24); }
+@media (hover: hover) and (pointer: fine) {
+  .pin:hover .pin__media { transition-duration: 0.25s, 0.4s, 0.5s; }
+  .pin:hover .pin__media::after { opacity: 1; }
+  .pin:hover .pin__media img { transform: scale(1.06); }
+  /* One film at a time: the rest of the board steps back while you look. */
+  .pins__board:has(.pin:hover) .pin:not(:hover) .pin__media { opacity: 0.45; transition-delay: 0s; }
+  .pins__board:has(.pin:hover) .pin:not(:hover) .pin__cap { opacity: 0.5; transition-delay: 0s; }
+}
+.pins__board:has(.pin:focus-visible) .pin:not(:focus-visible) .pin__media { opacity: 0.45; transition-delay: 0s; }
+
+.pins__note { max-width: 1320px; margin: clamp(2.5rem, 6vh, 4rem) auto 0; text-align: center; }
+.pins__note .btn { font-weight: 500; font-size: 14px; }
+
+@media (max-width: 899px) {
+  /* Two columns: the four balanced columns pair up, two above two. */
+  .pins__board { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: clamp(24px, 6vw, 34px); column-gap: 12px; }
+  .pins__col { gap: clamp(22px, 6vw, 30px); }
+  .pin__cap { padding-top: 0.6rem; }
+  .pin__t { font-size: 13.5px; }
+  .pin__k { font-size: 12.5px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    /* Each still is pinned as it comes up the screen... */
+    .pin { animation: ab-pin linear both; animation-timeline: view(); animation-range: entry 0% entry 75%; }
+    /* ...and the columns sit at four depths, so the board parts and closes
+       as it passes — the nearest column moves most. */
+    @media (min-width: 900px) {
+      .pins__col { animation: ab-depth linear both; animation-timeline: --pins; animation-range: cover 0% cover 100%; }
+      .pins__col:nth-child(1) { --d: 36px; }
+      .pins__col:nth-child(2) { --d: 110px; }
+      .pins__col:nth-child(3) { --d: 14px; }
+      .pins__col:nth-child(4) { --d: 72px; }
+    }
+  }
+}
+@keyframes ab-pin { from { opacity: 0; transform: translateY(46px) scale(0.965); } to { opacity: 1; transform: none; } }
+@keyframes ab-depth { from { transform: translateY(var(--d)); } to { transform: translateY(calc(var(--d) * -1)); } }
+
+/* =========================================================================
+   3. On Set — by year
+   ========================================================================= */
+#onset .onset__sub { margin-bottom: clamp(3rem, 8vh, 5.5rem); }
+.set { max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: clamp(4rem, 11vh, 7rem); }
+.set__group {
+  display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 10fr);
+  column-gap: clamp(1.5rem, 3vw, 3rem);
+}
+/* The year stays put while its photographs pass, and hands over to the next. */
+.set__yr {
+  position: sticky; top: 6rem; align-self: start; margin: 0;
+  font-size: clamp(2rem, 3.4vw, 3.1rem); font-weight: 500; line-height: 1;
+  letter-spacing: -0.04em; color: var(--fg); font-variant-numeric: tabular-nums;
+}
+.set__prints {
+  display: grid; grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: clamp(2.5rem, 5vw, 4.5rem) var(--ab-gap); align-items: start;
+}
+.set__print { margin: 0; min-width: 0; grid-column: span 5; }
+.set__print--wide { grid-column: 1 / span 6; }
+.set__print--tall { grid-column: 7 / span 4; grid-row: 1 / span 2; align-self: center; }
+.set__print--mid  { grid-column: 2 / span 5; }
+.set__group--flip .set__print--wide { grid-column: 5 / span 6; }
+.set__group--flip .set__print--tall { grid-column: 1 / span 4; }
+.set__group--flip .set__print--mid  { grid-column: 5 / span 5; }
+.set__print--half { grid-column: span 5; }
+.set__print--half:nth-child(even) { margin-top: clamp(4rem, 12vw, 10rem); }
+.set__print--full { grid-column: 1 / -1; }
+
+.set__win {
+  position: relative; overflow: hidden; aspect-ratio: 3 / 2;
+  border-radius: var(--ab-r); background: #000;
+  transform: perspective(1200px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.8s var(--ease);
+}
+.set__print--tall .set__win { aspect-ratio: 4 / 5; }
+.set__print--full .set__win { aspect-ratio: 16 / 9; }
+.set__img { width: 100%; height: 100%; object-fit: cover; }
+.set__win::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  background: radial-gradient(640px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.1), transparent 45%);
+  background-size: 100% 100%; opacity: var(--lit, 0); transition: opacity 0.5s var(--ease);
+}
+.set__cap { padding-top: 0.85rem; font-size: 13px; line-height: 1.4; letter-spacing: -0.005em; color: var(--fg-faint); }
+
+@media (max-width: 1000px) {
+  .set__group { grid-template-columns: minmax(0, 1fr); }
+  .set__yr { position: static; margin-bottom: clamp(1.25rem, 4vw, 2rem); }
+}
+@media (max-width: 700px) {
+  .set { gap: clamp(3.5rem, 14vw, 5rem); }
+  /* On a phone the year rides under the bar while its photographs pass. */
+  .set__yr {
+    position: sticky; top: 64px; z-index: 3;
+    margin: 0 calc(-1 * var(--gut)) 0.75rem; padding: 0.7rem var(--gut) 0.9rem;
+    font-size: 1.6rem;
+    background: linear-gradient(var(--bg) 62%, rgba(8, 9, 10, 0));
+  }
+  /* Wide prints take the width; a tall print and its neighbour pair up. */
+  .set__prints { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem 10px; }
+  .set__print, .set__print--wide, .set__print--half, .set__print--full,
+  .set__group--flip .set__print--wide {
+    grid-column: 1 / -1; grid-row: auto; margin-top: 0;
+  }
+  .set__print--tall, .set__print--mid,
+  .set__group--flip .set__print--tall, .set__group--flip .set__print--mid {
+    grid-column: span 1; grid-row: auto; margin-top: 0; align-self: start;
+  }
+  .set__print--mid .set__win { aspect-ratio: 4 / 5; }
+  .set__print--wide .set__win, .set__print--half .set__win, .set__print--full .set__win {
+    margin: 0 calc(-1 * var(--gut)); border-radius: 0;
+  }
+  .set__print--wide .set__win::after, .set__print--half .set__win::after, .set__print--full .set__win::after { box-shadow: none; }
+  .set__print--full .set__win { aspect-ratio: 3 / 2; }
+  .set__cap { padding-top: 0.7rem; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    /* Each print opens top-down as it comes up, holding its place on the
+       screen like a window being raised, and the picture settles inside. */
+    .set__win  { animation: ab-open linear both; animation-timeline: view(); animation-range: entry 0% cover 42%; }
+    .set__img  { animation: ab-inside linear both; animation-timeline: view(); animation-range: entry 0% cover 55%; }
+    .set__cap  { animation: ab-cap linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+    @media (max-width: 700px) {
+      .set__print--wide .set__win, .set__print--half .set__win, .set__print--full .set__win { animation-name: ab-open-flat; }
+    }
+  }
+}
+@keyframes ab-open { from { clip-path: inset(0 0 100% 0 round var(--ab-r)); } to { clip-path: inset(0 0 0 0 round var(--ab-r)); } }
+@keyframes ab-open-flat { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes ab-inside { from { transform: scale(1.16) translateY(-5%); } to { transform: none; } }
+@keyframes ab-cap { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* =========================================================================
+   4. What people say
+   ========================================================================= */
+/* The crowd: two lines of voices drifting past, set as type, not chips. */
+#said .says { margin-bottom: clamp(3.5rem, 9vh, 6rem); padding: 0.4rem 0; }
+#said .say {
+  margin: 0 clamp(2rem, 3.4vw, 3.25rem) 0 0; padding: 0;
+  background: none; border: 0; border-radius: 0; gap: 0.7rem;
+}
+#said .say__t { font-size: clamp(1.05rem, 1.45vw, 1.3rem); font-weight: 500; letter-spacing: -0.02em; color: var(--fg); }
+#said .says__row--back { margin-top: 1rem; }
+#said .says__row--back .say__t { color: var(--fg-dim); }
+#said .say__u {
+  font-family: var(--ff); font-size: 13px; letter-spacing: -0.005em;
+  text-transform: none; color: var(--fg-faint);
+}
+#said .says.ab-still .says__row { animation-play-state: paused; }
+/* Standing still, the voices wrap into one centred paragraph of quotes. The
+   track was sized to its content, so without this it stayed one line wide
+   and ran off both edges of the screen. */
+@media (prefers-reduced-motion: reduce) {
+  #said .says { margin-left: 0; margin-right: 0; }
+  #said .says__track:first-child { flex: 1 1 100%; flex-wrap: wrap; justify-content: center; row-gap: 0.9rem; max-width: 1100px; margin: 0 auto; }
+  #said .say {
+    flex: 0 1 auto; max-width: 100%; margin: 0 0.9rem;
+    flex-wrap: wrap; justify-content: center; column-gap: 0.5rem; white-space: normal; text-align: center;
+  }
+  #said .say__t { font-size: 1rem; }
+}
+
+/* The two named voices lead, as type. */
+.said-leads {
+  max-width: 1320px; margin: 0 auto clamp(3.5rem, 9vh, 6rem);
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem clamp(2rem, 5vw, 5rem);
+}
+#said .said-leads .said {
+  margin: 0; padding: 1.5rem 0 0; display: block;
+  background: none; border: 0; border-top: 1px solid var(--line); border-radius: 0;
+}
+#said .said-leads .said__en {
+  font-size: clamp(1.45rem, 2.5vw, 2.2rem); line-height: 1.2; font-weight: 500;
+  letter-spacing: -0.028em; text-wrap: balance; color: var(--fg);
+}
+#said .said-leads .said__by { margin-top: 1.1rem; font-size: 14px; color: var(--fg-dim); }
+
+/* The rest as a wall: columns that pack, so no card waits on its neighbour. */
+.said-wall { max-width: 1320px; margin: 0 auto; columns: 3 280px; column-gap: var(--ab-gap); }
+#said .said-wall .said {
+  position: relative; display: block; overflow: hidden;
+  break-inside: avoid; margin: 0 0 var(--ab-gap); padding: 1.45rem 1.5rem 1.3rem;
+  background: var(--surface, #0f1011); border: 1px solid var(--line); border-radius: 12px;
+  transition: border-color 0.4s var(--ease);
+}
+#said .said-wall .said__en { font-size: 16px; line-height: 1.62; letter-spacing: -0.005em; }
+#said .said__by {
+  font-family: var(--ff); text-transform: none; letter-spacing: -0.005em;
+  font-size: 13px; line-height: 1.45; color: var(--fg-faint); padding-top: 0.9rem; margin: 0;
+}
+#said .said__by::before { content: "— "; }
+/* The card you are reading lights where the pointer is. */
+#said .said-wall .said::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.055), transparent 60%);
+  opacity: var(--lit, 0); transition: opacity 0.4s var(--ease);
+}
+#said .said-wall .said:hover { border-color: rgba(255, 255, 255, 0.16); }
+
+@media (max-width: 760px) {
+  .said-leads { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* =========================================================================
+   Reduced motion: every board stands still, fully composed.
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .pin__media, .set__win { transform: none !important; }
+  .pin:hover .pin__media img { transform: none; }
+}
+@media print {
+  .pins__col, .pin, .set__win, .set__img { animation: none !important; transform: none !important; clip-path: none !important; }
+  .set__yr { position: static; }
+}
