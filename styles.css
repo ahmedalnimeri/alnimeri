@@ -2278,3 +2278,111 @@ body.is-locked { overflow: hidden; }
   background: transparent; box-shadow: none; border: 0;
   border-top: 1px solid var(--line); border-radius: 0; padding: 26px 0 0;
 }
+
+/* ================= linear pass =================
+   Ahmed: "Copy this: linear.app". Measured from the site itself — ground
+   #08090a, ink #f7f8f8, muted #8a8f98, hairlines at 8% white, surfaces
+   #0f1011, radii 8-12px, display type at weight ~510 and -0.022em with a 1.0
+   line, 13px muted labels, indigo accent #5e6ad2. Typeface stays Poppins:
+   Inter is theirs, the metrics are what carry the look. */
+:root {
+  --bg: #08090a; --bg-raised: #0f1011; --surface: #0f1011;
+  --fg: #f7f8f8; --fg-dim: #9aa0a9; --fg-faint: #858a94;
+  --line: rgba(255, 255, 255, 0.08); --line-soft: rgba(255, 255, 255, 0.05);
+  --accent: #5e6ad2; --accent-ink: #ffffff;
+  --radius: 12px;
+}
+body { background: var(--bg); color: var(--fg); }
+
+/* display: tight, medium weight, a one-to-one line */
+.hero__name, .slate__title, .commission__heading h2, .contact__head {
+  font-weight: 500; letter-spacing: -0.022em; line-height: 1.02;
+}
+.hero--editorial .hero__lede, .work__intro, .commission__heading > span { font-size: 17px; line-height: 1.6; color: var(--fg-dim); }
+.masthead__nav a { font-size: 13px; font-weight: 400; color: var(--fg-dim); }
+.masthead__nav a:hover { color: var(--fg); }
+
+/* surfaces: a hairline and a barely-there fill, never a shadow */
+.card, .commission__card, .on-surface .commission__card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: none; padding: 26px 24px;
+}
+.on-surface { background: #0b0c0d; }
+.tile__link, .hero__feature, .filmcard img, .mc__frame, .film__frame {
+  border: 1px solid var(--line); border-radius: var(--radius);
+}
+.filmcats a { border-color: var(--line); }
+.filmcats a:hover { background: rgba(255,255,255,.04); color: var(--fg); }
+
+/* one accent, used sparingly: links that lead somewhere */
+.commission__card a, .film__note a, .reel__note a { color: var(--fg-dim); }
+.commission__card a:hover, .film__note a:hover, .reel__note a:hover { color: var(--accent); }
+.btn--solid { background: var(--fg); color: #08090a; }
+.btn--ghost { border-color: var(--line); color: var(--fg); }
+.btn--ghost:hover { background: rgba(255,255,255,.05); }
+
+/* the soft wash behind the opening frame */
+.hero--editorial { position: relative; isolation: isolate; }
+.hero--editorial::after {
+  content: ""; position: absolute; z-index: -1; inset: -10% -20% 30%;
+  background: radial-gradient(60% 50% at 50% 30%, rgba(94,106,210,.16), transparent 70%);
+  pointer-events: none;
+}
+
+/* ================= linear layout and motion =================
+   Ahmed: "I like the layout of linear.app and the elements ... and all the
+   animations are great."
+
+   The bar: full width, a hairline under it, name left, links right, one pill. */
+.masthead, .masthead.is-compact {
+  top: 0; left: 0; transform: none; width: 100%;
+  border-radius: 0; border: 0; border-bottom: 1px solid var(--line);
+  padding: 14px max(var(--gut), calc((100vw - 1320px) / 2));
+  background: rgba(8, 9, 10, 0.72);
+  backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+.masthead__nav { gap: 28px; }
+.masthead .btn { padding: 7px 15px; font-size: 13px; font-weight: 500; }
+
+/* Motion: everything arrives the same way — out of focus, a little low,
+   then settled. Smooth, never stepped; staggered by the delays main.js
+   already writes. */
+.reveal, .lift { opacity: 0; transform: translateY(18px); filter: blur(10px); }
+.reveal.is-in, .is-lit .lift {
+  opacity: 1; transform: none; filter: blur(0);
+  transition: opacity 1s var(--ease), transform 1s var(--ease), filter 1s var(--ease) !important;
+  transition-delay: var(--d, 0ms) !important;
+}
+/* the opening frame settles out of a slight tilt, like a window put down */
+@keyframes window-in {
+  from { opacity: 0; transform: perspective(1600px) rotateX(16deg) translateY(70px) scale(.97); filter: blur(8px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+.hero__feature { animation: window-in 1.8s var(--ease) .45s both; transform-origin: 50% 0; }
+/* hover: the frame lifts its border, nothing jumps */
+.tile__link, .hero__feature, .commission__still, .filmcard img { transition: border-color .4s var(--ease), transform .9s var(--ease); }
+.tile__link:hover, .hero__feature:hover { border-color: rgba(255, 255, 255, 0.18); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .lift, .hero__feature { opacity: 1 !important; transform: none !important; filter: none !important; animation: none !important; }
+}
+.no-js .reveal, .no-js .lift { opacity: 1; transform: none; filter: none; }
+
+/* Phones keep the other page visible in the bar (the Instagram in-app
+   visitors never found About otherwise) — as quiet links, not white pills. */
+@media (max-width: 620px) {
+  .masthead { padding-block: 12px; }
+  .masthead__nav { gap: 20px; }
+  .masthead__nav a[href="/about"]:not([aria-current]),
+  .masthead__nav a[href="/cv"]:not([aria-current]),
+  .masthead__nav a[href="./"] {
+    padding: 6px 0; background: none; border-radius: 0;
+    color: var(--fg); font-weight: 500; font-size: 15px;
+  }
+}
+/* the returning visitor's way back in, in the same voice as everything else */
+.resume {
+  font-family: var(--ff); font-size: 13px; letter-spacing: -0.01em; text-transform: none;
+  justify-content: flex-start; max-width: 1320px; margin-inline: auto;
+  animation: none;
+}

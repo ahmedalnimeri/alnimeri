@@ -100,7 +100,7 @@
 .hero--editorial .hero__cta .btn { font-size: 15px; padding: 13px 26px; }
 .hero__career { margin: 30px 0 0; font-size: 12px; color: var(--fg-faint); }
 .hero__career a { color: var(--fg); border-bottom-color: var(--line); }
-.hero__feature { margin: 54px auto 0; max-width: 1240px; border-radius: 6px; }
+.hero__feature { margin: 54px auto 0; max-width: 1240px; border-radius: var(--radius); }
 
 .marquee { background: transparent; border-block: 1px solid var(--line-soft); padding-block: 40px; }
 #numbers { padding-block: 80px; }
@@ -112,13 +112,13 @@
 .commission__heading > span { font-size: 17px; color: var(--fg-dim); }
 .commission__grid { gap: 40px 34px; margin-top: 54px; }
 .commission__number { display: none; }
-.commission__card { border-top: 1px solid var(--line); border-radius: 0; padding: 26px 0 0; background: transparent; box-shadow: none; }
+
 .commission__card h3 { font-size: 21px; letter-spacing: -.02em; }
 .commission__card p { font-size: 14px; }
 
 #work { padding-block: clamp(92px, 13vh, 150px); }
 #work .grid { gap: 84px 34px; }
-#work .tile__link { border-radius: 4px; border: 0; }
+#work .tile__link { border-radius: var(--radius); }
 .section .slate, #work .slate { justify-content: center; align-items: center; text-align: center; flex-wrap: wrap; border-top: 0; padding-top: 0; }
 .slate::before { display: none; }
 .slate__title { font-size: clamp(36px, 5vw, 66px); letter-spacing: -.042em; }
@@ -127,9 +127,102 @@
 .contact__head { font-size: clamp(42px, 6vw, 88px); letter-spacing: -.04em; }
 
 /* the light bands run full width and carry their own inner rhythm */
-.on-light { padding-inline: var(--gut); }
+.on-surface { padding-inline: var(--gut); }
 #about.on-light .card { border-color: rgba(0,0,0,.08); }
 
-.on-light { background: #f1efe9; }
-.on-light .commission__card { border-top-color: rgba(0,0,0,.16); }
+.on-surface { background: #0b0c0d; }
+
 .section, .commission { padding-block: clamp(120px, 17vh, 210px); }
+
+/* ---- linear layout ------------------------------------------------------
+   Left-aligned opening, a framed film where Linear puts its product window,
+   hairline rules between chapters, two-column chapter heads, and columns
+   divided by vertical hairlines. */
+.hero--editorial { text-align: left; padding: 190px var(--gut) 0; }
+.hero__copy { max-width: 1320px; margin: 0 auto; }
+.hero--editorial .hero__name { margin: 0; max-width: 15ch; font-size: clamp(44px, 5.4vw, 78px); }
+.hero--editorial .hero__lede { margin: 26px 0 0; max-width: 48ch; }
+.hero--editorial .hero__cta { justify-content: flex-start; }
+.hero__career { text-align: left; }
+.hero__feature { max-width: 1320px; margin: 80px auto 0; border: 1px solid var(--line); border-radius: 14px; }
+.hero--editorial::after { inset: 20% -10% -10%; background: radial-gradient(50% 45% at 50% 60%, rgba(94,106,210,.18), transparent 70%); }
+
+/* chapters: a hairline across the full width, then the head */
+#numbers, .commission, #work, #about, #matchcut, .contact { border-top: 1px solid var(--line); }
+.marquee { border-block: 0; }
+.section .slate, #work .slate, .chapter__head .slate { justify-content: flex-start; text-align: left; margin: 0; }
+.slate__title { font-size: clamp(36px, 4.2vw, 58px); }
+.slate__run { margin: 16px 0 0; }
+.chapter__head {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 28px 64px; align-items: start;
+  max-width: 1320px; margin: 0 auto clamp(52px, 8vh, 88px);
+}
+.chapter__aside .work__intro { text-align: left; margin: 0; max-width: 32ch; font-size: clamp(19px, 1.7vw, 23px); line-height: 1.45; color: #d0d6e0; }
+.chapter__more { display: inline-block; margin-top: 22px; font-size: 15px; color: var(--fg-dim); text-decoration: none; }
+.chapter__more:hover { color: var(--fg); }
+#about .slate, #matchcut .slate { max-width: 1320px; margin: 0 auto clamp(44px, 7vh, 72px); }
+
+/* the offers: a title, then four columns split by hairlines, a frame on top of each */
+.commission { background: var(--bg); }
+.commission__heading { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 64px; align-items: end; text-align: left; }
+.commission__heading h2 { margin: 0; font-size: clamp(36px, 4.2vw, 58px); }
+.commission__heading > span { font-size: clamp(19px, 1.7vw, 23px); line-height: 1.45; color: #d0d6e0; max-width: 32ch; }
+.commission .commission__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 64px; border-top: 1px solid var(--line); }
+.commission .commission__card {
+  background: transparent; border: 0; border-left: 1px solid var(--line); border-radius: 0;
+  padding: 28px 28px 8px; box-shadow: none;
+}
+.commission .commission__card:first-child { border-left: 0; padding-left: 0; }
+.commission .commission__card:last-child { padding-right: 0; }
+.commission__still { margin: 0 0 24px; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; }
+.commission__still img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.commission__card:hover .commission__still img { transform: scale(1.035); }
+.commission__card h3 { font-size: 16px; font-weight: 500; letter-spacing: -.01em; margin: 0 0 8px; }
+.commission__card p { font-size: 14px; line-height: 1.65; color: var(--fg-dim); }
+
+/* the numbers: four columns split by hairlines */
+#numbers .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 0; padding-top: 0; max-width: 1320px; margin: 0 auto; }
+#numbers .stats > div { padding: 6px 28px; border-left: 1px solid var(--line); }
+#numbers .stats > div:first-child { border-left: 0; padding-left: 0; }
+
+@media (max-width: 900px) {
+  .commission .commission__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .commission .commission__card:nth-child(3) { border-left: 0; padding-left: 0; }
+  .commission .commission__card:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 760px) {
+  .hero--editorial { padding-top: 130px; }
+  .chapter__head, .commission__heading { grid-template-columns: 1fr; }
+  .commission .commission__grid { grid-template-columns: 1fr; }
+  .commission .commission__card { border-left: 0; padding: 26px 0 8px; border-top: 1px solid var(--line); }
+  .commission .commission__card:first-child { border-top: 0; }
+  #numbers .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 28px; }
+  #numbers .stats > div:nth-child(3) { border-left: 0; padding-left: 0; }
+}
+
+/* alignment pass: everything hangs off the same 1320px column as the bar */
+.hero--editorial { display: block; }
+.hero__copy { width: 100%; max-width: 1320px; margin: 0 auto; }
+.hero__feature { display: block; width: 100%; max-width: 1320px; }
+.chapter__head .slate { flex-direction: column; align-items: flex-start; }
+.chapter__head .slate__run, #work .slate__run { flex: none; margin: 18px 0 0 !important; width: auto; }
+/* equal columns: every card gets the same gutter, and the grid is pulled out
+   by that gutter so the outer edges still sit on the page column */
+.commission .commission__grid { margin-inline: -28px; }
+.commission .commission__card,
+.commission .commission__card:first-child,
+.commission .commission__card:last-child { padding: 28px 28px 8px; }
+.commission .commission__card:first-child { border-left: 0; }
+@media (max-width: 900px) {
+  .commission .commission__grid { margin-inline: 0; }
+  .commission .commission__card:nth-child(odd) { padding-left: 0; }
+  .commission .commission__card:nth-child(even) { padding-right: 0; }
+}
+@media (max-width: 760px) {
+  .commission .commission__card, .commission .commission__card:first-child, .commission .commission__card:last-child { padding: 26px 0 8px; }
+}
+
+/* the rule above the offers sits on the page column, not the pulled-out grid */
+.commission .commission__grid { border-top: 0; position: relative; }
+.commission .commission__grid::before { content: ""; position: absolute; top: 0; left: 28px; right: 28px; height: 1px; background: var(--line); }
+@media (max-width: 900px) { .commission .commission__grid::before { left: 0; right: 0; } }
