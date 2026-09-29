@@ -27,7 +27,7 @@
 <meta name="twitter:image" content="https://alnimeri.com/assets/og-home.jpg">
 
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/poppins-600.woff2" crossorigin>
-<link rel="preload" as="image" type="image/webp" imagesrcset="/assets/posters/843280565-480.webp?h=98a9bde0 480w, /assets/posters/843280565-768.webp?h=315e5578 768w, /assets/posters/843280565-1280.webp?h=9491d898 1280w" imagesizes="(max-width: 1440px) 92vw, 1320px" fetchpriority="high">
+<link rel="preload" as="image" type="image/webp" imagesrcset="/assets/posters/1058181870-480.webp?h=3c37a86d 480w, /assets/posters/1058181870-768.webp?h=37282e8f 768w, /assets/posters/1058181870-1280.webp?h=0c6f1b2f 1280w" imagesizes="(max-width: 900px) 92vw, 46vw" fetchpriority="high">
 <link rel="preconnect" href="https://player.vimeo.com">
 <link rel="stylesheet" href="styles.css?v=94">
 <script type="application/ld+json">{
@@ -597,7 +597,7 @@
     }
   ]
 }</script>
-<link rel="stylesheet" href="refinement.css?v=6b6cac2c">
+<link rel="stylesheet" href="refinement.css?v=da8cb970">
 </head>
 <body>
 <a class="skip" href="#work">Skip to work</a>
@@ -625,14 +625,28 @@
       </div>
       <p class="hero__career">Associate Creative Director · 1000media / Nas Company<br><a href="/cv">Experience &amp; CV <span aria-hidden="true">↗</span></a></p>
     </div>
-    <a class="hero__feature" href="/work/al-doroub" aria-label="Explore Al Doroub, a feature documentary">
-      <picture>
-        <source type="image/webp" srcset="assets/posters/843280565-480.webp?h=98a9bde0 480w, assets/posters/843280565-768.webp?h=315e5578 768w, assets/posters/843280565-1280.webp?h=9491d898 1280w" sizes="(max-width: 1440px) 92vw, 1320px">
-        <img srcset="assets/posters/843280565-480.jpg?h=f9b9139e 480w, assets/posters/843280565-768.jpg?h=9c819345 768w, assets/posters/843280565.jpg?h=60978943 1280w" sizes="(max-width: 1440px) 92vw, 1320px" src="assets/posters/843280565.jpg?h=60978943" width="1280" height="720" alt="A moment from Al Doroub" fetchpriority="high" decoding="async">
-      </picture>
-      <span class="hero__feature-top">A story worth staying for <span>01 / 17</span></span>
-      <span class="hero__feature-bottom"><span><small>FEATURE DOCUMENTARY · SUDAN</small><strong>Al Doroub</strong></span><span class="hero__play" aria-hidden="true">↗</span></span>
-    </a>
+    <figure class="twoshot">
+      <!-- The picture follows the sentence: "a brief" is a brief, "my country"
+           is Sudan. main.js is not involved; motion.js cuts between them. -->
+      <div class="twoshot__frame">
+        <a class="twoshot__shot is-on" data-shot="1" href="/work/solana-accelerate" tabindex="-1">
+        <picture>
+          <source type="image/webp" srcset="assets/posters/1058181870-480.webp?h=3c37a86d 480w, assets/posters/1058181870-768.webp?h=37282e8f 768w, assets/posters/1058181870-1280.webp?h=0c6f1b2f 1280w" sizes="(max-width: 900px) 92vw, 46vw">
+          <img srcset="assets/posters/1058181870-480.jpg?h=a755383c 480w, assets/posters/1058181870-768.jpg?h=a8cef681 768w, assets/posters/1058181870.jpg?h=bb1f445e 1280w" sizes="(max-width: 900px) 92vw, 46vw" src="assets/posters/1058181870.jpg?h=bb1f445e" width="1280" height="720" alt="Still from Solana Accelerate" fetchpriority="high" decoding="async">
+        </picture>
+        </a>
+        <a class="twoshot__shot" data-shot="2" href="/work/al-doroub" tabindex="-1">
+        <picture>
+          <source type="image/webp" srcset="assets/posters/843280565-480.webp?h=98a9bde0 480w, assets/posters/843280565-768.webp?h=315e5578 768w, assets/posters/843280565-1280.webp?h=9491d898 1280w" sizes="(max-width: 900px) 92vw, 46vw">
+          <img srcset="assets/posters/843280565-480.jpg?h=f9b9139e 480w, assets/posters/843280565-768.jpg?h=9c819345 768w, assets/posters/843280565.jpg?h=60978943 1280w" sizes="(max-width: 900px) 92vw, 46vw" src="assets/posters/843280565.jpg?h=60978943" width="1280" height="720" alt="Still from Al Doroub" loading="eager" decoding="async">
+        </picture>
+        </a>
+      </div>
+      <figcaption class="twoshot__cap">
+        <a class="twoshot__label is-on" data-shot="1" href="/work/solana-accelerate"><span>A brief</span>Solana Accelerate</a>
+        <a class="twoshot__label" data-shot="2" href="/work/al-doroub"><span>My country</span>Al Doroub</a>
+      </figcaption>
+    </figure>
   </section>
 
   <section class="marquee" aria-label="Selected clients">
@@ -1015,33 +1029,6 @@
     </div>
   </section>
 
-  <section class="section mcbg" id="matchcut">
-    <div class="mcbg__media" aria-hidden="true">
-      <video class="mcbg__video mcbg__video--wide" muted loop playsinline preload="none"
-             data-poster="assets/matchcut/poster-wide-720.jpg?h=f46b1692" width="1280" height="720">
-        <source src="assets/matchcut/match-cut-wide-720.mp4?h=1419c61c" type="video/mp4">
-      </video>
-      <video class="mcbg__video mcbg__video--tall" muted loop playsinline preload="none"
-             data-poster="assets/matchcut/poster-720.jpg?h=1995f84a" width="720" height="1280">
-        <source src="assets/matchcut/match-cut-720.mp4?h=cad44209" type="video/mp4">
-      </video>
-    </div>
-    <div class="slate">
-      <h2 class="slate__title">Match Cut</h2>
-    </div>
-    <div class="mcbg__body">
-      <div class="mcbg__col">
-        <p class="mcbg__lede">One face, 1998 to 2026. <span>Eighteen photographs, locked on the eyes.</span></p>
-        <div class="mcbg__cta">
-          <a class="btn btn--solid" href="#contact">Get in touch</a>
-          <a class="btn btn--ghost" href="/work/">Watch the work</a>
-          <a class="btn btn--ghost" href="/cv">Read the CV</a>
-        </div>
-        <button class="mcbg__toggle" type="button">Pause the cut</button>
-      </div>
-    </div>
-  </section>
-
   <section class="commission project-questions" aria-labelledby="questions-title">
     <div class="commission__heading"><p>BEFORE THE BRIEF</p><h2 id="questions-title">Working with a film director in Dubai</h2></div>
     <details><summary>What kinds of films do you make?</summary><p>I work across brand and campaign films, documentaries, institutional films and post-production. Explore <a href="/work/solana-accelerate">Solana Accelerate</a> for campaign work, <a href="/work/al-doroub">Al Doroub</a> for documentary, or <a href="/work/">the full film selection</a>.</p></details>
@@ -1056,6 +1043,14 @@
       <div class="slate">
         <h2 class="slate__title">Contact</h2>
       </div>
+      <figure class="contact__face reveal">
+        <video class="contact__cut" muted loop playsinline preload="none"
+               data-poster="assets/matchcut/poster-720.jpg?h=1995f84a" width="720" height="1280"
+               aria-label="Match cut of one face, 1998 to 2026">
+          <source src="assets/matchcut/match-cut-720.mp4?h=cad44209" type="video/mp4">
+        </video>
+        <figcaption>1998 &rarr; 2026. The person who reads your brief.</figcaption>
+      </figure>
       <img class="lockup reveal" src="assets/lockup.png?h=85640908" alt="Ahmed Nimeri Production"
            width="1100" height="1295" loading="lazy" decoding="async">
       <p class="contact__head reveal">Send the brief.</p>
@@ -1085,7 +1080,7 @@
 </div>
 
 <script src="main.js?v=94" defer></script>
-<script src="motion.js?v=71a02f6c" defer></script>
+<script src="motion.js?v=ec571417" defer></script>
 <!-- Cloudflare Web Analytics -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "031672bac7b743a990b8dfcf074f7a38"}'></script>
 <!-- End Cloudflare Web Analytics -->

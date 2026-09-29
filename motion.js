@@ -1,25 +1,71 @@
-/* motion.js — the moments that carry an idea, the way linear.app's hands do.
-   Frames assembling into a film. Words resolving from blur. A light that
-   follows the eye across the work. Films opening like a letterbox. Depth
-   inside each frame. All of it is skipped under reduced motion, and the
-   pointer-driven parts only run where there is a real pointer. */
+/* motion.js — motion that carries an idea, never motion for its own sake.
+
+   The picture follows the sentence: "Some of it was a brief" shows a brief,
+   "Some of it was my country" cuts to Sudan. Words resolve from blur. A light
+   follows the eye across the work. Films open like a letterbox and keep a
+   little depth in the frame. At the foot of the page, beside "I answer my own
+   email", the match cut is the face of the person who does.
+
+   Under reduced motion nothing animates: the two-shot still answers hover and
+   focus, but cuts instead of dissolving, and never cuts on its own. */
 (function () {
   'use strict';
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce) return;
   var fine = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
-  var root = document.documentElement;
-  root.classList.add('has-motion');
 
-  /* ---- 1. words resolve one by one ------------------------------------ */
+  /* ---- the picture follows the sentence ------------------------------- */
+  var two = document.querySelector('.twoshot');
+  if (two) {
+    var shots = [].slice.call(two.querySelectorAll('.twoshot__shot'));
+    var labels = [].slice.call(two.querySelectorAll('.twoshot__label'));
+    var cur = 1, held = false, timer = null;
+    var show = function (n) {
+      cur = n;
+      shots.forEach(function (s) { s.classList.toggle('is-on', +s.dataset.shot === n); });
+      labels.forEach(function (l) { l.classList.toggle('is-on', +l.dataset.shot === n); });
+    };
+    var hold = function (n) { return function () { held = true; show(n); }; };
+    var release = function () { held = false; };
+    var c1 = document.querySelector('.hero__name .shot--1');
+    var c2 = document.querySelector('.hero__name .shot--2');
+    [[c1, 1], [c2, 2]].forEach(function (p) {
+      if (!p[0]) return;
+      p[0].addEventListener('pointerenter', hold(p[1]));
+      p[0].addEventListener('pointerleave', release);
+    });
+    labels.forEach(function (l) {
+      l.addEventListener('pointerenter', hold(+l.dataset.shot));
+      l.addEventListener('focus', hold(+l.dataset.shot));
+      l.addEventListener('pointerleave', release);
+      l.addEventListener('blur', release);
+    });
+    if (!reduce) {
+      // the cut lands with the second clause, then the two films alternate
+      // like a held two-shot until someone takes over with the pointer
+      setTimeout(function () {
+        if (!held) show(2);
+        timer = setInterval(function () { if (!held && !document.hidden) show(cur === 1 ? 2 : 1); }, 5200);
+      }, 1750);
+    }
+  }
+
+  if (reduce) {
+    // no autoplay: show the match cut as a still frame instead of a blank box
+    var still = document.querySelector('.contact__cut');
+    if (still && still.dataset.poster) still.poster = still.dataset.poster;
+    return;
+  }
+  document.documentElement.classList.add('has-motion');
+
+  /* ---- words resolve one by one --------------------------------------- */
   var name = document.querySelector('.hero__name');
   if (name) {
     var i = 0;
     var wrap = function (node) {
       [].slice.call(node.childNodes).forEach(function (ch) {
         if (ch.nodeType === 3) {
-          var parts = ch.textContent.split(/(\s+)/), frag = document.createDocumentFragment();
-          parts.forEach(function (p) {
+          var frag = document.createDocumentFragment();
+          ch.textContent.split(/(\s+)/).forEach(function (p) {
             if (!p) return;
             if (/^\s+$/.test(p)) { frag.appendChild(document.createTextNode(p)); return; }
             var s = document.createElement('span');
@@ -34,65 +80,7 @@
     name.classList.add('has-words');
   }
 
-  /* ---- 2. the edit assembles: loose frames drift, swerve around the
-          cursor, then converge into the featured film's window ---------- */
-  var hero = document.querySelector('.hero--editorial');
-  var win = document.querySelector('.hero__feature');
-  if (hero && win && fine && innerWidth >= 900 && scrollY < 200) {
-    hero.classList.add('has-swarm');
-    var layer = document.createElement('div');
-    layer.className = 'swarm'; layer.setAttribute('aria-hidden', 'true');
-    hero.appendChild(layer);
-    var N = 24, frames = [], mouse = { x: -9999, y: -9999 };
-    var H = hero.getBoundingClientRect();
-    for (var k = 0; k < N; k++) {
-      var el = document.createElement('i');
-      var w = 54 + Math.random() * 90;
-      el.style.width = w + 'px'; el.style.height = (w * 9 / 16) + 'px';
-      layer.appendChild(el);
-      var side = k % 2 ? 1 : -1;
-      frames.push({
-        el: el,
-        x: H.width / 2 + side * (H.width * (0.28 + Math.random() * 0.34)),
-        y: H.height * (0.18 + Math.random() * 0.62),
-        vx: 0, vy: 0, r: (Math.random() - 0.5) * 18,
-        phase: Math.random() * Math.PI * 2, tx: 0, ty: 0
-      });
-    }
-    hero.addEventListener('pointermove', function (e) {
-      var b = hero.getBoundingClientRect(); mouse.x = e.clientX - b.left; mouse.y = e.clientY - b.top;
-    });
-    var t0 = performance.now(), GATHER = 1500, END = 2900;
-    var step = function (now) {
-      var t = now - t0, b = hero.getBoundingClientRect(), wr = win.getBoundingClientRect();
-      frames.forEach(function (f, n) {
-      // land on the part of the window you can actually see: its top edge,
-      // spread across its width, so the payoff happens on screen
-      var cx = wr.left - b.left + wr.width * (0.2 + 0.6 * ((n * 37) % 100) / 100);
-      var cy = Math.min(wr.top - b.top + 24, innerHeight - (b.top > 0 ? b.top : 0) - 60);
-        if (t < GATHER) {
-          // loose drift, a slow wander, and a swerve away from the cursor
-          f.vx += Math.cos(f.phase + t / 600) * 0.05; f.vy += Math.sin(f.phase + t / 700) * 0.05;
-          var dx = f.x - mouse.x, dy = f.y - mouse.y, d2 = dx * dx + dy * dy;
-          if (d2 < 150 * 150) { var d = Math.sqrt(d2) || 1; f.vx += dx / d * 1.1; f.vy += dy / d * 1.1; }
-          f.vx *= 0.9; f.vy *= 0.9; f.x += f.vx; f.y += f.vy;
-          f.el.style.opacity = Math.min(1, t / 500);
-          f.el.style.transform = 'translate(' + f.x + 'px,' + f.y + 'px) rotate(' + f.r + 'deg)';
-        } else {
-          // converge into the window, shrinking and fading as they land
-          var p = Math.min(1, (t - GATHER - n * 12) / (END - GATHER - 300));
-          p = p < 0 ? 0 : p; var e = 1 - Math.pow(1 - p, 3);
-          var x = f.x + (cx - f.x) * e, y = f.y + (cy - f.y) * e;
-          f.el.style.opacity = String(1 - e);
-          f.el.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + (f.r * (1 - e)) + 'deg) scale(' + (1 - 0.6 * e) + ')';
-        }
-      });
-      if (t < END + 200) requestAnimationFrame(step); else layer.remove();
-    };
-    requestAnimationFrame(step);
-  }
-
-  /* ---- 3. a light that follows the eye -------------------------------- */
+  /* ---- a light that follows the eye ----------------------------------- */
   if (fine) {
     var track = function (container, sel) {
       if (!container) return;
@@ -108,7 +96,7 @@
     track(document.querySelector('#work .grid'), '.tile__link');
   }
 
-  /* ---- 4 & 5. letterbox reveal is CSS; depth needs the scroll ---------- */
+  /* ---- depth inside the frame (the letterbox reveal itself is CSS) ----- */
   var depthEls = [].slice.call(document.querySelectorAll('#work .tile__img, .commission__still img'));
   if (depthEls.length && 'IntersectionObserver' in window) {
     var live = new Set();
@@ -122,11 +110,24 @@
       var vh = innerHeight;
       live.forEach(function (el) {
         var r = el.getBoundingClientRect();
-        var p = ((r.top + r.height / 2) - vh / 2) / vh;          // -1 .. 1 across the screen
-        el.style.setProperty('--py', (p * -22).toFixed(1) + 'px');
+        el.style.setProperty('--py', ((((r.top + r.height / 2) - vh / 2) / vh) * -22).toFixed(1) + 'px');
       });
     };
     addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(paint); } }, { passive: true });
     paint();
+  }
+
+  /* ---- the face beside "I answer my own email" ------------------------ */
+  var cut = document.querySelector('.contact__cut');
+  if (cut && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting) {
+          if (!cut.poster && cut.dataset.poster) cut.poster = cut.dataset.poster;
+          if (cut.preload !== 'auto') cut.preload = 'auto';
+          var pr = cut.play(); if (pr && pr.catch) pr.catch(function () {});
+        } else if (!cut.paused) { cut.pause(); }
+      });
+    }, { threshold: 0.25 }).observe(cut);
   }
 })();
