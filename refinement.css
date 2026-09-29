@@ -226,3 +226,57 @@
 .commission .commission__grid { border-top: 0; position: relative; }
 .commission .commission__grid::before { content: ""; position: absolute; top: 0; left: 28px; right: 28px; height: 1px; background: var(--line); }
 @media (max-width: 900px) { .commission .commission__grid::before { left: 0; right: 0; } }
+
+/* ---- motion ------------------------------------------------------------ */
+/* words resolve one by one; the second clause lands after a beat */
+.has-motion .hero__name .shot { opacity: 1 !important; transition: none !important; animation: none !important; }
+.hero__name.has-words .w {
+  display: inline-block; opacity: 0; filter: blur(12px); transform: translateY(.22em);
+  animation: word-in 1s var(--ease) forwards;
+  animation-delay: calc(var(--i) * 55ms + 150ms);
+}
+.hero__name.has-words .shot--2 .w { animation-delay: calc(var(--i) * 55ms + 520ms); }
+@keyframes word-in { to { opacity: 1; filter: blur(0); transform: none; } }
+
+/* the edit assembles: weightless hairline frames */
+.swarm { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+.swarm i {
+  position: absolute; left: 0; top: 0; margin: -20px 0 0 -40px; opacity: 0;
+  border: 1px solid rgba(255, 255, 255, .34); border-radius: 3px;
+  background: rgba(255, 255, 255, .018); will-change: transform, opacity;
+}
+.has-swarm .hero__feature { animation-delay: 1.35s; }
+
+/* a light that follows the eye */
+.commission__card { position: relative; }
+.commission__card::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.045), transparent 60%);
+  transition: opacity .45s var(--ease);
+}
+.commission__grid:hover .commission__card::after { opacity: 1; }
+.commission__still, #work .tile__link { position: relative; }
+.commission__still::before, #work .tile__link::before {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; padding: 1px; opacity: 0;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.55), transparent 65%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  transition: opacity .45s var(--ease);
+}
+.commission__grid:hover .commission__still::before, #work .grid:hover .tile__link::before { opacity: 1; }
+
+/* films open like a letterbox, and keep a little depth inside the frame */
+.has-motion #work .tile .tile__img, .has-motion .commission__still img {
+  clip-path: inset(50% 0 50% 0);
+  transform: translateY(var(--py, 0)) scale(1.08) !important;
+  transition: clip-path 1.15s var(--ease), transform .25s linear !important;
+  transition-delay: var(--d, 0ms), 0ms !important;
+}
+.has-motion #work .tile.is-in .tile__img, .has-motion .commission__card.is-in .commission__still img { clip-path: inset(0 0 0 0); }
+.has-motion #work .tile__link:hover .tile__img, .has-motion .commission__card:hover .commission__still img {
+  transform: translateY(var(--py, 0)) scale(1.12) !important;
+}
+
+/* an older centring rule carries #work's ID weight; the chapter head must too */
+#work .chapter__head .slate { justify-content: flex-start; align-items: flex-start; text-align: left; }
+#work .chapter__head .slate__run { align-self: flex-start; }
