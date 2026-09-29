@@ -1029,36 +1029,39 @@
     <details><summary>How do I start a film project?</summary><p><a href="#contact">Send the brief</a> with what you want to make, who it is for, where it will run and your target delivery date. A first idea is enough to start the conversation.</p></details>
   </section>
 
-  <section class="contact" id="contact">
-    <div class="contact__inner">
-      <div class="slate">
-        <h2 class="slate__title">Contact</h2>
+  <!-- the ending's own styles, loaded here rather than in the head so they
+       never hold up the first paint of the page -->
+  <link rel="stylesheet" href="design-ending.css?v=bb912cd7">
+  <section class="contact ending" id="contact">
+    <!-- The end credits. design-ending.js fills the roll from the films in
+         #work, so it can never drift from the grid; the stills rise past as
+         the page runs out, then hold, and the one ask stays in the middle. -->
+    <div class="ending__stage">
+      <div class="ending__roll" aria-hidden="true"></div>
+      <div class="contact__inner ending__card">
+        <div class="slate">
+          <h2 class="slate__title">Contact</h2>
+        </div>
+        <img class="lockup reveal" src="assets/lockup.png?h=85640908" alt="Ahmed Nimeri Production"
+             width="1100" height="1295" loading="lazy" decoding="async">
+        <p class="contact__head reveal" data-delay="80">Send the brief.</p>
+        <p class="contact__sub reveal" data-delay="160">Film commissions, creative leadership opportunities, collaborations &mdash; English or Arabic. I answer my own email.</p>
+        <div class="ending__acts reveal" data-delay="240">
+          <a class="btn btn--solid" href="mailto:ahmed@alnimeri.com?subject=Project%20enquiry%20%E2%80%94%20alnimeri.com&amp;body=Hi%20Ahmed%2C%0A%0AI%E2%80%99d%20like%20to%20discuss%20a%20project.%0A%0AWhat%20we%E2%80%99re%20making%3A%0AAudience%20and%20where%20it%20will%20run%3A%0ATiming%20and%20location%3A%0ABudget%20range%20%28if%20known%29%3A%0A%0AName%20%2F%20company%3A%0A">Get in touch <span aria-hidden="true">↗</span></a>
+          <span class="ending__mail"><a class="contact__mail" href="mailto:ahmed@alnimeri.com?subject=Project%20enquiry%20%E2%80%94%20alnimeri.com&amp;body=Hi%20Ahmed%2C%0A%0AI%E2%80%99d%20like%20to%20discuss%20a%20project.%0A%0AWhat%20we%E2%80%99re%20making%3A%0AAudience%20and%20where%20it%20will%20run%3A%0ATiming%20and%20location%3A%0ABudget%20range%20%28if%20known%29%3A%0A%0AName%20%2F%20company%3A%0A">ahmed@alnimeri.com</a></span>
+        </div>
+        <nav class="contact__links" aria-label="Elsewhere">
+          <a href="https://vimeo.com/nimeri" rel="me noopener" target="_blank">Vimeo</a>
+          <a href="https://www.instagram.com/by_nimeri" rel="me noopener" target="_blank">Instagram</a>
+          <a href="https://www.linkedin.com/in/ahmedalnimeri/" rel="me noopener" target="_blank">LinkedIn</a>
+          <a href="assets/Ahmed_ElNimeri_CV.pdf?h=15dd1130">CV (PDF)</a>
+        </nav>
       </div>
-      <figure class="contact__face reveal">
-        <video class="contact__cut" muted loop playsinline preload="none"
-               data-poster="assets/matchcut/poster-720.jpg?h=1995f84a" width="720" height="1280"
-               aria-label="Match cut of one face, 1998 to 2026">
-          <source src="assets/matchcut/match-cut-720.mp4?h=cad44209" type="video/mp4">
-        </video>
-        <figcaption>1998 &rarr; 2026. The person who reads your brief.</figcaption>
-      </figure>
-      <img class="lockup reveal" src="assets/lockup.png?h=85640908" alt="Ahmed Nimeri Production"
-           width="1100" height="1295" loading="lazy" decoding="async">
-      <p class="contact__head reveal">Send the brief.</p>
-      <a class="contact__mail" href="mailto:ahmed@alnimeri.com?subject=Project%20enquiry%20%E2%80%94%20alnimeri.com&amp;body=Hi%20Ahmed%2C%0A%0AI%E2%80%99d%20like%20to%20discuss%20a%20project.%0A%0AWhat%20we%E2%80%99re%20making%3A%0AAudience%20and%20where%20it%20will%20run%3A%0ATiming%20and%20location%3A%0ABudget%20range%20%28if%20known%29%3A%0A%0AName%20%2F%20company%3A%0A">ahmed@alnimeri.com</a>
-      <p class="contact__sub reveal" data-delay="80">Film commissions, creative leadership opportunities, collaborations &mdash; English or Arabic. I answer my own email.</p>
-      <div class="brief-guide"><p>A few lines are enough: what you’re making, who it’s for, and when you need it. Add a location and budget range if you have them.</p><a class="btn btn--solid" href="mailto:ahmed@alnimeri.com?subject=Project%20enquiry%20%E2%80%94%20alnimeri.com&amp;body=Hi%20Ahmed%2C%0A%0AI%E2%80%99d%20like%20to%20discuss%20a%20project.%0A%0AWhat%20we%E2%80%99re%20making%3A%0AAudience%20and%20where%20it%20will%20run%3A%0ATiming%20and%20location%3A%0ABudget%20range%20%28if%20known%29%3A%0A%0AName%20%2F%20company%3A%0A">Start your email ↗</a><small>Opens your email app with a short brief to fill in. Prefer your own words? Email the address above.</small></div>
-      <nav class="contact__links" aria-label="Elsewhere">
-        <a class="btn btn--ghost" href="https://vimeo.com/nimeri" rel="me noopener" target="_blank">Vimeo</a>
-        <a class="btn btn--ghost" href="https://www.instagram.com/by_nimeri" rel="me noopener" target="_blank">Instagram</a>
-        <a class="btn btn--ghost" href="https://www.linkedin.com/in/ahmedalnimeri/" rel="me noopener" target="_blank">LinkedIn</a>
-        <a class="btn btn--ghost" href="assets/Ahmed_ElNimeri_CV.pdf?h=15dd1130">Download CV (PDF)</a>
-      </nav>
-      <footer class="colophon">
-        <span>© 2026 Ahmed El-Nimeri</span>
-        <span>Dubai, UAE · <a href="/work/">All films</a> · <a href="/privacy">Privacy</a></span>
-      </footer>
     </div>
+    <footer class="colophon">
+      <span>© 2026 Ahmed El-Nimeri</span>
+      <span>Dubai, UAE · <a href="/work/">All films</a> · <a href="/privacy">Privacy</a></span>
+    </footer>
   </section>
 
 </main>
@@ -1071,6 +1074,7 @@
 
 <script src="main.js?v=101" defer></script>
 <script src="motion.js?v=0198f5ad" defer></script>
+<script src="design-ending.js?v=e5c0963c" defer></script>
 <!-- Cloudflare Web Analytics -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "031672bac7b743a990b8dfcf074f7a38"}'></script>
 <!-- End Cloudflare Web Analytics -->

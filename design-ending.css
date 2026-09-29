@@ -1,0 +1,184 @@
+/* design-ending.css — the end of the home page, as the end of a film.
+
+   The films run out and the credits roll: the stills from #work rise past on
+   either side as the visitor scrolls the last screen, faster than the page,
+   out of black at the foot and back into black at the top. When the page
+   stops they hold, and one card stays still in the middle: the production
+   mark, the ask, the address. No loop, no autoplay; nothing moves unless the
+   visitor does. Home page only. */
+
+.contact.ending {
+  padding: 0 var(--gut) clamp(14px, 2.4vh, 24px);
+  overflow: hidden;
+}
+
+/* ---- the stage: one screen, the card in the middle -------------------- */
+.ending__stage {
+  position: relative;
+  display: grid; place-items: center;
+  min-height: max(640px, calc(100svh - 62px));
+  padding: clamp(104px, 15vh, 150px) 0 clamp(80px, 11vh, 120px);
+}
+
+/* ---- the roll ----------------------------------------------------------
+   Two columns of frames at the content edges. --t is how far below its
+   resting place a column starts: the near column travels further than the
+   far one, so while the page moves the two drift out of step and read as
+   depth. They only fall into line at the very end of the page, a row of
+   films level with the ask, like a crawl resolving into its last card. */
+.ending__roll {
+  --edge: max(var(--gut), calc((100vw - 1320px) / 2));
+  --cw: clamp(200px, 20.5vw, 330px);
+  --picH: calc(var(--cw) * 9 / 16);
+  --capH: 29px;
+  --gap: clamp(34px, 5.2vh, 58px);
+  --mid: calc(50% + 24px);   /* the middle of what the bar leaves visible */
+  position: absolute; inset: 0 calc(-1 * var(--gut));
+  overflow: hidden; pointer-events: none;
+}
+/* black at the head and foot of the stage: the frames come up out of the
+   dark and go back into it, the way a crawl does */
+.ending__roll::before, .ending__roll::after {
+  content: ""; position: absolute; left: 0; right: 0; z-index: 2; pointer-events: none;
+}
+.ending__roll::before {
+  top: 0; height: 34%;
+  background: linear-gradient(#000 0%, #000 18%, rgba(0,0,0,.82) 42%, rgba(0,0,0,.42) 70%, rgba(0,0,0,0) 100%);
+}
+.ending__roll::after {
+  bottom: 0; height: 30%;
+  background: linear-gradient(rgba(0,0,0,0) 0%, rgba(0,0,0,.42) 30%, rgba(0,0,0,.82) 58%, #000 86%);
+}
+/* anchored from the foot: the second frame from the bottom rests centred
+   on --mid, whatever the number of films */
+.ending__col {
+  position: absolute; width: var(--cw);
+  bottom: calc(100% - var(--mid) - 1.5 * (var(--picH) + var(--capH)) - var(--gap));
+  display: flex; flex-direction: column; gap: var(--gap);
+  pointer-events: auto;
+  transform: translate3d(0, calc((1 - var(--p, 1)) * var(--t)), 0);
+}
+.ending.is-rolling .ending__col { will-change: transform; }
+.ending__col--a { left: var(--edge);  --t: 62vh; }
+.ending__col--b { right: var(--edge); --t: 30vh; }
+
+/* ---- a frame and its credit ------------------------------------------- */
+.ending__frame {
+  display: block; color: var(--fg-faint); text-decoration: none;
+  opacity: .78; transition: opacity .7s var(--ease);
+}
+.ending__pic {
+  display: block; aspect-ratio: 16 / 9; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 8px; background: #0b0c0d;
+}
+.ending__pic img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  transition: transform 1.4s var(--ease);
+}
+.ending__cap {
+  display: flex; align-items: baseline; gap: 10px; margin-top: 12px;
+  font-size: 12.5px; line-height: 17px; height: 17px; letter-spacing: -.005em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ending__cap b { font-weight: 400; color: var(--fg-dim); overflow: hidden; text-overflow: ellipsis; }
+.ending__cap span { flex: none; }
+/* the pointer on a frame brings that film up to full light and the others
+   step back, the way a room goes quiet for the one on screen */
+@media (hover: hover) and (pointer: fine) {
+  .ending__frame:hover { opacity: 1; }
+  .ending__roll:has(.ending__frame:hover) .ending__frame:not(:hover) { opacity: .34; }
+  .ending__frame:hover .ending__pic img { transform: scale(1.04); }
+  .ending__frame:hover .ending__cap b { color: var(--fg); }
+}
+
+/* ---- the card ---------------------------------------------------------- */
+.contact.ending .ending__card {
+  position: relative; z-index: 3;
+  display: flex; flex-direction: column; align-items: center;
+  width: min(560px, 100%); max-width: none; margin: 0 auto; text-align: center;
+}
+.contact.ending .ending__card > * { margin-left: auto; margin-right: auto; text-align: center; }
+.contact.ending .lockup {
+  height: clamp(66px, 6.6vw, 92px); width: auto;
+  margin: 0 auto clamp(26px, 4.2vh, 40px); opacity: .92;
+}
+.contact.ending .contact__head {
+  margin: 0; font-size: clamp(40px, 4.5vw, 66px); line-height: 1.02; letter-spacing: -.035em;
+}
+.contact.ending .contact__sub {
+  margin-top: 18px; max-width: 38ch; font-size: 16px; line-height: 1.6; color: var(--fg-dim);
+}
+.ending__acts {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 14px 26px; margin-top: 32px;
+}
+.ending__acts .btn { font-size: 15px; font-weight: 500; padding: 13px 26px; }
+.ending__mail { position: relative; }
+.contact.ending .contact__mail {
+  font-size: 15px; font-weight: 400; letter-spacing: -.005em; line-height: 1.4;
+  color: var(--fg); padding: 10px 0 2px; border-bottom: 1px solid rgba(255, 255, 255, .22);
+  transition: border-color .35s var(--ease), opacity .35s var(--ease);
+}
+.contact.ending .contact__mail:hover { opacity: 1; border-bottom-color: var(--fg); }
+/* "Copied" hangs under the address instead of pushing the row about */
+.ending__mail .copied {
+  position: absolute; top: calc(100% + 10px); left: 50%; margin: 0;
+  transform: translateX(-50%); white-space: nowrap;
+}
+.contact.ending .contact__links {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 26px;
+  margin-top: clamp(30px, 5vh, 44px);
+}
+.contact.ending .contact__links a {
+  padding: 8px 0; font-size: 13px; color: var(--fg-faint); text-decoration: none;
+  transition: color .35s var(--ease);
+}
+.contact.ending .contact__links a:hover { color: var(--fg); }
+.contact.ending .colophon {
+  position: relative; z-index: 3; max-width: 1320px; margin: 0 auto;
+}
+
+/* ---- narrower screens: the roll above, the card under it ---------------
+   The last screen is laid out as one frame: the roll takes whatever height
+   the card leaves, so at the end of the page the films sit between the bar
+   and the ask on any phone, a row resting in full light. */
+@media (max-width: 999px) {
+  .ending__stage {
+    display: flex; flex-direction: column; place-items: normal;
+    min-height: calc(100svh - 58px); padding: 0 0 26px;
+  }
+  .ending__roll {
+    --cw: min(300px, calc((100vw - 2 * var(--gut) - 14px) / 2));
+    --edge: max(var(--gut), calc(50vw - var(--cw) - 7px));
+    --gap: 24px; --capH: 25px; --mid: 57%;
+    position: relative; inset: auto; flex: 1 0 clamp(280px, 38svh, 460px);
+    margin: 0 calc(-1 * var(--gut));
+  }
+  .ending__roll::before { height: 24%; }
+  .ending__roll::after {
+    height: 30%;
+    background: linear-gradient(rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 34%, rgba(0,0,0,.9) 64%, #000 90%);
+  }
+  .ending__col--a { --t: 34svh; }
+  .ending__col--b { --t: 16svh; }
+  .ending__cap { font-size: 12px; line-height: 16px; height: 16px; gap: 8px; margin-top: 9px; }
+  .ending__cap span { display: none; }
+  .contact.ending .ending__card { flex: none; margin-top: 0; }
+  .contact.ending .lockup { height: 52px; margin-bottom: 16px; }
+  .contact.ending .contact__links { margin-top: 20px; }
+}
+@media (max-width: 560px) {
+  .contact.ending .contact__head { font-size: clamp(38px, 11vw, 46px); }
+  .contact.ending .contact__sub { margin-top: 12px; font-size: 15px; line-height: 1.55; }
+  .ending__acts { flex-direction: column; gap: 6px; margin-top: 24px; }
+  .ending__acts .btn { width: 100%; max-width: 320px; justify-content: center; }
+  .contact.ending .colophon { font-size: 12px; margin-top: 0; }
+}
+
+/* ---- reduced motion: the last frame, held ------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .ending__col { transform: none; }
+  .ending__frame, .ending__pic img, .contact.ending .contact__mail { transition: none; }
+  .ending__frame:hover .ending__pic img { transform: none; }
+}
+@media print { .ending__roll { display: none; } .ending__stage { min-height: 0; padding: 0; } }
