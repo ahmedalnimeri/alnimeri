@@ -13,31 +13,63 @@
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var fine = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-  /* ---- the films beside the line --------------------------------------- */
-  // One after another, with the caption naming the one on screen. Hovering
-  // the picture holds it.
+  /* ---- the films beside the line: a slideshow you can feel ------------- */
+  // Ahmed: "I should feel there's a slideshow here." A row of segments, one per
+  // film: the current one fills while its film is up, the ones behind stay
+  // filled. The fill itself drives the timing (animationend advances), so
+  // pausing on hover and advancing can never drift apart. Segments jump;
+  // phones can swipe.
   var two = document.querySelector('.twoshot');
   if (two) {
     var shots = [].slice.call(two.querySelectorAll('.twoshot__shot'));
     var cap = two.querySelector('.twoshot__label');
-    var cur = 0, held = false;
+    var frame = two.querySelector('.twoshot__frame');
+    var cur = 0;
+    var bar = document.createElement('div');
+    bar.className = 'twoshot__bar'; bar.setAttribute('role', 'tablist'); bar.setAttribute('aria-label', 'Films');
+    var segs = shots.map(function (sh, k) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'twoshot__seg'; b.setAttribute('role', 'tab');
+      b.setAttribute('aria-label', 'Show ' + sh.dataset.title);
+      b.innerHTML = '<i></i>';
+      b.addEventListener('click', function () { show(k); });
+      bar.appendChild(b);
+      return b;
+    });
+    frame.insertAdjacentElement('afterend', bar);
     var show = function (i) {
-      cur = i;
-      var s = shots[i];
-      shots.forEach(function (x, k) { x.classList.toggle('is-on', k === i); });
+      cur = (i + shots.length) % shots.length;
+      shots.forEach(function (x, k) { x.classList.toggle('is-on', k === cur); });
+      segs.forEach(function (sg, k) {
+        sg.classList.toggle('is-done', k < cur);
+        sg.classList.remove('is-on');
+        sg.setAttribute('aria-selected', k === cur ? 'true' : 'false');
+      });
+      void segs[cur].offsetWidth;                 // restart the fill
+      segs[cur].classList.add('is-on');
+      var s = shots[cur];
       if (cap) { cap.querySelector('b').textContent = s.dataset.title; cap.querySelector('span').textContent = s.dataset.kind; cap.href = s.getAttribute('href'); }
     };
-    var frame = two.querySelector('.twoshot__frame');
-    [frame, cap].forEach(function (el) {
-      if (!el) return;
-      el.addEventListener('pointerenter', function () { held = true; });
-      el.addEventListener('pointerleave', function () { held = false; });
+    segs.forEach(function (sg) {
+      sg.querySelector('i').addEventListener('animationend', function () { if (sg.classList.contains('is-on')) show(cur + 1); });
     });
-    if (!reduce && shots.length > 1) {
-      setTimeout(function () {
-        setInterval(function () { if (!held && !document.hidden) show((cur + 1) % shots.length); }, 3400);
-      }, 1750);
-    }
+    // holding the pointer on the picture holds the film
+    [frame, cap, bar].forEach(function (el) {
+      if (!el) return;
+      el.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') two.classList.add('is-held'); });
+      el.addEventListener('pointerleave', function () { two.classList.remove('is-held'); });
+    });
+    // swipe on touch screens
+    var x0 = null;
+    frame.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse') x0 = e.clientX; });
+    frame.addEventListener('pointerup', function (e) {
+      if (x0 === null) return;
+      var dx = e.clientX - x0; x0 = null;
+      if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1));
+    });
+    document.addEventListener('visibilitychange', function () { two.classList.toggle('is-away', document.hidden); });
+    if (reduce) two.classList.add('is-still');
+    show(0);
   }
 
   if (reduce) {

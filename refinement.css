@@ -349,3 +349,21 @@
 
 /* the caption over the client logos, in the same voice as everything else */
 .marquee__label { font-family: var(--ff); font-size: 13px; letter-spacing: -.01em; text-transform: none; color: var(--fg-faint); }
+
+/* the slideshow bar: one segment per film, the current one filling */
+.twoshot__bar { display: flex; gap: 6px; margin-top: 14px; }
+.twoshot__seg { flex: 1; height: 16px; padding: 7px 0; border: 0; background: none; cursor: pointer; }
+.twoshot__seg i {
+  display: block; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, .16);
+  background-image: linear-gradient(#fff, #fff); background-repeat: no-repeat; background-size: 0% 100%;
+}
+.twoshot__seg.is-done i { background-size: 100% 100%; background-image: linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,.55)); }
+.twoshot__seg.is-on i { animation: seg-fill 4.2s linear forwards; }
+.twoshot__seg:first-child.is-on i { animation-duration: 5.4s; }            /* the first film holds while the line resolves */
+@keyframes seg-fill { to { background-size: 100% 100%; } }
+.twoshot.is-held .twoshot__seg.is-on i, .twoshot.is-away .twoshot__seg.is-on i { animation-play-state: paused; }
+.twoshot.is-still .twoshot__seg.is-on i { animation: none; background-size: 100% 100%; }
+.twoshot__seg:hover i { background-color: rgba(255, 255, 255, .3); }
+.twoshot__seg:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.twoshot__cap { margin-top: 10px; }
+.twoshot__frame { touch-action: pan-y; }
