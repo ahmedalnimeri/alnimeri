@@ -179,7 +179,6 @@
   .contact.ending .contact__head { font-size: clamp(38px, 11vw, 46px); }
   .contact.ending .contact__sub { margin-top: 12px; font-size: 15px; line-height: 1.55; }
   .ending__acts { flex-direction: column; gap: 6px; margin-top: 24px; }
-  .ending__acts .btn { width: 100%; max-width: 320px; justify-content: center; }
   .contact.ending .colophon { font-size: 12px; margin-top: 0; }
 }
 
