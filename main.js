@@ -539,16 +539,6 @@
     cutTo(target.offsetTop - headerOffset());
   });
 
-  /* E exports the sequence — the same muscle memory as an edit bay. The
-     colophon carries the visible link; this is for the hands that know. */
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== 'e' || e.metaKey || e.ctrlKey || e.altKey) return;
-    var t = e.target;
-    if (t && (/^(INPUT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable)) return;
-    if (lb && lb.classList.contains('is-open')) return;
-    cutEl.classList.add('is-cutting');
-    setTimeout(function () { location.href = document.documentElement.getAttribute('data-edl') || '/selects.edl'; }, 42);
-  });
 
   /* ---- masthead contracts on scroll --------------------------------- */
 
@@ -998,7 +988,6 @@
       '<button type="button" class="btn btn--solid" data-act="share">Send it</button>' +
       '<button type="button" class="btn btn--ghost" data-act="copy">Copy link</button>' +
       '<a class="btn btn--ghost" data-act="open" href="#">Open the reel</a>' +
-      '<a class="btn btn--ghost" data-act="edl" href="#">EDL ↓</a>' +
     '</div>' +
     '<p class="sheet__note">Anyone with the link sees these films, in this order, with the stamps recomputed. The link carries the cut and nothing about you.</p>' +
     '</div>';
@@ -1029,7 +1018,6 @@
     sheet.querySelector('[data-n]').textContent = pad(sel.length);
     sheet.querySelector('[data-url]').textContent = url.replace(/^https?:\/\//, '');
     sheet.querySelector('[data-act="open"]').href = url;
-    sheet.querySelector('[data-act="edl"]').href = url + '.edl';
     var list = sheet.querySelector('[data-list]'); list.innerHTML = '';
     sel.forEach(function (k, n) {
       var t = tiles[ALPHABET.indexOf(k)], li = document.createElement('li');

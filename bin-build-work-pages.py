@@ -375,8 +375,7 @@ idx = (HEAD.format(title='All films', slug='', poster='assets/og-work.jpg', ver=
   </div>
   {rows}
   <p class="film__note">The same {COUNT} films as the <a href="/">front page</a>, as a list.
-    Each page carries the film, its running time and the published post its view count came from.
-    The machine-readable cut list is at <a href="/selects.edl">/selects.edl</a>.</p>
+    Each page carries the film, its running time and the published post its view count came from.</p>
 </section>
 ''' + FOOT.format(ver=VER))
 open('work/index.html', 'w').write(idx)
