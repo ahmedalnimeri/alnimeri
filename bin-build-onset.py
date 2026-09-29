@@ -2,9 +2,10 @@
 """Render About section 006, On Set, from assets/onset.json.
 
 The board groups the frames by the year they were taken, in the order they
-happened, and lays each print out by its "shape" (wide, tall, mid, half,
-full). Typed by hand the grouping drifts the moment a frame is added, so it is
-derived here from one list.
+happened, and lays each print out by its "shape" (wide, side, mid, half,
+full). Every shape keeps the photograph whole at 3:2; they differ in size
+and placement only. Typed by hand the grouping drifts the moment a frame is
+added, so it is derived here from one list.
 
   python3 bin-build-onset.py seed                      # write assets/onset.json from about.html (once)
   python3 bin-build-onset.py grade SRC NAME [GRAVITY]  # grade a photo into assets/onset/NAME(.jpg|-700.jpg)
@@ -49,10 +50,10 @@ def grade(src, name, gravity='center'):
         print('wrote', out)
 
 # How each print sits on the board. "shape" in assets/onset.json picks one;
-# "focus" is the object-position for crops that lose part of the frame (tall).
+# the value is the print's rendered width, for the srcset.
 SHAPES = {
     'wide': '(max-width: 700px) 100vw, 46vw',
-    'tall': '(max-width: 700px) 50vw, 31vw',
+    'side': '(max-width: 700px) 50vw, 29vw',
     'mid':  '(max-width: 700px) 50vw, 38vw',
     'half': '(max-width: 700px) 100vw, 38vw',
     'full': '(max-width: 700px) 100vw, 78vw',
@@ -60,7 +61,7 @@ SHAPES = {
 
 def render(frames):
     # One group per year, in the order the frames happened. Groups of three
-    # alternate which side the tall print stands on, so the board never
+    # alternate which side the wide print stands on, so the board never
     # repeats itself down the page.
     groups = []
     for f in frames:
@@ -71,7 +72,7 @@ def render(frames):
     out, flip = [], False
     for year, fs in groups:
         cls = ''
-        if any(f.get('shape') == 'tall' for f in fs):
+        if any(f.get('shape') == 'side' for f in fs):
             cls = ' set__group--flip' if flip else ''
             flip = not flip
         prints = []
@@ -79,12 +80,11 @@ def render(frames):
             shape = f.get('shape', 'mid')
             if shape not in SHAPES: sys.exit(f"unknown shape {shape!r} for {f['name']}")
             name = f['name']
-            pos = f' style="object-position: {esc(f["focus"])}"' if f.get('focus') else ''
             prints.append(f'''          <figure class="set__print set__print--{shape}">
             <div class="set__win"><img class="set__img" src="assets/onset/{name}-700.jpg"
                  srcset="assets/onset/{name}-700.jpg 700w, assets/onset/{name}.jpg 1200w"
                  sizes="{SHAPES[shape]}"
-                 alt="{esc(f['alt'])}" width="1200" height="800"{pos}
+                 alt="{esc(f['alt'])}" width="1200" height="800"
                  loading="lazy" decoding="async"></div>
             <figcaption class="set__cap">{esc(f['label'])}</figcaption>
           </figure>''')

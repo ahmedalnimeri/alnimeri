@@ -3,9 +3,11 @@
    The page as four boards, each with one idea in its motion:
      1. the opening racks focus onto him, and "Mostly I listen." lands a beat
         after the rest of the sentence;
-     2. every film is pinned to a board whose columns sit at different depths;
-     3. On Set is laid out by year — the year holds while its photographs pass;
-     4. what people say lights up under the reader's pointer.
+     2. every film is pinned to a board; the one you look at is the only one
+        lit, and the frame leans in and reframes toward where you look;
+     3. On Set is laid out by year, every photograph whole — the year holds
+        while its photographs pass;
+     4. what people say is set as type: the crowd drifts, the named voices lead.
    Scroll-linked pieces use CSS scroll timelines (compositor, no JS); browsers
    without them get the same boards standing still. Colours are the site's own. */
 
@@ -102,7 +104,6 @@
 .pins {
   position: relative; z-index: 1;
   padding: clamp(3rem, 9vh, 6.5rem) var(--gut) clamp(1rem, 3vh, 2rem);
-  view-timeline-name: --pins;
 }
 .pins__board {
   max-width: 1320px; margin: 0 auto;
@@ -116,21 +117,17 @@
   position: relative; display: block; overflow: hidden;
   aspect-ratio: 16 / 9; border-radius: var(--ab-r);
   background: var(--surface, #0f1011); border: 1px solid var(--line);
-  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   /* Opacity comes back after a short hold, so crossing the gap between two
      stills does not flash the whole board. */
-  transition: transform 0.7s var(--ease), border-color 0.4s var(--ease), opacity 0.5s var(--ease) 0.18s;
+  transition: border-color 0.4s var(--ease), opacity 0.5s var(--ease) 0.18s;
 }
 .pin--tall .pin__media { aspect-ratio: 3 / 4; }
+/* The frame leans in, and reframes toward where you look — the way an
+   operator follows the eye. --px/--py come from design-about.js; the long
+   ease is the operator's lag. */
 .pin__media img {
   width: 100%; height: 100%; object-fit: cover;
-  transition: transform 1.1s var(--ease) !important;
-}
-/* The light on the print follows the pointer. */
-.pin__media::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(520px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.13), transparent 42%);
-  opacity: 0; transition: opacity 0.5s var(--ease);
+  transition: transform 1.1s var(--ease), translate 1.4s var(--ease);
 }
 .pin__cap { display: flex; flex-direction: column; gap: 1px; padding: 0.8rem 2px 0; transition: opacity 0.5s var(--ease) 0.18s; }
 .pin__t { font-size: 14px; font-weight: 500; letter-spacing: -0.012em; line-height: 1.35; color: var(--fg); }
@@ -138,10 +135,9 @@
 
 .pin:focus-visible .pin__media { outline: 2px solid var(--fg); outline-offset: 3px; }
 .pin:hover .pin__media, .pin:focus-visible .pin__media { border-color: rgba(255, 255, 255, 0.24); }
+.pin:focus-visible .pin__media img { transform: scale(1.06); }
 @media (hover: hover) and (pointer: fine) {
-  .pin:hover .pin__media { transition-duration: 0.25s, 0.4s, 0.5s; }
-  .pin:hover .pin__media::after { opacity: 1; }
-  .pin:hover .pin__media img { transform: scale(1.06); }
+  .pin:hover .pin__media img { transform: scale(1.08); translate: var(--px, 0) var(--py, 0); }
   /* One film at a time: the rest of the board steps back while you look. */
   .pins__board:has(.pin:hover) .pin:not(:hover) .pin__media { opacity: 0.45; transition-delay: 0s; }
   .pins__board:has(.pin:hover) .pin:not(:hover) .pin__cap { opacity: 0.5; transition-delay: 0s; }
@@ -162,25 +158,17 @@
 
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    /* Each still is pinned as it comes up the screen... */
+    /* Each still is pinned as it comes up the screen. */
     .pin { animation: ab-pin linear both; animation-timeline: view(); animation-range: entry 0% entry 75%; }
-    /* ...and the columns sit at four depths, so the board parts and closes
-       as it passes — the nearest column moves most. */
-    @media (min-width: 900px) {
-      .pins__col { animation: ab-depth linear both; animation-timeline: --pins; animation-range: cover 0% cover 100%; }
-      .pins__col:nth-child(1) { --d: 36px; }
-      .pins__col:nth-child(2) { --d: 110px; }
-      .pins__col:nth-child(3) { --d: 14px; }
-      .pins__col:nth-child(4) { --d: 72px; }
-    }
   }
 }
 @keyframes ab-pin { from { opacity: 0; transform: translateY(46px) scale(0.965); } to { opacity: 1; transform: none; } }
-@keyframes ab-depth { from { transform: translateY(var(--d)); } to { transform: translateY(calc(var(--d) * -1)); } }
 
 /* =========================================================================
    3. On Set — by year
    ========================================================================= */
+/* Every photograph is shown whole, at the shape it was taken: rhythm comes
+   from size and placement, never from cropping out the rig or the room. */
 #onset .onset__sub { margin-bottom: clamp(3rem, 8vh, 5.5rem); }
 .set { max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: clamp(4rem, 11vh, 7rem); }
 .set__group {
@@ -198,11 +186,13 @@
   gap: clamp(2.5rem, 5vw, 4.5rem) var(--ab-gap); align-items: start;
 }
 .set__print { margin: 0; min-width: 0; grid-column: span 5; }
-.set__print--wide { grid-column: 1 / span 6; }
-.set__print--tall { grid-column: 7 / span 4; grid-row: 1 / span 2; align-self: center; }
-.set__print--mid  { grid-column: 2 / span 5; }
+/* Three to a year: a wide print, a smaller one beside it sharing its
+   baseline, and a third below, set in from the edge. */
+.set__print--wide { grid-column: 1 / span 6; grid-row: 1; }
+.set__print--side { grid-column: 7 / span 4; grid-row: 1; align-self: end; }
+.set__print--mid  { grid-column: 2 / span 5; grid-row: 2; }
 .set__group--flip .set__print--wide { grid-column: 5 / span 6; }
-.set__group--flip .set__print--tall { grid-column: 1 / span 4; }
+.set__group--flip .set__print--side { grid-column: 1 / span 4; }
 .set__group--flip .set__print--mid  { grid-column: 5 / span 5; }
 .set__print--half { grid-column: span 5; }
 .set__print--half:nth-child(even) { margin-top: clamp(4rem, 12vw, 10rem); }
@@ -211,17 +201,11 @@
 .set__win {
   position: relative; overflow: hidden; aspect-ratio: 3 / 2;
   border-radius: var(--ab-r); background: #000;
-  transform: perspective(1200px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.8s var(--ease);
 }
-.set__print--tall .set__win { aspect-ratio: 4 / 5; }
-.set__print--full .set__win { aspect-ratio: 16 / 9; }
 .set__img { width: 100%; height: 100%; object-fit: cover; }
 .set__win::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  background: radial-gradient(640px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.1), transparent 45%);
-  background-size: 100% 100%; opacity: var(--lit, 0); transition: opacity 0.5s var(--ease);
 }
 .set__cap { padding-top: 0.85rem; font-size: 13px; line-height: 1.4; letter-spacing: -0.005em; color: var(--fg-faint); }
 
@@ -238,33 +222,32 @@
     font-size: 1.6rem;
     background: linear-gradient(var(--bg) 62%, rgba(8, 9, 10, 0));
   }
-  /* Wide prints take the width; a tall print and its neighbour pair up. */
+  /* Wide prints take the width; the smaller two of a year pair up. */
   .set__prints { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem 10px; }
   .set__print, .set__print--wide, .set__print--half, .set__print--full,
   .set__group--flip .set__print--wide {
     grid-column: 1 / -1; grid-row: auto; margin-top: 0;
   }
-  .set__print--tall, .set__print--mid,
-  .set__group--flip .set__print--tall, .set__group--flip .set__print--mid {
+  .set__print--side, .set__print--mid,
+  .set__group--flip .set__print--side, .set__group--flip .set__print--mid {
     grid-column: span 1; grid-row: auto; margin-top: 0; align-self: start;
   }
-  .set__print--mid .set__win { aspect-ratio: 4 / 5; }
   .set__print--wide .set__win, .set__print--half .set__win, .set__print--full .set__win {
     margin: 0 calc(-1 * var(--gut)); border-radius: 0;
   }
   .set__print--wide .set__win::after, .set__print--half .set__win::after, .set__print--full .set__win::after { box-shadow: none; }
-  .set__print--full .set__win { aspect-ratio: 3 / 2; }
   .set__cap { padding-top: 0.7rem; }
 }
 
-/* Each print opens top-down as it arrives, like a blind being raised, and
-   the picture settles inside it; the caption follows. Time-based, once, on
-   arrival (design-about.js adds .ab-armed and .is-open) — a scroll-linked
-   version left prints half-open wherever the reader stopped. */
+/* Each print opens top-down as it arrives and the picture settles inside
+   it; the caption follows. The opening starts fast and lands slowly, so it
+   never lingers as a thin line. Time-based, once, on arrival (design-about.js
+   adds .ab-armed and .is-open) — a scroll-linked version left prints
+   half-open wherever the reader stopped. */
 @media (prefers-reduced-motion: no-preference) {
   .ab-armed .set__win {
     clip-path: inset(0 0 100% 0 round var(--ab-r));
-    transition: clip-path 1.15s cubic-bezier(0.7, 0, 0.2, 1) var(--ab-d, 0ms), transform 0.8s var(--ease);
+    transition: clip-path 1.1s cubic-bezier(0.22, 1, 0.36, 1) var(--ab-d, 0ms);
   }
   .ab-armed .set__img {
     transform: scale(1.14);
@@ -272,7 +255,7 @@
   }
   .ab-armed .set__cap {
     opacity: 0; transform: translateY(8px);
-    transition: opacity 0.8s var(--ease) calc(var(--ab-d, 0ms) + 0.5s), transform 0.8s var(--ease) calc(var(--ab-d, 0ms) + 0.5s);
+    transition: opacity 0.8s var(--ease) calc(var(--ab-d, 0ms) + 0.35s), transform 0.8s var(--ease) calc(var(--ab-d, 0ms) + 0.35s);
   }
   .ab-armed .set__print.is-open .set__win { clip-path: inset(0 0 0 0 round var(--ab-r)); }
   .ab-armed .set__print.is-open .set__img { transform: none; }
@@ -327,27 +310,20 @@
 }
 #said .said-leads .said__by { margin-top: 1.1rem; font-size: 14px; color: var(--fg-dim); }
 
-/* The rest as a wall: columns that pack, so no card waits on its neighbour. */
-.said-wall { max-width: 1320px; margin: 0 auto; columns: 3 280px; column-gap: var(--ab-gap); }
+/* The rest in columns under the leads, in the same hand: type on a hairline,
+   no boxes. Columns pack, so no comment waits on its neighbour. */
+.said-wall { max-width: 1320px; margin: 0 auto; columns: 3 260px; column-gap: clamp(2rem, 4vw, 4rem); }
 #said .said-wall .said {
-  position: relative; display: block; overflow: hidden;
-  break-inside: avoid; margin: 0 0 var(--ab-gap); padding: 1.45rem 1.5rem 1.3rem;
-  background: var(--surface, #0f1011); border: 1px solid var(--line); border-radius: 12px;
-  transition: border-color 0.4s var(--ease);
+  display: block; break-inside: avoid;
+  margin: 0 0 clamp(2rem, 4vw, 2.75rem); padding: 1.15rem 0 0;
+  background: none; border: 0; border-top: 1px solid var(--line); border-radius: 0;
 }
-#said .said-wall .said__en { font-size: 16px; line-height: 1.62; letter-spacing: -0.005em; }
+#said .said-wall .said__en { font-size: 16px; line-height: 1.62; letter-spacing: -0.005em; color: var(--fg); }
 #said .said__by {
   font-family: var(--ff); text-transform: none; letter-spacing: -0.005em;
   font-size: 13px; line-height: 1.45; color: var(--fg-faint); padding-top: 0.9rem; margin: 0;
 }
 #said .said__by::before { content: "— "; }
-/* The card you are reading lights where the pointer is. */
-#said .said-wall .said::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
-  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.055), transparent 60%);
-  opacity: var(--lit, 0); transition: opacity 0.4s var(--ease);
-}
-#said .said-wall .said:hover { border-color: rgba(255, 255, 255, 0.16); }
 
 @media (max-width: 760px) {
   .said-leads { grid-template-columns: minmax(0, 1fr); }
@@ -357,12 +333,11 @@
    Reduced motion: every board stands still, fully composed.
    ========================================================================= */
 @media (prefers-reduced-motion: reduce) {
-  .pin__media, .set__win { transform: none !important; }
   .set__win { clip-path: none !important; }
   .set__img, .set__cap { transform: none !important; opacity: 1 !important; }
-  .pin:hover .pin__media img { transform: none; }
+  .pin:hover .pin__media img, .pin:focus-visible .pin__media img { transform: none; translate: none; }
 }
 @media print {
-  .pins__col, .pin, .set__win, .set__img { animation: none !important; transform: none !important; clip-path: none !important; }
+  .pin, .set__win, .set__img { animation: none !important; transform: none !important; clip-path: none !important; }
   .set__yr { position: static; }
 }
