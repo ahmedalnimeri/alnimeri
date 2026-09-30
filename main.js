@@ -64,12 +64,12 @@
       'allow="autoplay; fullscreen; picture-in-picture" allowfullscreen ' +
       'title="' + title.replace(/"/g, '&quot;') + '"></iframe>';
     caption.textContent = title;
-    // Source metadata, read off the tile's own chip — never invented.
+    // The running time, read off the tile's own chip — never invented.
     var dur = from && from.querySelector('.tile__dur');
     if (dur) {
       var src = document.createElement('span');
       src.className = 'lb__src';
-      src.textContent = 'SRC ' + dur.textContent.trim();
+      src.textContent = dur.textContent.trim();
       caption.appendChild(src);
     }
     lb.classList.add('is-open');
