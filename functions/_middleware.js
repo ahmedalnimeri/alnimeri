@@ -21,7 +21,7 @@
 const BLOCKED = /^\/(reel\.tpl(\.html)?\/?|wrangler\.(jsonc|toml|json)|package(-lock)?\.json|README\.md|bin-[^/]*\.py|schema\.sql|\.gitignore)$|^\/(docs|\.claude|\.git)(\/|$)/i;
 
 // Not page views: files, including video (a Range request per chunk) and data.
-const ASSET = /\.(css|js|mjs|jpg|jpeg|png|svg|ico|webp|avif|gif|woff2?|pdf|xml|txt|map|mp4|webm|m4v|json|webmanifest|md|sql|edl)$/i;
+const ASSET = /\.(css|js|mjs|jpg|jpeg|png|svg|ico|webp|avif|gif|woff2?|pdf|xml|txt|map|mp4|webm|m4v|json|webmanifest|md|sql)$/i;
 const BOT   = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|curl|wget|python-requests|monitor|preview/i;
 
 
