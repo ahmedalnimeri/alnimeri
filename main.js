@@ -1800,7 +1800,8 @@
       e.preventDefault(); e.stopPropagation();
       var subj = decodeURIComponent((href.split('subject=')[1] || '').split('&')[0]);
       var film = (subj.match(/Project enquiry — (.+)$/) || [])[1];
-      open(kindFrom(subj), film && film !== 'alnimeri.com' ? film : '');
+      // a film page's button knows its kind of film (data-kind); a subject line only hints at it
+      open(a.getAttribute('data-kind') || kindFrom(subj), film && film !== 'alnimeri.com' ? film : '');
     }
   }, true);
 })();

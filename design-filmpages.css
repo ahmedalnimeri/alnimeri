@@ -1,0 +1,355 @@
+/* alnimeri.com — the film pages and the work index.
+
+   One idea runs through both: house lights. A film lights the room it is in
+   (its own still, thrown soft onto the page behind the frame); pointing at a
+   film dims the others; pressing play takes the lights down on everything
+   but the picture. Nothing here is painted in a colour the films did not
+   bring themselves.
+
+   Loaded only by /work/ pages (bin-build-work-pages.py). Tokens come from
+   styles.css: --bg, --fg, --fg-dim, --fg-faint, --line, --radius, --ease. */
+
+.fp {
+  --fp-top: 58px;                         /* the masthead's height */
+  --fp-w: 1320px;
+  position: relative; z-index: 1;
+  padding: calc(var(--fp-top) + clamp(28px, 5.5vh, 64px)) var(--gut) clamp(56px, 9vh, 104px);
+  overflow-x: clip;
+}
+@media (max-width: 620px) { .fp { --fp-top: 54px; } }
+
+/* ---------- the head: where you are, what it is ---------- */
+.fp-head { display: grid; gap: 12px; margin: 0 0 clamp(20px, 3.4vh, 34px); }
+.fp-crumbs { margin: 0; display: flex; flex-wrap: wrap; gap: 0 10px; font-size: 13px; letter-spacing: -0.005em; color: var(--fg-faint); }
+.fp-crumbs a { color: var(--fg-dim); text-decoration: none; transition: color .35s var(--ease); }
+.fp-crumbs a:hover { color: var(--fg); }
+.fp-title {
+  margin: 0; max-width: 26ch;
+  font-size: clamp(34px, 4.6vw, 64px); font-weight: 500; letter-spacing: -0.032em; line-height: 1.02;
+  color: var(--fg); text-wrap: balance;
+}
+/* every fact carries its own "·" in front; the row is shifted left by one
+   separator and clipped there, so a line never starts with a dot however
+   the facts wrap */
+.fp-meta {
+  --sep: 22px;
+  margin: 2px 0 0 calc(-1 * var(--sep)); display: flex; flex-wrap: wrap; align-items: baseline;
+  clip-path: inset(-8px -8px -8px var(--sep));
+  font-size: 15px; letter-spacing: -0.01em; color: var(--fg-dim);
+}
+.fp-meta > *::before { content: "·"; display: inline-block; width: var(--sep); text-align: center; color: var(--fg-faint); }
+.fp-meta a { color: var(--fg); text-decoration: none; }
+.fp-meta a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--line); }
+@media (max-width: 560px) {
+  .fp-meta > a { flex-basis: 100%; margin-top: 2px; }
+}
+
+/* ---------- the hero: a frame sized to the screen, not to the column ----------
+   Landscape: title above, the frame as wide as the screen allows while it
+   still fits under the title in one view. Portrait: the frame at full height
+   on the left, the words beside it. */
+.fp-hero { width: min(100%, var(--fp-w), max(700px, calc((100svh - 330px) * 16 / 9))); margin: 0 auto; }
+@supports not (height: 1svh) { .fp-hero { width: min(100%, var(--fp-w), max(700px, calc((100vh - 330px) * 16 / 9))); } }
+
+.fp-stage { position: relative; isolation: isolate; }
+/* the film lights the room: its own still, very soft, behind the frame */
+.fp-light {
+  position: absolute; z-index: -1; inset: -14% -16% -26%;
+  pointer-events: none; opacity: .5;
+  -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent 100%);
+          mask-image: radial-gradient(closest-side, #000 30%, transparent 100%);
+  transition: opacity 1.6s var(--ease);
+}
+.fp-light img { width: 100%; height: 100%; object-fit: cover; filter: blur(64px) saturate(1.2); transform: translateZ(0); }
+
+.fp-frame {
+  position: relative; aspect-ratio: 16 / 9; overflow: hidden;
+  border-radius: var(--radius, 12px); border: 1px solid rgba(255, 255, 255, .09);
+  background: #000; cursor: pointer;
+  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, .7);
+  transform-origin: 50% 0;
+}
+.fp-frame > img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: opacity .9s var(--ease), transform 2.4s var(--ease);
+}
+.fp-frame:hover > img { transform: scale(1.018); }
+.fp-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity .9s var(--ease); }
+.fp-frame.is-loaded iframe { opacity: 1; }
+.fp-frame.is-loaded > img { opacity: 0; }
+.fp-frame.is-playing { cursor: default; }
+
+/* the play control: centred for touch and keyboard; on a mouse it follows
+   the pointer across the picture, so wherever you look, you can press play */
+.fp-play {
+  position: absolute; left: 50%; top: 50%; z-index: 2;
+  transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 8px 18px 8px 8px; border-radius: 999px;
+  background: rgba(8, 9, 10, .52); border: 1px solid rgba(255, 255, 255, .16);
+  -webkit-backdrop-filter: blur(14px) saturate(150%); backdrop-filter: blur(14px) saturate(150%);
+  color: var(--fg); text-decoration: none; white-space: nowrap;
+  font-size: 14px; font-weight: 500; letter-spacing: -0.01em;
+  transition: opacity .5s var(--ease), background-color .35s var(--ease);
+  will-change: transform;
+}
+.fp-play:hover, .fp-frame:hover .fp-play { background: rgba(8, 9, 10, .66); }
+.fp-play:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+.fp-play__icon { width: 34px; height: 34px; border-radius: 50%; background: var(--fg); display: grid; place-items: center; flex: none; }
+.fp-play__icon svg { width: 13px; height: 13px; fill: #08090a; margin-left: 2px; }
+.fp-play__dur { color: var(--fg-dim); font-weight: 400; }
+.fp-frame.is-playing .fp-play { opacity: 0; pointer-events: none; }
+/* a vertical film carries its title in the middle of the picture; the
+   control waits below it instead of covering it */
+.fp-film--portrait .fp-play { top: 86%; }
+.fp-frame:focus-visible { outline: 2px solid var(--fg); outline-offset: 4px; }
+
+/* the frame is set down like a window, once, as the page opens */
+/* It starts visible: the still is the page's largest picture, and a frame
+   that waits at opacity 0 would hold back the moment it counts as shown. */
+@keyframes fp-window {
+  from { opacity: .35; transform: perspective(1800px) rotateX(10deg) translateY(40px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fp-light-in { from { opacity: 0; } }
+.fp-film .fp-frame { animation: fp-window 1.3s var(--ease) both; }
+.fp-film .fp-light { animation: fp-light-in 2.4s var(--ease) .3s both; }
+
+/* ---------- the credit: one line under the picture, the way a film ends ---------- */
+.fp-credit { margin: 18px 0 0; font-size: 14px; letter-spacing: -0.005em; line-height: 1.5; color: var(--fg-faint); }
+.fp-credit a { color: var(--fg); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size .5s var(--ease); }
+.fp-credit a:hover, .fp-credit a:focus-visible { background-size: 100% 1px; }
+
+/* ---------- house lights: down while the film plays ---------- */
+.fp-head, .fp-credit, .fp > :not(.fp-hero) { transition: opacity 1.2s var(--ease); }
+.fp-lights-down .fp-head, .fp-lights-down .fp-credit, .fp-lights-down .fp > :not(.fp-hero) { opacity: .16; }
+.fp-lights-down .fp-light { opacity: .5; }
+.fp-lights-down .masthead { opacity: .16; transition: opacity 1.2s var(--ease); }
+.fp-lights-down .masthead:hover, .fp-lights-down .masthead:focus-within { opacity: 1; }
+.masthead { transition: opacity .8s var(--ease); }
+
+/* ---------- portrait films: the frame at full height, the words beside ---------- */
+@media (min-width: 900px) {
+  .fp-film--portrait .fp-hero {
+    width: min(100%, 1180px);
+    display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 1fr auto 1fr;
+    column-gap: clamp(40px, 6vw, 96px);
+  }
+  .fp-film--portrait .fp-stage { grid-column: 1; grid-row: 1 / span 3; }
+  .fp-film--portrait .fp-head { grid-column: 2; grid-row: 1; align-self: end; margin: 0; }
+  .fp-film--portrait .fp-credit { grid-column: 2; grid-row: 2; margin: 28px 0 0; padding-top: 20px; border-top: 1px solid var(--line); }
+  .fp-film--portrait .fp-frame { aspect-ratio: 9 / 16; height: min(calc(100svh - var(--fp-top) - 88px), 860px); min-height: 520px; }
+  .fp-film--portrait .fp-light { inset: -12% -40%; }
+}
+@media (max-width: 899px) {
+  .fp-film--portrait .fp-frame { aspect-ratio: 9 / 16; width: min(100%, 62svh); margin-inline: auto; }
+}
+
+/* ---------- what people said ---------- */
+.fp .reception { max-width: var(--fp-w); margin: clamp(72px, 12vh, 128px) auto 0; padding-top: 0; border-top: 0; }
+.fp .reception__head, .fp-more__head h2, .fp-close h2 {
+  margin: 0; font-size: clamp(22px, 2.3vw, 30px); font-weight: 500; letter-spacing: -0.022em; line-height: 1.15; color: var(--fg);
+}
+.fp .reception__sub { font-size: 13px; }
+.fp .reception__grid { gap: 0 clamp(20px, 3vw, 44px); border-top: 1px solid var(--line); }
+.fp .said { background: none; border: 0; border-radius: 0; padding: 26px 0 0; gap: 14px; }
+.fp .said__en { margin: 0; font-size: clamp(18px, 1.6vw, 22px); line-height: 1.45; letter-spacing: -0.018em; font-weight: 400; color: var(--fg); }
+.fp .said__en::before { content: "“"; }
+.fp .said__en::after { content: "”"; }
+.fp .said__by { font-family: var(--ff); font-size: 13px; letter-spacing: -0.005em; text-transform: none; color: var(--fg-faint); padding: 0; }
+/* a long thread (Al Doroub has two dozen) is three voices and then the room:
+   the first three at pull-quote size, the rest at reading size, quieter, so
+   the wall of words never outweighs the film */
+.fp .said:nth-child(n+4) { padding-top: 22px; gap: 10px; }
+.fp .said:nth-child(n+4) .said__en { font-size: 15px; line-height: 1.6; letter-spacing: -0.008em; color: var(--fg-dim); }
+
+/* ---------- a card: one still, its name, its facts ---------- */
+.fp-card { list-style: none; transition: opacity .7s var(--ease); }
+.fp-card > a { display: block; color: inherit; text-decoration: none; border-radius: var(--radius, 12px); outline: none; }
+.fp-card__still {
+  display: block; position: relative; overflow: hidden; aspect-ratio: 16 / 9;
+  border-radius: var(--radius, 12px); border: 1px solid var(--line); background: #0f1011;
+  transition: border-color .5s var(--ease);
+}
+.fp-card--portrait .fp-card__still { aspect-ratio: 9 / 16; }
+.fp-card__still img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+  /* the camera moves where you look: --px/--py are the pointer, -1 to 1 */
+  transform: scale(var(--z, 1)) translate3d(calc(var(--px, 0) * -1.6%), calc(var(--py, 0) * -1.6%), 0);
+  transition: transform 1.3s var(--ease);
+}
+.fp-card > a:hover .fp-card__still, .fp-card > a:focus-visible .fp-card__still { border-color: rgba(255, 255, 255, .22); }
+.fp-card > a:hover { --z: 1.07; }
+.fp-card > a:focus-visible .fp-card__still { outline: 2px solid var(--fg); outline-offset: 3px; }
+.fp-card__name { display: block; margin-top: 13px; font-size: 15px; font-weight: 500; letter-spacing: -0.012em; line-height: 1.35; color: var(--fg); }
+.fp-card__meta { display: block; margin-top: 3px; font-size: 13px; line-height: 1.5; letter-spacing: -0.005em; color: var(--fg-faint); }
+
+/* pointing at one film dims the rest */
+@media (hover: hover) and (pointer: fine) {
+  .fp-lights:not(.is-rehanging):has(.fp-card > a:hover) .fp-card:not(:has(> a:hover)) { opacity: .4; }
+}
+
+/* ---------- more films: one line, one height, each at its own shape ----------
+   Each card grows in proportion to its still's shape (--g, 16/9 or 9/16), so
+   every picture on the line stands exactly as tall as the others and a
+   vertical film stands as a vertical film. */
+.fp-more { max-width: var(--fp-w); margin: clamp(88px, 14vh, 150px) auto 0; }
+.fp-more__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px; margin-bottom: clamp(24px, 4vh, 40px); }
+.fp-more__head a { font-size: 14px; color: var(--fg-dim); text-decoration: none; transition: color .35s var(--ease); }
+.fp-more__head a:hover { color: var(--fg); }
+.fp-hang { margin: 0; padding: 0; display: flex; align-items: flex-start; gap: clamp(16px, 1.8vw, 26px); }
+.fp-hang > .fp-card { flex: var(--g, 1.778) 1 0; min-width: 0; }
+@media (max-width: 700px) {
+  /* on a phone, one under another; a vertical film keeps its shape at a
+     width that does not take the whole screen */
+  .fp-hang { flex-direction: column; gap: 30px; }
+  .fp-hang > .fp-card { flex: none; width: 100%; }
+  .fp-hang > .fp-card--portrait { width: 56%; }
+}
+
+/* ---------- the way in to the brief ----------
+   The end frame: the film's light comes up once more, and the one question
+   sits in it. The button opens the brief with this film already named. */
+.fp-close {
+  position: relative; isolation: isolate;
+  max-width: var(--fp-w); margin: clamp(56px, 9vh, 104px) auto 0;
+  padding: clamp(64px, 12vh, 132px) 0;
+  display: grid; justify-items: center; text-align: center; gap: 14px;
+}
+.fp-film .fp-light--end { inset: -10% 4%; opacity: .38; animation: none; }
+.fp-light--end img { filter: blur(80px) saturate(1.2); }
+.fp-close h2 { font-size: clamp(30px, 4vw, 54px); letter-spacing: -0.032em; line-height: 1.04; }
+.fp-close p { margin: 0 0 14px; max-width: 40ch; font-size: 17px; line-height: 1.6; color: var(--fg-dim); }
+.fp-close .btn { color: #08090a; }
+
+.fp-foot { max-width: var(--fp-w); margin: clamp(72px, 12vh, 128px) auto 0; }
+.fp-nav {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 16px;
+  padding: 20px 0 0; border-top: 1px solid var(--line);
+}
+.fp-nav a { color: var(--fg-dim); text-decoration: none; font-size: 15px; letter-spacing: -0.01em; line-height: 1.35; transition: color .35s var(--ease); }
+.fp-nav a:hover { color: var(--fg); }
+.fp-nav a > span { display: block; margin-bottom: 4px; font-size: 13px; color: var(--fg-faint); }
+.fp-nav__all { grid-column: 2; font-size: 13px !important; }
+.fp-nav__prev { grid-column: 1; }
+.fp-nav__next { grid-column: 3; text-align: right; }
+@media (max-width: 560px) {
+  .fp-nav { grid-template-columns: 1fr 1fr; row-gap: 22px; }
+  .fp-nav__all { grid-column: 1 / -1; grid-row: 2; justify-self: start; }
+  .fp-nav__prev { grid-column: 1; grid-row: 1; }
+  .fp-nav__next { grid-column: 2; grid-row: 1; }
+  .fp-more { margin-top: 72px; }
+  .fp-close { margin-top: 56px; }
+  .fp-foot { margin-top: 48px; }
+}
+.fp-note { margin: 28px 0 0; max-width: 62ch; font-size: 13px; line-height: 1.65; color: var(--fg-faint); }
+.fp-note a, .fp-lede a { color: var(--fg-dim); text-underline-offset: 3px; text-decoration-color: var(--line); }
+.fp-note a:hover, .fp-lede a:hover { color: var(--fg); }
+
+/* ---------- the index: tabs and one wall ---------- */
+.fp-index .fp-head { max-width: var(--fp-w); margin-inline: auto; }
+/* the wall re-hangs in place; the browser must not scroll to follow a card */
+.fp-index { overflow-anchor: none; }
+.fp-lede { margin: 6px 0 0; max-width: 62ch; font-size: 17px; line-height: 1.6; letter-spacing: -0.01em; color: var(--fg-dim); }
+
+.fp-tabs {
+  position: sticky; top: var(--fp-top); z-index: 20;
+  margin: clamp(10px, 2vh, 20px) calc(-1 * var(--gut)) clamp(24px, 4vh, 40px);
+  padding: 12px var(--gut);
+  background: rgba(8, 9, 10, .74);
+  -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid transparent; transition: border-color .4s var(--ease);
+}
+.fp-tabs.is-stuck { border-bottom-color: var(--line); }
+.fp-tabs__row {
+  position: relative; max-width: var(--fp-w); margin: 0 auto;
+  display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
+}
+.fp-tabs__row::-webkit-scrollbar { display: none; }
+/* when the row runs off the edge, the edge says so (the script marks it;
+   without the script, phones always carry the fade) */
+.fp-tabs__row.is-more { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+                                mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }
+@media (max-width: 900px) {
+  .fp-tabs__row:not(.is-measured) { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+                                            mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }
+}
+.fp-tabs__row > a, .fp-tabs__ink > span {
+  flex: none; display: inline-flex; align-items: baseline; gap: 7px;
+  padding: 7px 14px; border-radius: 999px; white-space: nowrap;
+  font-size: 14px; letter-spacing: -0.01em; line-height: 1.5; text-decoration: none;
+}
+.fp-tabs__row > a { color: var(--fg-dim); border: 1px solid transparent; transition: color .35s var(--ease); }
+.fp-tabs__row > a:hover { color: var(--fg); }
+.fp-tabs__row > a:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+.fp-tabs__row > a > span, .fp-tabs__ink > span > span { font-size: 12px; color: var(--fg-faint); font-variant-numeric: tabular-nums; }
+/* the pill: a lit copy of the row, clipped to the chosen kind; it slides,
+   and the words inside it brighten as it passes */
+.fp-tabs__ink {
+  position: absolute; left: 0; top: 0; bottom: 0; width: max-content;
+  display: flex; gap: 4px; pointer-events: none;
+  clip-path: inset(0 var(--ir, 100%) 0 var(--il, 0) round 999px);
+  background: rgba(255, 255, 255, .1);
+  transition: clip-path .55s var(--ease);
+}
+.fp-tabs__ink > span { color: var(--fg); border: 1px solid transparent; }
+.fp-tabs__ink > span > span { color: var(--fg-dim) !important; }
+/* without the script: the chosen tab from the address alone */
+.fp-index:not(:has(.fp-tabs__ink)) .fp-tabs__row > a[data-cat="all"],
+.fp-index:has(#brand:target) .fp-tabs__row > a[data-cat="brand"],
+.fp-index:has(#events:target) .fp-tabs__row > a[data-cat="events"],
+.fp-index:has(#documentary:target) .fp-tabs__row > a[data-cat="documentary"],
+.fp-index:has(#motion:target) .fp-tabs__row > a[data-cat="motion"] { color: var(--fg); border-color: var(--line); background: rgba(255, 255, 255, .06); }
+.fp-index:has(.fp-cat:target) .fp-tabs__row > a[data-cat="all"] { color: var(--fg-dim); border-color: transparent; background: none; }
+
+/* one wall, read left to right like a page: every film in the same frame,
+   and the first film of whatever is showing hung large. With one size of
+   cell and one 2x2 lead, seventeen films fill five rows of four exactly. */
+.fp-wall {
+  position: relative; max-width: var(--fp-w); margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-flow: row dense;
+  align-content: start; min-height: calc(100svh - 160px);   /* a short kind never pulls the page out from under the tabs */
+  gap: clamp(28px, 4.2vh, 44px) clamp(16px, 1.8vw, 26px);
+}
+.fp-wall .fp-cat, .fp-wall .fp-cards { display: contents; }
+.fp-cat__head { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.fp-wall .fp-card { display: flex; flex-direction: column; min-width: 0; }
+.fp-wall .fp-card > a { display: flex; flex-direction: column; flex: 1 1 auto; }
+.fp-wall .fp-card.is-lead { grid-row: span 2; grid-column: span 2; }
+.fp-wall .fp-card--portrait .fp-card__still { aspect-ratio: 16 / 9; }
+.fp-wall .fp-card.is-lead .fp-card__still { aspect-ratio: auto; flex: 1 1 auto; min-height: 240px; }
+@media (max-width: 1100px) { .fp-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* a kind of four films or fewer: no lead, every film large, as many to a
+   row as make the rows whole (three for three; two for two or four) */
+.fp-wall[data-few], .fp-wall:not([data-filter]):has(.fp-cat[data-few]:target) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 701px) {
+  .fp-wall[data-few="3"], .fp-wall:not([data-filter]):has(.fp-cat[data-few="3"]:target) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* a kind chosen: the others leave the wall (script: data-filter; no
+   script: the address, /work/#documentary) */
+.fp-wall[data-filter="brand"] .fp-card:not([data-cat="brand"]),
+.fp-wall[data-filter="events"] .fp-card:not([data-cat="events"]),
+.fp-wall[data-filter="documentary"] .fp-card:not([data-cat="documentary"]),
+.fp-wall[data-filter="motion"] .fp-card:not([data-cat="motion"]),
+.fp-wall:not([data-filter]):has(#brand:target) .fp-card:not([data-cat="brand"]),
+.fp-wall:not([data-filter]):has(#events:target) .fp-card:not([data-cat="events"]),
+.fp-wall:not([data-filter]):has(#documentary:target) .fp-card:not([data-cat="documentary"]),
+.fp-wall:not([data-filter]):has(#motion:target) .fp-card:not([data-cat="motion"]) { display: none; }
+.fp-wall .fp-card.is-leaving { display: flex !important; position: absolute; margin: 0; pointer-events: none; z-index: 0; }
+@media (max-width: 700px) {
+  .fp-wall { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 12px; }
+  .fp-wall .fp-card__name { font-size: 14px; margin-top: 10px; }
+  .fp-wall .fp-card__meta { font-size: 12px; }
+}
+
+/* ---------- reduced motion: every frame already in place ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .fp-film .fp-frame, .fp-film .fp-light { animation: none; }
+  .fp-card__still img, .fp-frame > img { transition: none; transform: none !important; }
+  .fp-tabs__ink, .fp-light, .fp-card, .fp-head, .fp-credit, .fp > :not(.fp-hero) { transition: none; }
+}
+
+@media print {
+  .fp-light, .fp-play, .fp-tabs, .fp-close .btn { display: none !important; }
+  .fp-wall { columns: 3; }
+}
