@@ -29,7 +29,7 @@
 /motion.js
   Cache-Control: public, max-age=31536000, immutable
 
-# The film hover layer, stamped the same way (and by bin-build-work-pages.py).
+# The film hover layer (home + pulled reels), stamped the same way (and by bin-build-reel.py).
 /design-hover.css
   Cache-Control: public, max-age=31536000, immutable
 

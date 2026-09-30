@@ -17,7 +17,7 @@ can go stale behind an immutable header:
   refinement.css?v=, motion.js?v=   the home page's own sheet and script,
                              stamped with md5[:8] (served immutable); the
                              same for design-hover.css / .js (the film hover
-                             layer; bin-build-work-pages.py stamps /work/)
+                             layer; bin-build-reel.py stamps the reel pages)
 
 Fonts and favicons are excluded by design — see the note at EXCLUDE.
 Run this after touching anything under assets/, refinement.css or motion.js.
