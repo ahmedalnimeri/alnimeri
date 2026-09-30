@@ -17,20 +17,9 @@
    1. Opening
    ========================================================================= */
 
-/* The four facts were a counter band under the lede; they become one quiet
-   line along the foot of the picture, with the CV buttons back above the fold. */
-.pagehead--plate .stats {
-  margin: clamp(2.25rem, 5vh, 3.25rem) 0 0;
-  padding: 1.1rem 0 0; gap: 1.1rem 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-.pagehead--plate .stats > div { display: flex; align-items: baseline; gap: 0.6rem; min-width: 0; }
-.pagehead--plate .stats b {
-  display: inline; flex: none;
-  font-size: 1.15rem; font-weight: 500; letter-spacing: -0.02em; color: var(--fg);
-}
-.pagehead--plate .stats span { margin: 0; font-size: 13px; line-height: 1.35; color: var(--fg-dim); }
-
+/* The opening holds the screen: the words sit in the negative space of the
+   picture, with the CV buttons above the fold. (The row of figures under the
+   lede is gone: no numbers on the opening.) */
 @media (min-width: 901px) {
   .pagehead--plate {
     display: flex; flex-direction: column; align-items: flex-start;
@@ -41,15 +30,6 @@
   .pagehead--plate > .pagehead__act { margin-bottom: auto; padding-bottom: 2rem; }
   .pagehead--plate .pagehead__title { max-width: min(14ch, 54vw); }
   .pagehead--plate .pagehead__lede { max-width: min(52ch, 46vw); }
-  .pagehead--plate .stats {
-    order: 1; align-self: stretch; max-width: none;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin: 0; padding: 1.15rem 0 1.6rem;
-  }
-}
-@media (max-width: 900px) {
-  .pagehead--plate .stats { max-width: none; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .pagehead--plate .stats > div { flex-direction: column; gap: 0.15rem; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -63,15 +43,13 @@
   .pagehead--plate .pagehead__title,
   .pagehead--plate .pagehead__lede,
   .pagehead--plate .pagehead__grace,
-  .pagehead--plate .pagehead__act,
-  .pagehead--plate .stats { animation: ab-rise 1.1s var(--ease) both; }
+  .pagehead--plate .pagehead__act { animation: ab-rise 1.1s var(--ease) both; }
   .pagehead--plate > .hero__eyebrow   { animation-delay: 0.15s; }
   .pagehead--plate .pagehead__title   { animation-delay: 0.3s; }
   .pagehead--plate .pagehead__title em { display: inline-block; animation: ab-listen 1.3s var(--ease) 1.05s both; }
   .pagehead--plate .pagehead__lede    { animation-delay: 1.4s; }
   .pagehead--plate .pagehead__grace   { animation-delay: 1.5s; }
   .pagehead--plate .pagehead__act     { animation-delay: 1.6s; }
-  .pagehead--plate .stats             { animation-delay: 1.75s; }
 
   /* Leaving the opening, the picture falls behind the page. It moves inside
      its frame (the translate property, so it composes with the settle), and
