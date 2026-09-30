@@ -176,7 +176,6 @@
 .commission .commission__card:last-child { padding-right: 0; }
 .commission__still { margin: 0 0 24px; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; }
 .commission__still img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.commission__card:hover .commission__still img { transform: scale(1.035); }
 .commission__card h3 { font-size: 16px; font-weight: 500; letter-spacing: -.01em; margin: 0 0 8px; }
 .commission__card p { font-size: 14px; line-height: 1.65; color: var(--fg-dim); }
 
@@ -239,35 +238,18 @@
 @keyframes word-in { to { opacity: 1; filter: blur(0); transform: none; } }
 
 
-/* a light that follows the eye */
+/* a light that follows the eye: now design-hover.css, one light for every film */
 .commission__card { position: relative; }
-.commission__card::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0;
-  background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.045), transparent 60%);
-  transition: opacity .45s var(--ease);
-}
-.commission__grid:hover .commission__card::after { opacity: 1; }
 .commission__still, #work .tile__link { position: relative; }
-.commission__still::before, #work .tile__link::before {
-  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; padding: 1px; opacity: 0;
-  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.55), transparent 65%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  transition: opacity .45s var(--ease);
-}
-.commission__grid:hover .commission__still::before, #work .grid:hover .tile__link::before { opacity: 1; }
 
 /* films open like a letterbox, and keep a little depth inside the frame */
 .has-motion #work .tile .tile__img, .has-motion .commission__still img {
   clip-path: inset(50% 0 50% 0);
   transform: translateY(var(--py, 0)) scale(1.08) !important;
-  transition: clip-path 1.15s var(--ease), transform .25s linear !important;
-  transition-delay: var(--d, 0ms), 0ms !important;
+  transition: clip-path 1.15s var(--ease), transform .25s linear, opacity .7s var(--ease) !important;
+  transition-delay: var(--d, 0ms), 0ms, 0ms !important;
 }
 .has-motion #work .tile.is-in .tile__img, .has-motion .commission__card.is-in .commission__still img { clip-path: inset(0 0 0 0); }
-.has-motion #work .tile__link:hover .tile__img, .has-motion .commission__card:hover .commission__still img {
-  transform: translateY(var(--py, 0)) scale(1.12) !important;
-}
 
 /* an older centring rule carries #work's ID weight; the chapter head must too */
 #work .chapter__head .slate { justify-content: flex-start; align-items: flex-start; text-align: left; }

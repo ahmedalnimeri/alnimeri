@@ -1,0 +1,117 @@
+/* design-hover.css — films answer the pointer.
+
+   One idea, on the home page's films (the selects, the four ways to work
+   together) and on a pulled reel: the house lights go down and the picture
+   comes up.
+
+   Point at a film and it takes the room. The other pictures recede; the one
+   you chose keeps its full exposure and starts to move, a slow push towards
+   wherever you are looking, as if it is about to roll. The edge of its frame
+   catches the light nearest your pointer. One small cue resolves in a
+   corner, clear of the subtitles: what a click does, and how long the film
+   runs (the one fact about a film the tile does not already print).
+
+   Phones have no pointer, so the film that crosses the middle of the screen
+   is the one that comes up, and a press brings up the one under the finger.
+   Keyboard focus does the same. Under reduced motion nothing moves: the
+   room still dims, the frame still lights and the cue still shows.
+
+   design-hover.js does the measuring and moves only transforms. Every state
+   here hangs on classes the script sets (.hv-on, .hv-room, .is-hot), so
+   without it the pages keep their plain hover; only the retirements just
+   below apply regardless. */
+
+:root {
+  --hv-dim: .5;                               /* how far the other pictures recede */
+  --hv-out: cubic-bezier(.16, 1, .3, 1);     /* long, soft settle */
+}
+@media (hover: none) { :root { --hv-dim: .6; } }  /* a phone shows one film at a time; keep the rest readable */
+
+/* ---- retired: the trim handles ][ and the white play disc ---------------
+   Edit-suite furniture on top of the picture. The cue replaces both. The
+   selected ring (box-shadow on ::after) is untouched. */
+.tile__link::before, .tile__link::after { border-width: 0; }
+.hv-on .tile__play { display: none; }
+
+/* the older hover push, superseded by the one below */
+.tile__link:hover .tile__img, .tile__link:focus-visible .tile__img { transform: none; }
+
+/* ---- the frames ---------------------------------------------------------- */
+.hv-frame { position: relative; overflow: hidden; isolation: isolate; }
+.hv-frame .hv-pic, .hv-frame .tile__preview {
+  scale: var(--hv-s, 1);
+  translate: var(--hv-x, 0px) var(--hv-y, 0px);
+}
+.hv-card.is-live .hv-pic, .hv-card.is-live .tile__preview { will-change: transform; }
+
+/* the room: pictures recede, words stay (the pictures already ease their
+   opacity: styles.css, and the letterbox rule in refinement.css) */
+.hv-room.is-lit .hv-card:not(.is-hot) .hv-pic { opacity: var(--hv-dim); }
+
+/* the light: it never falls on the picture (that stays as it was graded);
+   it catches the edge of the frame nearest the pointer */
+.hv-rim {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+  border-radius: inherit; padding: 1px; overflow: hidden;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  transition: opacity .7s var(--ease);
+}
+.hv-rim::before {
+  content: ""; position: absolute; left: 0; top: 0; width: 520px; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, .8), rgba(255, 255, 255, 0));
+  transform: translate3d(var(--hv-lx, 50%), var(--hv-ly, 50%), 0) translate(-50%, -50%);
+}
+.hv-card.is-hot .hv-rim { opacity: 1; }
+.hv-card.is-live .hv-rim::before { will-change: transform; }
+/* with no pointer to catch it, the edge is a quiet acknowledgement, not a ring */
+@media (hover: none) { .hv-card.is-hot .hv-rim { opacity: .45; } }
+
+/* the cue: what a click does, and for how long; the words resolve from blur,
+   the way the opening line does. It sits in the corner subtitles never reach:
+   the lower left of a wide frame, where they sit centred and narrow; the top
+   of a phone-width frame, which they cross from side to side. */
+.hv-cue {
+  position: absolute; left: 14px; bottom: 14px; z-index: 4; max-width: calc(100% - 28px);
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 4px 13px 4px 4px; border-radius: 100px;
+  background: rgba(8, 9, 10, .64); border: 1px solid rgba(255, 255, 255, .12);
+  font: 500 13px/1.2 var(--ff); letter-spacing: -.01em; color: var(--fg); white-space: nowrap;
+  pointer-events: none;
+  opacity: 0; transform: translateY(6px); filter: blur(6px);
+  transition: opacity .35s var(--ease), transform .45s var(--ease), filter .45s var(--ease);
+}
+.hv-cue i {
+  flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--fg);
+}
+.hv-cue svg { width: 8px; height: 10px; margin-left: 2px; fill: #08090a; }
+.hv-cue b { flex: none; font-weight: 500; }
+.hv-cue span { flex: none; color: var(--fg-dim); font-weight: 400; font-variant-numeric: tabular-nums; }
+/* small frames (the four offers, phones) carry a smaller cue */
+.hv-cue--s { left: 10px; bottom: 10px; max-width: calc(100% - 20px); gap: 7px; padding: 3px 10px 3px 3px; font-size: 12px; }
+.hv-cue--s i { width: 20px; height: 20px; }
+.hv-cue--s svg { width: 7px; height: 9px; }
+.hv-cue--off { display: none; }
+@media (hover: none) { .hv-cue { bottom: auto; top: 10px; transform: translateY(-6px); } }
+.hv-card.is-hot .hv-cue {
+  opacity: 1; transform: none; filter: blur(0);
+  transition: opacity .6s var(--ease) .12s, transform .9s var(--hv-out) .12s, filter .7s var(--ease) .12s;
+}
+
+/* the commission still leads to its film */
+.hv-on .commission__still[data-hv-go] { cursor: pointer; }
+
+/* the lit frame's own edge comes up a touch */
+.hv-card.is-hot .tile__link, .hv-card.is-hot .commission__still { border-color: rgba(255, 255, 255, .2); }
+
+/* keyboard: a clear ring on whatever carries focus into a film */
+.hv-on .tile__link:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* nothing moves: no push, no drift, no following light — the room still
+     dims, the frame still lights and the cue still shows */
+  .hv-frame .hv-pic, .hv-frame .tile__preview { scale: none; translate: none; }
+  .hv-rim::before { transform: none; inset: 0; width: auto; aspect-ratio: auto; border-radius: 0; background: rgba(255, 255, 255, .5); }
+  .hv-cue, .hv-card.is-hot .hv-cue { transform: none; filter: none; }
+}
