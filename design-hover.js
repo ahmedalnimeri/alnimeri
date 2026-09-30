@@ -18,18 +18,27 @@
   var text = function (el) { return el ? el.textContent.replace(/\s+/g, ' ').trim() : ''; };
   var runtime = function (s) { var m = /\b\d{1,2}:\d{2}\b/.exec(s || ''); return m ? m[0] : ''; };
 
-  // Where film stills live, and what each one's cue says. The cue names what
-  // plays and how long it runs, using only words already on the page.
+  // What a tile's link does, as its own label says it ("Play …", or "Watch
+  // … on X" for the one that opens the post), and how long the film runs.
+  var verb = function (a) {
+    var l = (a && a.getAttribute('aria-label')) || '', on = / on (\w+), \d/.exec(l);
+    return (/^Watch\b/.test(l) ? 'Watch' : 'Play') + (on ? ' on ' + on[1] : '');
+  };
+  // the running time of a film by its page, read from its tile on this page
+  var runOf = function (href) {
+    var a = href && document.querySelector('.tile__name a[href="' + href + '"]');
+    var t = a && a.closest('.tile');
+    return t ? runtime(text(t.querySelector('.tile__dur'))) : '';
+  };
+
+  // Where film stills live, and what each one's cue says. The cue carries
+  // only what the tile does not already print beside the picture.
   var SETS = [
     { room: '#work .grid, #selects .grid', card: 'article.tile', frame: '.tile__link', pic: '.tile__img',
-      cue: function (c) { return ['Play', text(c.querySelector('.tile__dur'))]; } },
+      cue: function (c) { var a = c.querySelector('.tile__link'); return [verb(a), runtime(text(c.querySelector('.tile__dur')))]; } },
     { room: '.commission__grid', card: '.commission__card', frame: '.commission__still', pic: 'img',
-      cue: function (c) { var t = text(c.querySelector('.commission__example')).replace(/[↗→]/g, '').trim().split(' · '); return [t[0], t[1] || '']; },
-      go: function (c) { var a = c.querySelector('.commission__example'); return a ? a.getAttribute('href') : ''; } },
-    { room: '.reel__track', card: '.reel__frame', frame: '', pic: 'img', across: true,
-      cue: function (c) { var l = c.getAttribute('aria-label') || '', k = l.lastIndexOf(' — '); return k > 0 ? [l.slice(0, k), l.slice(k + 3)] : [l, '']; } },
-    { room: '.film', card: '.filmcard', frame: '.filmcard__still', pic: 'img',
-      cue: function (c) { return ['Watch', runtime(text(c.querySelector('.filmcard__meta')))]; } }
+      cue: function (c) { return ['Watch', runOf(this.go(c))]; },
+      go: function (c) { var a = c.querySelector('.commission__example'); return a ? a.getAttribute('href') : ''; } }
   ];
 
   var rooms = [];
@@ -49,7 +58,10 @@
           var href = set.go(card);
           if (href) {
             frame.setAttribute('data-hv-go', '');
-            frame.addEventListener('click', function () { location.href = href; });
+            frame.addEventListener('click', function (e) {
+              if (e.metaKey || e.ctrlKey || e.shiftKey) window.open(href, '_blank', 'noopener');
+              else location.href = href;
+            });
           }
         }
       });
@@ -61,14 +73,13 @@
   if (!rooms.length) return;
   document.documentElement.classList.add('hv-on');
 
-  /* The light, its glint on the frame and the cue are made the first time a
-     film comes up, so a page nobody points at carries no extra nodes. */
+  /* The frame's light and the cue are made the first time a film comes up,
+     so a page nobody points at carries no extra nodes. */
   var build = function (st) {
     if (st.built) return;
     st.built = true;
-    var light = document.createElement('span'); light.className = 'hv-light'; light.setAttribute('aria-hidden', 'true');
     var rim = document.createElement('span'); rim.className = 'hv-rim'; rim.setAttribute('aria-hidden', 'true');
-    st.frame.appendChild(light); st.frame.appendChild(rim);
+    st.frame.appendChild(rim);
     var words = st.room.set.cue(st.card);
     if (words && words[0]) {
       var cue = document.createElement('span'); cue.className = 'hv-cue'; cue.setAttribute('aria-hidden', 'true');
@@ -117,7 +128,7 @@
       var ts = st.hot ? PUSH : 1;
       // the push is slow going in and a little quicker coming back
       st.s += (ts - st.s) * ease(st.hot ? 0.022 : 0.06, dt);
-      // the camera drifts after the eye; the light keeps up with it
+      // the camera drifts after the eye; the light on the frame keeps up with it
       var tpx = st.hot ? st.tpx : 0, tpy = st.hot ? st.tpy : 0;
       st.px += (tpx - st.px) * ease(0.05, dt); st.py += (tpy - st.py) * ease(0.05, dt);
       st.lx += (st.tlx - st.lx) * ease(0.16, dt); st.ly += (st.tly - st.ly) * ease(0.16, dt);
@@ -150,7 +161,9 @@
     if (x == null) { measure(st); x = st.rect.left + st.w / 2; y = st.rect.top + st.h * 0.45; }
     aim(st, x, y);
     if (!st.hot) { st.lx = st.tlx; st.ly = st.tly; }   // the light starts where you came in, it never sweeps across
-    if (st.cue) st.cue.classList.toggle('hv-cue--s', st.w < 440);
+    // a smaller cue on small frames, and none on a frame too small to carry
+    // one without covering the picture (the offers at tablet width)
+    if (st.cue) { st.cue.classList.toggle('hv-cue--s', st.w < 440); st.cue.classList.toggle('hv-cue--off', st.w < 240); }
     st.hot = true; room.hot = st;
     st.card.classList.add('is-hot');
     room.el.classList.add('is-lit');
@@ -200,7 +213,7 @@
         var pick = null;
         inBand.forEach(function (st) { if (!pick || st.seen > pick.seen) pick = st; });
         if (pick && pick !== room.hot) up(pick);          // between two films, the last one stays up
-      }, { rootMargin: room.set.across ? '0px -36% 0px -36%' : '-36% 0px -36% 0px' });
+      }, { rootMargin: '-36% 0px -36% 0px' });
       room.cards.forEach(function (st) { band.observe(st.frame); });
       // when the whole room leaves the screen its lights come back up
       new IntersectionObserver(function (es) {
