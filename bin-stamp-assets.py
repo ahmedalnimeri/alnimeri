@@ -15,7 +15,9 @@ can go stale behind an immutable header:
   srcset="a 640w, b 1280w"   responsive posters
   url("assets/...")          backgrounds in the stylesheet
   refinement.css?v=, motion.js?v=   the home page's own sheet and script,
-                             stamped with md5[:8] (served immutable)
+                             stamped with md5[:8] (served immutable); the
+                             same for design-hover.css / .js (the film hover
+                             layer; bin-build-work-pages.py stamps /work/)
 
 Fonts and favicons are excluded by design — see the note at EXCLUDE.
 Run this after touching anything under assets/, refinement.css or motion.js.
@@ -98,7 +100,7 @@ def process(text, missing):
             n += 1
         return new
 
-    text = re.sub(r'(?<![\w/.-])(refinement\.css|motion\.js)\?v=[a-f0-9]+', own, text)
+    text = re.sub(r'(?<![\w/.-])(refinement\.css|motion\.js|design-hover\.css|design-hover\.js)\?v=[a-f0-9]+', own, text)
     return text, n
 
 total, allmissing = 0, []
