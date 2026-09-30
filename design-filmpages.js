@@ -28,7 +28,9 @@
       f.title = play.getAttribute('data-title') || 'Film';
       f.allow = 'autoplay; fullscreen; picture-in-picture';
       f.setAttribute('allowfullscreen', '');
-      f.addEventListener('load', function () { frame.classList.add('is-loaded'); try { f.focus(); } catch (e) {} });
+      // focus stays on the page, so Escape still brings the lights up; Tab
+      // is the next step into the player's own controls
+      f.addEventListener('load', function () { frame.classList.add('is-loaded'); });
       frame.appendChild(f);
       frame.classList.add('is-playing');
       // if the player is slow to answer, the still steps aside anyway
@@ -45,12 +47,14 @@
 
     if (vid) {
       // The lights follow the visitor's attention. Up: the pointer leaves the
-      // picture for a moment, a click or a tap anywhere else, Escape, or the
-      // film scrolled away. Down again: back onto the picture, or into the
-      // player's own controls.
+      // picture for a moment, a click or a tap anywhere else, Escape, focus
+      // moving on to the rest of the page, or the film scrolled away. Down
+      // again: back onto the picture, or into the player's own controls.
       var upTimer = 0;
       var up = function () { clearTimeout(upTimer); lights(false); };
       d.addEventListener('keydown', function (e) { if (e.key === 'Escape') up(); });
+      // and moving on through the page from the keyboard brings them up too
+      d.addEventListener('focusin', function (e) { if (playing && !frame.contains(e.target)) up(); });
       d.addEventListener('click', function (e) { if (playing && !frame.contains(e.target)) up(); });
       frame.addEventListener('mouseleave', function () {
         if (!playing) return;

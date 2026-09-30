@@ -47,6 +47,18 @@ CROP = {
     'The Greatest Sudanese Sit-In': (0, 52, 768, 328),     # 2.34:1 scope
 }
 
+# On a phone the chip is two lines in the still's lower left corner, which is
+# where two of these films carry their own words: 60 Secs of New York has its
+# title burned into the lower middle of the frame, and Sia x Solana a name card
+# in the lower left. Looked at still by still at 360-430px; every other chip
+# keeps the corner. 'under': the chip hangs just below the picture, in the open
+# black under the lowest still (only ever the lowest: plane 3); 'end': the
+# chip takes the lower right corner instead.
+PHONE_CHIP = {
+    '60 Secs of New York': 'under',
+    'Sia x Solana': 'end',
+}
+
 # The enquiry links sit inside <!--email_off-->: Cloudflare's email
 # obfuscation would otherwise rewrite the mailto: and main.js could no longer
 # open the brief from it (as on every other mailto: link on the site).
@@ -93,8 +105,12 @@ def still(f, n):
         webp = (f'<source type="image/webp" srcset="{b}-480.webp 480w, {b}-768.webp 768w, {b}-1280.webp 1280w" '
                 f'sizes="{SIZES[n]}">')
     label = html.escape(f"{f['title']} — {f['kind']}" + (f", {f['stat']}" if f['stat'] else ''), quote=True)
+    chip = PHONE_CHIP.get(f['title'], '')
+    if chip == 'under' and n != 3:
+        raise SystemExit(f"PHONE_CHIP: {f['title']} can hang its chip under the picture only as the lowest still")
+    chip = f' cmp__still--chip-{chip}' if chip else ''
     return (
-        f'\n        <a class="cmp__still cmp__still--{n}{" is-lead" if n == 1 else ""}" href="{f["href"]}" data-depth="{DEPTH[n]}" style="{shape}" aria-label="{label}">'
+        f'\n        <a class="cmp__still cmp__still--{n}{" is-lead" if n == 1 else ""}{chip}" href="{f["href"]}" data-depth="{DEPTH[n]}" style="{shape}" aria-label="{label}">'
         f'<span class="cmp__frame">{"<picture>" + webp if webp else ""}<img srcset="{b}-480.jpg 480w, {b}-768.jpg 768w, {b}.jpg 1280w" sizes="{SIZES[n]}" '
         f'src="{b}-768.jpg" alt="" width="768" height="432" loading="lazy" decoding="async">{"</picture>" if webp else ""}</span>'
         f'<span class="cmp__chip" aria-hidden="true"><b>{html.escape(f["title"])}</b><span>{html.escape(reach)}</span></span></a>')

@@ -105,7 +105,9 @@
 }
 .ending__cap {
   display: flex; align-items: baseline; gap: 10px; margin-top: 12px;
-  font-size: 12.5px; line-height: 17px; height: 17px; letter-spacing: -.005em;
+  /* the credit's size follows the frame (a short screen rests smaller
+     frames), so the longest title still fits */
+  font-size: min(12.5px, calc(var(--cw) / 14.6)); line-height: 17px; height: 17px; letter-spacing: -.005em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .ending__cap b { font-weight: 400; color: var(--fg-dim); overflow: hidden; text-overflow: ellipsis; }
@@ -167,6 +169,15 @@
 .contact.ending .contact__links a:hover { color: var(--fg); }
 .contact.ending .colophon {
   position: relative; z-index: 3; width: 100%; max-width: 1320px; margin: 0 auto;
+}
+
+/* set by design-ending.js on a short wide screen (1366x625 and the like),
+   when closing up the air around the card would leave the mark closer than
+   40px to the bar: the bar already carries the mark, so the ask leads the
+   card and the whole last frame, the visitor's clock included, fits between
+   the bar and the colophon */
+@media (min-width: 1000px) {
+  .ending--nomark .lockup { display: none; }
 }
 
 /* ---- narrower screens: the roll above, the card under it ---------------

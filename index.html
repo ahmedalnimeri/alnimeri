@@ -601,8 +601,6 @@
   ]
 }</script>
 <link rel="stylesheet" href="refinement.css?v=7fbac424">
-<link rel="stylesheet" href="design-hover.css?v=16bea70d">
-<link rel="stylesheet" href="design-compositions.css?v=b3c86f66">
 </head>
 <body>
 <a class="skip" href="#work">Skip to work</a>
@@ -685,6 +683,11 @@
     </div>
   </section>
 
+  <!-- the film layers' own styles (the lights down over the films, the four
+       compositions), loaded here rather than in the head so they never
+       hold up the first paint of the page: nothing above this line uses them -->
+  <link rel="stylesheet" href="design-hover.css?v=16bea70d">
+  <link rel="stylesheet" href="design-compositions.css?v=d29944df">
   <section class="commission on-surface" id="services" aria-labelledby="commission-title">
     <div class="commission__heading"><p>WORK WITH ME</p><h2 id="commission-title">What are we making?</h2><span>From a first idea to the final cut. Tell me where you need me.</span></div>
     <!-- ART:CHAPTERS -->
@@ -698,7 +701,7 @@
       <div class="cmp__art">
         <a class="cmp__still cmp__still--1 is-lead" href="/work/solana-accelerate" data-depth="1" style="--ar:768/432" aria-label="Solana Accelerate — Campaign film, 1.4M views on X"><span class="cmp__frame"><picture><source type="image/webp" srcset="assets/posters/1058181870-480.webp?h=3c37a86d 480w, assets/posters/1058181870-768.webp?h=37282e8f 768w, assets/posters/1058181870-1280.webp?h=0c6f1b2f 1280w" sizes="(max-width: 959px) 88vw, 51vw"><img srcset="assets/posters/1058181870-480.jpg?h=a755383c 480w, assets/posters/1058181870-768.jpg?h=a8cef681 768w, assets/posters/1058181870.jpg?h=bb1f445e 1280w" sizes="(max-width: 959px) 88vw, 51vw" src="assets/posters/1058181870-768.jpg?h=a8cef681" alt="" width="768" height="432" loading="lazy" decoding="async"></picture></span><span class="cmp__chip" aria-hidden="true"><b>Solana Accelerate</b><span>1.4M views on X</span></span></a>
         <a class="cmp__still cmp__still--2" href="/work/token-supercycle" data-depth=".45" style="--ar:768/432" aria-label="Token Supercycle — Campaign film, 126K views on X"><span class="cmp__frame"><picture><source type="image/webp" srcset="assets/posters/1224813193-480.webp?h=ef56e9b6 480w, assets/posters/1224813193-768.webp?h=025a3953 768w, assets/posters/1224813193-1280.webp?h=1dcbc12e 1280w" sizes="(max-width: 959px) 54vw, 25vw"><img srcset="assets/posters/1224813193-480.jpg?h=37126c7f 480w, assets/posters/1224813193-768.jpg?h=63d9e734 768w, assets/posters/1224813193.jpg?h=293595c8 1280w" sizes="(max-width: 959px) 54vw, 25vw" src="assets/posters/1224813193-768.jpg?h=63d9e734" alt="" width="768" height="432" loading="lazy" decoding="async"></picture></span><span class="cmp__chip" aria-hidden="true"><b>Token Supercycle</b><span>126K views on X</span></span></a>
-        <a class="cmp__still cmp__still--3" href="/work/60-secs-of-new-york" data-depth=".72" style="--ar:768/324;--cw:1.0000;--cx:0.0000;--cy:-0.1667" aria-label="60 Secs of New York — Campaign film, 768K views on X"><span class="cmp__frame"><picture><source type="image/webp" srcset="assets/posters/1083313331-480.webp?h=8c285a55 480w, assets/posters/1083313331-768.webp?h=fdd4314b 768w, assets/posters/1083313331-1280.webp?h=28b7e8f8 1280w" sizes="(max-width: 959px) 70vw, 38vw"><img srcset="assets/posters/1083313331-480.jpg?h=773dac8d 480w, assets/posters/1083313331-768.jpg?h=532e13dd 768w, assets/posters/1083313331.jpg?h=a57df66d 1280w" sizes="(max-width: 959px) 70vw, 38vw" src="assets/posters/1083313331-768.jpg?h=532e13dd" alt="" width="768" height="432" loading="lazy" decoding="async"></picture></span><span class="cmp__chip" aria-hidden="true"><b>60 Secs of New York</b><span>768K views on X</span></span></a>
+        <a class="cmp__still cmp__still--3 cmp__still--chip-under" href="/work/60-secs-of-new-york" data-depth=".72" style="--ar:768/324;--cw:1.0000;--cx:0.0000;--cy:-0.1667" aria-label="60 Secs of New York — Campaign film, 768K views on X"><span class="cmp__frame"><picture><source type="image/webp" srcset="assets/posters/1083313331-480.webp?h=8c285a55 480w, assets/posters/1083313331-768.webp?h=fdd4314b 768w, assets/posters/1083313331-1280.webp?h=28b7e8f8 1280w" sizes="(max-width: 959px) 70vw, 38vw"><img srcset="assets/posters/1083313331-480.jpg?h=773dac8d 480w, assets/posters/1083313331-768.jpg?h=532e13dd 768w, assets/posters/1083313331.jpg?h=a57df66d 1280w" sizes="(max-width: 959px) 70vw, 38vw" src="assets/posters/1083313331-768.jpg?h=532e13dd" alt="" width="768" height="432" loading="lazy" decoding="async"></picture></span><span class="cmp__chip" aria-hidden="true"><b>60 Secs of New York</b><span>768K views on X</span></span></a>
       </div>
     </article>
     <article class="cmp cmp--events cmp--flip cmp--duo" style="--h3:0.5625" aria-labelledby="cmp-events">
@@ -720,7 +723,7 @@
       </div>
       <div class="cmp__art">
         <a class="cmp__still cmp__still--1 is-lead" href="/work/al-doroub" data-depth="1" style="--ar:768/432" aria-label="Al Doroub — Feature documentary · Compass Creative, 4.2K reactions · 2.4K shares"><span class="cmp__frame"><picture><source type="image/webp" srcset="assets/posters/843280565-480.webp?h=98a9bde0 480w, assets/posters/843280565-768.webp?h=315e5578 768w, assets/posters/843280565-1280.webp?h=9491d898 1280w" sizes="(max-width: 959px) 88vw, 51vw"><img srcset="assets/posters/843280565-480.jpg?h=f9b9139e 480w, assets/posters/843280565-768.jpg?h=9c819345 768w, assets/posters/843280565.jpg?h=60978943 1280w" sizes="(max-width: 959px) 88vw, 51vw" src="assets/posters/843280565-768.jpg?h=9c819345" alt="" width="768" height="432" loading="lazy" decoding="async"></picture></span><span class="cmp__chip" aria-hidden="true"><b>Al Doroub</b><span>4.2K reactions · 2.4K shares</span></span></a>
-        <a class="cmp__still cmp__still--2" href="/work/sia-x-solana" data-depth=".45" style="--ar:768/432" aria-label="Sia x Solana — Documentary, 148K views on X"><span class="cmp__frame"><picture><source type="image/webp" srcset="assets/posters/1093647469-480.webp?h=2fa96382 480w, assets/posters/1093647469-768.webp?h=94a151f2 768w, assets/posters/1093647469-1280.webp?h=f2a41ed9 1280w" sizes="(max-width: 959px) 54vw, 25vw"><img srcset="assets/posters/1093647469-480.jpg?h=072631f9 480w, assets/posters/1093647469-768.jpg?h=f343a3e0 768w, assets/posters/1093647469.jpg?h=ab76c1a9 1280w" sizes="(max-width: 959px) 54vw, 25vw" src="assets/posters/1093647469-768.jpg?h=f343a3e0" alt="" width="768" height="432" loading="lazy" decoding="async"></picture></span><span class="cmp__chip" aria-hidden="true"><b>Sia x Solana</b><span>148K views on X</span></span></a>
+        <a class="cmp__still cmp__still--2 cmp__still--chip-end" href="/work/sia-x-solana" data-depth=".45" style="--ar:768/432" aria-label="Sia x Solana — Documentary, 148K views on X"><span class="cmp__frame"><picture><source type="image/webp" srcset="assets/posters/1093647469-480.webp?h=2fa96382 480w, assets/posters/1093647469-768.webp?h=94a151f2 768w, assets/posters/1093647469-1280.webp?h=f2a41ed9 1280w" sizes="(max-width: 959px) 54vw, 25vw"><img srcset="assets/posters/1093647469-480.jpg?h=072631f9 480w, assets/posters/1093647469-768.jpg?h=f343a3e0 768w, assets/posters/1093647469.jpg?h=ab76c1a9 1280w" sizes="(max-width: 959px) 54vw, 25vw" src="assets/posters/1093647469-768.jpg?h=f343a3e0" alt="" width="768" height="432" loading="lazy" decoding="async"></picture></span><span class="cmp__chip" aria-hidden="true"><b>Sia x Solana</b><span>148K views on X</span></span></a>
         <a class="cmp__still cmp__still--3" href="/work/the-greatest-sudanese-sit-in" data-depth=".72" style="--ar:768/328;--cw:1.0000;--cx:0.0000;--cy:-0.1585" aria-label="The Greatest Sudanese Sit-In — Documentary, 442K views on Facebook"><span class="cmp__frame"><picture><source type="image/webp" srcset="assets/posters/1061801108-480.webp?h=1095c811 480w, assets/posters/1061801108-768.webp?h=fb208776 768w, assets/posters/1061801108-1280.webp?h=e034d454 1280w" sizes="(max-width: 959px) 70vw, 38vw"><img srcset="assets/posters/1061801108-480.jpg?h=f5eb04b9 480w, assets/posters/1061801108-768.jpg?h=63596002 768w, assets/posters/1061801108.jpg?h=371b4686 1280w" sizes="(max-width: 959px) 70vw, 38vw" src="assets/posters/1061801108-768.jpg?h=63596002" alt="" width="768" height="432" loading="lazy" decoding="async"></picture></span><span class="cmp__chip" aria-hidden="true"><b>The Greatest Sudanese Sit-In</b><span>442K views on Facebook</span></span></a>
       </div>
     </article>
@@ -1082,7 +1085,7 @@
 
   <!-- the ending's own styles, loaded here rather than in the head so they
        never hold up the first paint of the page -->
-  <link rel="stylesheet" href="design-ending.css?v=4ed3128f">
+  <link rel="stylesheet" href="design-ending.css?v=f85cc699">
   <section class="contact ending" id="contact">
     <!-- The end credits. design-ending.js fills the roll from the films in
          #work, so it can never drift from the grid; the stills rise past as
@@ -1105,7 +1108,7 @@
           <a href="https://vimeo.com/nimeri" rel="me noopener" target="_blank">Vimeo</a>
           <a href="https://www.instagram.com/by_nimeri" rel="me noopener" target="_blank">Instagram</a>
           <a href="https://www.linkedin.com/in/ahmedalnimeri/" rel="me noopener" target="_blank">LinkedIn</a>
-          <a href="assets/Ahmed_ElNimeri_CV.pdf?h=15dd1130">CV (PDF)</a>
+          <a href="assets/Ahmed_ElNimeri_CV-2026-09.pdf?h=8339bf0f">CV (PDF)</a>
         </nav>
       </div>
     </div>
@@ -1125,9 +1128,9 @@
 
 <script src="main.js?v=103" defer></script>
 <script src="motion.js?v=562248ff" defer></script>
-<script src="design-hover.js?v=592fcae8" defer></script>
+<script src="design-hover.js?v=83bb82d7" defer></script>
 <script src="design-compositions.js?v=e7d42a16" defer></script>
-<script src="design-ending.js?v=03ec65d0" defer></script>
+<script src="design-ending.js?v=4e053fe5" defer></script>
 <!-- Cloudflare Web Analytics -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "031672bac7b743a990b8dfcf074f7a38"}'></script>
 <!-- End Cloudflare Web Analytics -->

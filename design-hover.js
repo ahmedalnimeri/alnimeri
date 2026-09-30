@@ -183,6 +183,9 @@
     wake(st);
   };
 
+  var keyed = function (el) {
+    try { return el.matches(':focus-visible'); } catch (e) { return true; }   // no :focus-visible: as before
+  };
   rooms.forEach(function (room) {
     room.cards.forEach(function (st) {
       var c = st.card;
@@ -190,7 +193,9 @@
       c.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse' || e.pointerType === 'pen') down(st); });
       // a press brings up the film under the finger, lit where it landed
       c.addEventListener('pointerdown', function (e) { if (e.pointerType === 'touch') up(st, e.clientX, e.clientY); });
-      c.addEventListener('focusin', function () { if (!st.hot) up(st); });
+      // keyboard focus only: a film closed with the mouse hands focus back to
+      // its tile, and that must not leave the room dimmed
+      c.addEventListener('focusin', function (e) { if (!st.hot && keyed(e.target)) up(st); });
       c.addEventListener('focusout', function (e) { if (!c.contains(e.relatedTarget) && !c.matches(':hover')) down(st); });
     });
     room.el.addEventListener('pointermove', function (e) {

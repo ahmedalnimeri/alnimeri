@@ -84,8 +84,26 @@
      comes on screen and on resize, never while scrolling. */
   var stage = sec.querySelector('.ending__stage');
   var card = sec.querySelector('.ending__card');
+  var mark = card && card.querySelector('.lockup');
   var narrow = window.matchMedia && matchMedia('(max-width: 999px)');
+  var AIR = 40;   // the least air left between the bar and the card on a wide screen, in px
   var fit = function () {
+    sec.classList.remove('ending--nomark');
+    settle();
+    // On a wide screen the air around the card may close up only so far: a
+    // card whose mark would come to rest against the bar (a short laptop
+    // screen, 1366x625, with the visitor's clock in the card) rests without
+    // the mark instead, since the bar above already carries it, and the ask
+    // leads. Read from layout (offsetTop), so a reveal still in flight does
+    // not move the measurement.
+    if (mark && !(narrow && narrow.matches)) {
+      var room = parseFloat(getComputedStyle(sec).minHeight) || 0;
+      var atEnd = card.getBoundingClientRect().top - sec.getBoundingClientRect().top + mark.offsetTop
+                  - Math.max(0, sec.offsetHeight - room);
+      if (room && atEnd < AIR) { sec.classList.add('ending--nomark'); settle(); }
+    }
+  };
+  var settle = function () {
     sec.style.removeProperty('--stage-pad');
     roll.style.removeProperty('--rows');
     sec.classList.remove('ending--bare');

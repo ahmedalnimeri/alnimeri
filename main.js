@@ -636,7 +636,10 @@
       b.setAttribute('aria-label', 'Go to ' + name);
       b.addEventListener('click', function () {
         // Offset by the fixed masthead's height so the slate lands clear.
-        cutTo(s.offsetTop - headerOffset());
+        // The home page's ending is one screen that rests at the very end of
+        // the page, its top tucked under the bar, so that clip cuts to the end.
+        cutTo(s.classList.contains('ending') ? document.documentElement.scrollHeight
+                                              : s.offsetTop - headerOffset());
       });
       track.appendChild(b);
       return b;
@@ -1141,6 +1144,7 @@
     }
   });
   sheet.querySelector('[data-act="share"]').addEventListener('click', function () {
+    if (!navigator.share) return;
     var n = sel.length, url = location.origin + '/reel/' + code();
     var names = sel.map(function (k) { return nameOf(tiles[ALPHABET.indexOf(k)]); });
     navigator.share({ title: n + ' film' + (n > 1 ? 's' : '') + ' by Ahmed El-Nimeri',

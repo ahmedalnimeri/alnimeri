@@ -169,6 +169,9 @@ a { color: inherit; }
   display: inline-flex; align-items: center; gap: 0.5rem;
   padding: 0.72rem 1.5rem;
   border-radius: var(--pill); border: 1px solid transparent;
+  /* a <button> does not inherit the page's face on its own: without this the
+     brief's "Send to Ahmed" and the reel's buttons set in Arial */
+  font-family: inherit;
   font-size: 0.9rem; font-weight: 600; letter-spacing: -0.005em;
   text-decoration: none; white-space: nowrap; cursor: pointer;
 }
@@ -1250,6 +1253,10 @@ body.is-locked { overflow: hidden; }
 .no-js .lift { opacity: 1; transform: none; }
 .no-js .shot { opacity: 1; }
 .no-js .tile__play { display: none; }
+/* a tile's picture and title wait on the reveal too (the tile itself is
+   shown), so without JS they are shown outright */
+.no-js .tile.reveal .tile__link,
+.no-js .tile.reveal .tile__meta { opacity: 1; transform: none; }
 
 /* ---------- page-to-page: the cut crosses documents ----------
    Same-origin navigation runs through the View Transitions API: the old
@@ -1603,6 +1610,9 @@ body.is-locked { overflow: hidden; }
 }
 .sheet__acts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .sheet__acts .btn { padding: 0.6rem 1.1rem; font-size: 0.85rem; }
+/* .btn's display outranks the hidden attribute: "Send it" stays out where
+   the browser has no share sheet */
+.sheet__acts [hidden] { display: none; }
 .sheet__note { margin: 0.9rem 0 0; font-size: 0.78rem; color: var(--fg-faint); }
 .sheet__close { position: absolute; top: 1rem; right: 1rem; background: none; border: 0; color: var(--fg-dim); font-size: 1.1rem; cursor: pointer; padding: 0.4rem; }
 .sheet__card { position: relative; }

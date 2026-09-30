@@ -65,13 +65,24 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
             if w not in {x[1] for x in sizes}:
                 sizes.append((path, w, h))
     sizes.sort(key=lambda x: x[1])
+    # The same still's WebP set, from the tile's <source>, each by its real
+    # width: offered first, it is about a quarter lighter than the JPEGs.
+    webp = re.search(r'<source type="image/webp" srcset="([^"]+)"', b)
+    wsizes = []
+    for c in (webp.group(1).split(',') if webp else []):
+        path = c.strip().split()[0].split('?')[0] if c.strip() else ''
+        if path and os.path.exists(path):
+            w, h = dims(path)
+            if w not in {x[1] for x in wsizes}:
+                wsizes.append((path, w, h))
+    wsizes.sort(key=lambda x: x[1])
     fw, fh = dims(full)
     # Pin shape follows the film: 16:9, or the front page's 3:4 for verticals.
     tall = fw < fh
     slug = slugify(title)
     if not os.path.exists(f'work/{slug}.html'):
         sys.exit(f'no film page work/{slug}.html for {title}')
-    frames.append({'title': title, 'slug': slug, 'sizes': sizes, 'tall': tall,
+    frames.append({'title': title, 'slug': slug, 'sizes': sizes, 'webp': wsizes, 'tall': tall,
                    'kind': (re.search(r'tile__kind">([^<]*)<', b) or [None, ''])[1]})
 
 if len(frames) != _n:
@@ -91,14 +102,22 @@ for f in frames:
     cols[c].append(f)
     height[c] += (4 / 3 if f['tall'] else 9 / 16) + 0.17
 
+PIN_SIZES = '(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px'
+
 def pin(f):
     small = f['sizes'][0]
     srcset = ', '.join(f'/{p} {w}w' for p, w, h in f['sizes'])
     name = html.escape(html.unescape(f['title']), quote=True)
     kind = html.unescape(f['kind'])
+    title = f['title']
+    img = (f'<img src="/{small[0]}" srcset="{srcset}" sizes="{PIN_SIZES}" alt="Still from {title}" '
+           f'width="{small[1]}" height="{small[2]}" loading="lazy" decoding="async">')
+    if f['webp']:
+        img = ('<picture><source type="image/webp" srcset="' + ', '.join(f'/{p} {w}w' for p, w, h in f['webp'])
+               + f'" sizes="{PIN_SIZES}">' + img + '</picture>')
     return f'''
         <a class="pin{' pin--tall' if f['tall'] else ''}" href="/work/{f['slug']}" aria-label="{name} — {html.escape(kind, quote=True)}">
-          <span class="pin__media"><img src="/{small[0]}" srcset="{srcset}" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px" alt="Still from {f['title']}" width="{small[1]}" height="{small[2]}" loading="lazy" decoding="async"></span>
+          <span class="pin__media">{img}</span>
           <span class="pin__cap"><span class="pin__t">{f['title']}</span><span class="pin__k">{html.escape(kind)}</span></span>
         </a>'''
 

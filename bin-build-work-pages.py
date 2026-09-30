@@ -67,6 +67,8 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
         # first, and its srcset is not the one the cards are built from.
         'poster':  field(b, r'<img\s(?:[^>]*\s)?src="(assets/posters/[^"]+)"'),
         'srcset':  field(b, r'<img\s(?:[^>]*\s)?srcset="([^"]+)"'),
+        # and the WebP set of the same still, from that <source>
+        'webp':    field(b, r'<source type="image/webp" srcset="([^"]+)"'),
         'alt':     field(b, r'alt="([^"]+)"'),
         'portrait': field(b, r'data-portrait="(\w+)"') == 'true',
     })
@@ -241,17 +243,23 @@ def year_of(f):
 
 _card_n = [0]
 
-def still(f, sizes, eager=False, high=False):
-    """The film's one still, at its own shape: the vertical films are 9:16."""
+def still(f, sizes, eager=False, high=False, webp=False):
+    """The film's one still, at its own shape: the vertical films are 9:16.
+    webp: offered first as the tile's WebP set (about a third lighter), for
+    the film page's own picture and its light, which share one download."""
     alt = html.escape(html.unescape(f['title']), quote=True)
     w, h = ('720', '1280') if f['portrait'] else ('1280', '720')
     if not f['srcset']:
         return ''
-    return ('<img srcset="' + rooted_srcset(f['srcset']) + '" sizes="' + sizes + '"'
-            ' src="' + rooted(f['poster']) + '" alt="Still from ' + alt + '"'
-            ' width="' + w + '" height="' + h + '" '
-            + ('loading="eager"' + (' fetchpriority="high"' if high else '') if eager else 'loading="lazy"')
-            + ' decoding="async">')
+    img = ('<img srcset="' + rooted_srcset(f['srcset']) + '" sizes="' + sizes + '"'
+           ' src="' + rooted(f['poster']) + '" alt="Still from ' + alt + '"'
+           ' width="' + w + '" height="' + h + '" '
+           + ('loading="eager"' + (' fetchpriority="high"' if high else '') if eager else 'loading="lazy"')
+           + ' decoding="async">')
+    if webp and f['webp']:
+        return ('<picture><source type="image/webp" srcset="' + rooted_srcset(f['webp']) + '" sizes="' + sizes + '">'
+                + img + '</picture>')
+    return img
 
 def card(f, eager_first=0, sizes='(max-width: 700px) 46vw, (max-width: 1100px) 31vw, 320px', short=False, delay=0, shown_first=0):
     """The first card on /work/ is on screen when the page opens (the LCP on a
@@ -351,10 +359,10 @@ for i, f in enumerate(films):
     _t = html.escape(title_txt, quote=True)
     _sizes = ('(max-width: 700px) 70vw, 440px' if f['portrait']
               else '(max-width: 700px) 92vw, (max-width: 1400px) 80vw, 1180px')
-    _still = still(f, _sizes, eager=True, high=True)
+    _still = still(f, _sizes, eager=True, high=True, webp=True)
     # the same file as the still (same srcset, same sizes), so the light it
     # throws on the page costs no second download
-    _light = still(f, _sizes, eager=True).replace(' alt="Still from ' + _t + '"', ' alt=""')
+    _light = still(f, _sizes, eager=True, webp=True).replace(' alt="Still from ' + _t + '"', ' alt=""')
     _icon = '<span class="fp-play__icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z"/></svg></span>'
     if f['vid']:
         play = (f'<a class="fp-play" href="https://vimeo.com/{f["vid"]}" data-vid="{f["vid"]}" data-title="{_t}">'
@@ -422,9 +430,21 @@ for i, f in enumerate(films):
     _hang = []
     for k, g in enumerate(_more):
         grow = 9 / 16 if g['portrait'] else 16 / 9
-        _hang.append(card(g, short=True, delay=k * 125,
-                          sizes='(max-width: 700px) 60vw, 300px' if g['portrait'] else '(max-width: 700px) 88vw, 520px')
-                     .replace('<li class="fp-card', f'<li style="--g:{grow:.3f}" class="fp-card', 1))
+        c = (card(g, short=True, delay=k * 125,
+                  sizes='(max-width: 700px) 60vw, 300px' if g['portrait'] else '(max-width: 700px) 88vw, 520px')
+             .replace('<li class="fp-card', f'<li style="--g:{grow:.3f}" class="fp-card', 1))
+        # Under a landscape film with nothing between it and this block, the
+        # first card's top already shows at the foot of a phone's first
+        # screen, and waiting on lazy-loading and on the scroll reveal made it
+        # the page's last paint. So it is eager (it is fetched before load
+        # either way, so that costs nothing extra) and, on a phone, there from
+        # the first frame (is-peek, design-filmpages.css); on a wider screen,
+        # where it is well below the fold, it still arrives with the others.
+        # (Not card()'s eager_first/shown_first: those count across every page.)
+        if k == 0 and not f['portrait'] and not reception:
+            c = (c.replace('loading="lazy"', 'loading="eager"', 1)
+                  .replace('class="fp-card', 'class="fp-card is-peek', 1))
+        _hang.append(c)
     related = (f'<section class="fp-more" aria-labelledby="related-head">'
                f'<div class="fp-more__head reveal"><h2 id="related-head">{_head}</h2>{_all}</div>'
                f'<ol class="fp-hang fp-lights">' + ''.join(_hang) + '</ol></section>')
