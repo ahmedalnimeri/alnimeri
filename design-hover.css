@@ -63,7 +63,7 @@
    covers the whole picture wherever the pointer is. */
 .hv-light {
   left: 0; top: 0; z-index: 2; width: 300%; aspect-ratio: 1; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(8, 9, 10, 0), rgba(8, 9, 10, 0) 12%, rgba(8, 9, 10, .36) 44%, rgba(8, 9, 10, .5));
+  background: radial-gradient(closest-side, rgba(8, 9, 10, 0), rgba(8, 9, 10, 0) 14%, rgba(8, 9, 10, .24) 46%, rgba(8, 9, 10, .34));
   transform: translate3d(var(--hv-lx, 50%), var(--hv-ly, 50%), 0) translate(-50%, -50%);
 }
 .hv-rim {
