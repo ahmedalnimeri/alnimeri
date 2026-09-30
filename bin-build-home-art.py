@@ -47,6 +47,9 @@ CROP = {
     'The Greatest Sudanese Sit-In': (0, 52, 768, 328),     # 2.34:1 scope
 }
 
+# The enquiry links sit inside <!--email_off-->: Cloudflare's email
+# obfuscation would otherwise rewrite the mailto: and main.js could no longer
+# open the brief from it (as on every other mailto: link on the site).
 BODY = ('&amp;body=Hi%20Ahmed%2C%0A%0AI%E2%80%99d%20like%20to%20discuss%20a%20project.%0A%0AWhat%20we%E2%80%99re%20making%3A%0A'
         'Audience%20and%20where%20it%20will%20run%3A%0ATiming%20and%20location%3A%0ABudget%20range%20%28if%20known%29%3A%0A%0AName%20%2F%20company%3A%0A')
 
@@ -111,7 +114,7 @@ for n, (key, title, words, (all_href, all_text), subject, names) in enumerate(CH
       <div class="cmp__text reveal">
         <h3 class="cmp__title" id="cmp-{key}">{title}</h3>
         <p class="cmp__words">{words}</p>
-        <p class="cmp__links"><a href="{all_href}">{all_text} <span aria-hidden="true">&rarr;</span></a><a href="mailto:ahmed@alnimeri.com?subject={subject}{BODY}">Discuss a project <span aria-hidden="true">&rarr;</span></a></p>
+        <p class="cmp__links"><a href="{all_href}">{all_text} <span aria-hidden="true">&rarr;</span></a><!--email_off--><a href="mailto:ahmed@alnimeri.com?subject={subject}{BODY}">Discuss a project <span aria-hidden="true">&rarr;</span></a><!--/email_off--></p>
       </div>
       <div class="cmp__art">{stills}
       </div>
