@@ -30,6 +30,10 @@ except Exception:
 
 VER = re.search(r'styles\.css\?v=(\d+)', SRC).group(1)
 MARK = re.search(r'src="(assets/logo-96\.png\?h=[a-f0-9]+)"', SRC).group(1)
+# films answer the pointer: the hover layer's own files, versioned by content
+import hashlib
+HOVER_CSS = hashlib.md5(open('design-hover.css', 'rb').read()).hexdigest()[:8]
+HOVER_JS = hashlib.md5(open('design-hover.js', 'rb').read()).hexdigest()[:8]
 
 def field(block, pat, default=''):
     m = re.search(pat, block)
@@ -129,6 +133,7 @@ HEAD = '''<!doctype html>
 <meta name="twitter:description" content="{desc}">
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/poppins-600.woff2" crossorigin>
 <link rel="stylesheet" href="/styles.css?v={ver}">
+<link rel="stylesheet" href="/design-hover.css?v={hover_css}">
 <script type="application/ld+json">{schema}</script>
 </head>
 <body>
@@ -147,6 +152,7 @@ HEAD = '''<!doctype html>
 
 FOOT = '''</main>
 <script src="/main.js?v={ver}" defer></script>
+<script src="/design-hover.js?v={hover_js}" defer></script>
 </body>
 </html>
 '''
@@ -245,6 +251,8 @@ def card(f, eager_first=0):
         img = ('<img srcset="' + rooted_srcset(f['srcset']) + '" sizes="(max-width: 560px) 90vw, (max-width: 900px) 44vw, 312px"'
                ' src="' + rooted(f['poster']) + '" alt="Still from ' + alt + '"'
                ' width="1280" height="720" ' + ('loading="eager"' + (' fetchpriority="high"' if n == 0 else '') if eager else 'loading="lazy"') + ' decoding="async">')
+        # its own frame, so the picture can move inside it on hover (design-hover.css)
+        img = '<span class="filmcard__still">' + img + '</span>'
     yr = year_of(f)
     bits = [f['kind'], f['dur']] + ([yr] if yr else []) + ([nowrap_last(f['stat'])] if f['stat'] else [])
     return ('<li class="filmcard"><a href="/work/' + f['slug'] + '">' + img
@@ -375,9 +383,9 @@ for i, f in enumerate(films):
     ogw, ogh = pixels(_poster)
     page = (HEAD.format(title=html.escape(title_txt, quote=True), desc=desc, slug=f['slug'],
                         poster=_poster, ogw=ogw, ogh=ogh, og_type='video.other', skip='Skip to the film',
-                        ver=VER, mark=MARK,
+                        ver=VER, mark=MARK, hover_css=HOVER_CSS,
                         schema=json.dumps(schema, ensure_ascii=False))
-            + body + FOOT.format(ver=VER))
+            + body + FOOT.format(ver=VER, hover_js=HOVER_JS))
     open(f"work/{f['slug']}.html", 'w').write(page)
 
 # ---- the index -----------------------------------------------------------
@@ -406,7 +414,7 @@ idx_schema = {
 
 _ogw, _ogh = pixels('assets/og-work.jpg')
 idx = (HEAD.format(title='All films', slug='', poster='assets/og-work.jpg', ogw=_ogw, ogh=_ogh,
-                   og_type='website', skip='Skip to the films', ver=VER, mark=MARK,
+                   og_type='website', skip='Skip to the films', ver=VER, mark=MARK, hover_css=HOVER_CSS,
                    desc=f'Every film by Ahmed El-Nimeri on this site — {COUNT} pieces, {TRT} total running time, each with its running time and, where published, its view count and source.',
                    schema=json.dumps(idx_schema, ensure_ascii=False))
        + f'''<section class="film" id="film">
@@ -417,7 +425,7 @@ idx = (HEAD.format(title='All films', slug='', poster='assets/og-work.jpg', ogw=
   <p class="film__note">The same {COUNT} films as the <a href="/">front page</a>, as a list.
     Each page carries the film, its running time and the published post its view count came from.</p>
 </section>
-''' + FOOT.format(ver=VER))
+''' + FOOT.format(ver=VER, hover_js=HOVER_JS))
 open('work/index.html', 'w').write(idx)
 
 print(f'work/: {len(films)} film pages + index, TRT {total // 60}:{total % 60:02d}')

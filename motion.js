@@ -1,8 +1,7 @@
 /* motion.js — motion that carries an idea, never motion for its own sake.
 
    The films follow one another beside the opening line. Words resolve from
-   blur. A light
-   follows the eye across the work. Films open like a letterbox and keep a
+   blur. Films open like a letterbox and keep a
    little depth in the frame. At the foot of the page, beside "I answer my own
    email", the match cut is the face of the person who does.
 
@@ -11,7 +10,6 @@
 (function () {
   'use strict';
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var fine = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   /* ---- the films beside the line: a slideshow you can feel ------------- */
   // Ahmed: "I should feel there's a slideshow here." A row of segments, one per
@@ -123,21 +121,7 @@
     name.classList.add('has-words');
   }
 
-  /* ---- a light that follows the eye ----------------------------------- */
-  if (fine) {
-    var track = function (container, sel) {
-      if (!container) return;
-      container.addEventListener('pointermove', function (e) {
-        container.querySelectorAll(sel).forEach(function (el) {
-          var r = el.getBoundingClientRect();
-          el.style.setProperty('--mx', (e.clientX - r.left) + 'px');
-          el.style.setProperty('--my', (e.clientY - r.top) + 'px');
-        });
-      });
-    };
-    track(document.querySelector('.commission__grid'), '.commission__card, .commission__still');
-    track(document.querySelector('#work .grid'), '.tile__link');
-  }
+  /* (the light that follows the eye lives in design-hover.js now) */
 
   /* ---- depth inside the frame (the letterbox reveal itself is CSS) ----- */
   var depthEls = [].slice.call(document.querySelectorAll('#work .tile__img, .commission__still img'));
