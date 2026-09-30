@@ -70,9 +70,6 @@
 .commission__example { margin-top: auto; color: var(--fg-dim); font-size: 11px; }
 .commission__enquire { font-size: 13px; margin-top: 18px; color: var(--fg); padding: 10px 0; }
 .commission__card a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.brief-guide { max-width: 570px; margin: 22px auto 32px; }
-.brief-guide p { font-size: 14px; color: var(--fg-dim); line-height: 1.8; }
-.brief-guide small { display: block; font-size: 11px; color: var(--fg-dim); margin-top: 15px; }
 @media(max-width:760px) { .commission__grid { grid-template-columns: 1fr; gap: 18px; } .commission { padding-bottom: 30px; } }
 
 /* Searchable project information, available without JavaScript. */
@@ -90,7 +87,7 @@
 
 /* ---- light page, dark films: the home page rhythm ----
    One idea per screen, centred, with a lot of air between chapters. The film
-   band and the match cut keep the cinema ground and run full width. */
+   band keeps the cinema ground and runs full width. */
 .hero--editorial { grid-template-columns: 1fr; text-align: center; gap: 0; padding: 165px var(--gut) 0; }
 .hero__copy { max-width: 900px; margin: 0 auto; }
 .hero--editorial .hero__eyebrow { display: none; }
@@ -148,7 +145,7 @@
 .hero--editorial::after { inset: 20% -10% -10%; background: radial-gradient(50% 45% at 50% 60%, rgba(94,106,210,.18), transparent 70%); }
 
 /* chapters: a hairline across the full width, then the head */
-#numbers, .commission, #work, #about, #matchcut, .contact { border-top: 1px solid var(--line); }
+#numbers, .commission, #work, #about, .contact { border-top: 1px solid var(--line); }
 .marquee { border-block: 0; }
 .section .slate, #work .slate, .chapter__head .slate { justify-content: flex-start; text-align: left; margin: 0; }
 .slate__title { font-size: clamp(36px, 4.2vw, 58px); }
@@ -160,7 +157,7 @@
 .chapter__aside .work__intro { text-align: left; margin: 0; max-width: 32ch; font-size: clamp(19px, 1.7vw, 23px); line-height: 1.45; color: #d0d6e0; }
 .chapter__more { display: inline-block; margin-top: 22px; font-size: 15px; color: var(--fg-dim); text-decoration: none; }
 .chapter__more:hover { color: var(--fg); }
-#about .slate, #matchcut .slate { max-width: 1320px; margin: 0 auto clamp(44px, 7vh, 72px); }
+#about .slate { max-width: 1320px; margin: 0 auto clamp(44px, 7vh, 72px); }
 
 /* the offers: a title, then four columns split by hairlines, a frame on top of each */
 .commission { background: var(--bg); }
@@ -291,33 +288,22 @@
   .twoshot__shot, .twoshot__shot img { transition: none; transform: none; }
 }
 
-/* ---- the face beside "I answer my own email" ----------------------------- */
+/* ---- the contact card (the home page's own ending is design-ending.css) -- */
 .contact__inner {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
   column-gap: 72px; align-items: start; text-align: left;
 }
 .contact__inner > * { grid-column: 1; }
-.contact__inner > .contact__face { grid-column: 2; grid-row: 1 / span 9; margin: 0; align-self: center; }
-.contact__cut {
-  /* height:auto, or the height="1280" attribute wins over aspect-ratio and
-     the box becomes a 1280px-tall sliver that crops the face */
-  display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover;
-  border: 1px solid var(--line); border-radius: 14px; background: #0b0c0d;
-}
-.contact__face figcaption { margin-top: 14px; font-size: 13px; line-height: 1.5; color: var(--fg-faint); }
 .contact .lockup { margin-left: 0; }
-.contact .brief-guide { margin-left: 0; }
 .contact__links { justify-content: flex-start; }
 @media (max-width: 760px) {
   .contact__inner { grid-template-columns: 1fr; }
-  .contact__inner > .contact__face { grid-column: 1; grid-row: auto; max-width: 220px; margin: 8px 0 36px; }
 }
 
 /* "Send the brief." is the chapter's real title; the Contact slate stays for
    the document outline and screen readers, out of sight */
 .contact .slate { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.contact__inner > :not(.contact__face) { margin-left: 0; margin-right: 0; text-align: left; }
-.contact .brief-guide { max-width: 560px; }
+.contact__inner > * { margin-left: 0; margin-right: 0; text-align: left; }
 .contact .lockup { height: clamp(90px, 10vw, 140px); }
 /* between 761 and 1050px the address sits in the narrow left column and broke
    as "ahmed@alnimeri.co / m"; sized to that column it stays on one line */

@@ -1,9 +1,8 @@
 /* motion.js — motion that carries an idea, never motion for its own sake.
 
    The films follow one another beside the opening line. Words resolve from
-   blur. Films open like a letterbox and keep a
-   little depth in the frame. At the foot of the page, beside "I answer my own
-   email", the match cut is the face of the person who does.
+   blur. Films open like a letterbox and keep a little depth in the frame.
+   (The end credits at the foot of the page live in design-ending.js.)
 
    Under reduced motion nothing animates: the two-shot still answers hover and
    focus, but cuts instead of dissolving, and never cuts on its own. */
@@ -90,12 +89,7 @@
     if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true });
   }
 
-  if (reduce) {
-    // no autoplay: show the match cut as a still frame instead of a blank box
-    var still = document.querySelector('.contact__cut');
-    if (still && still.dataset.poster) still.poster = still.dataset.poster;
-    return;
-  }
+  if (reduce) return;
   document.documentElement.classList.add('has-motion');
 
   /* ---- words resolve one by one --------------------------------------- */
@@ -124,7 +118,7 @@
   /* (the light that follows the eye lives in design-hover.js now) */
 
   /* ---- depth inside the frame (the letterbox reveal itself is CSS) ----- */
-  var depthEls = [].slice.call(document.querySelectorAll('#work .tile__img, .commission__still img'));
+  var depthEls = [].slice.call(document.querySelectorAll('#work .tile__img'));
   if (depthEls.length && 'IntersectionObserver' in window) {
     var live = new Set();
     var ticking = false;
@@ -152,19 +146,5 @@
     };
     addEventListener('scroll', later, { passive: true });
     paint();
-  }
-
-  /* ---- the face beside "I answer my own email" ------------------------ */
-  var cut = document.querySelector('.contact__cut');
-  if (cut && 'IntersectionObserver' in window) {
-    new IntersectionObserver(function (es) {
-      es.forEach(function (e) {
-        if (e.isIntersecting) {
-          if (!cut.poster && cut.dataset.poster) cut.poster = cut.dataset.poster;
-          if (cut.preload !== 'auto') cut.preload = 'auto';
-          var pr = cut.play(); if (pr && pr.catch) pr.catch(function () {});
-        } else if (!cut.paused) { cut.pause(); }
-      });
-    }, { threshold: 0.25 }).observe(cut);
   }
 })();
