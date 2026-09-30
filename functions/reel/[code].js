@@ -1,12 +1,12 @@
 /**
- * /reel/<code>       — a viewer's own cut of the selects, rendered at the edge
- * /reel/<code>.edl   — the same cut as a CMX3600 cut list
+ * /reel/<code>   — a viewer's own cut of the selects, rendered at the edge
  *
  * The code is the cut: one character per film, in the order the viewer put
  * them (keys in _lib/reel.js, generated from the tiles). Nothing is stored —
  * the link carries the whole selection, so it works forever, needs no
- * database, and says nothing about who made it. The TRT and the EDL are
- * derived from the chosen films by the same running sum as the home page.
+ * database, and says nothing about who made it. The TRT is derived from
+ * the chosen films by the same running sum as the home page. Anything else
+ * under /reel/ (a code with an extension included) is the site's 404.
  */
 import { FILMS, ALPHABET, TEMPLATE } from '../_lib/reel.js';
 
@@ -81,38 +81,14 @@ export function page(code, films) {
   return TEMPLATE.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in fill ? fill[k] : m));
 }
 
-export function edl(code, films) {
-  const lines = [`TITLE: ALNIMERI_REEL_${code.toUpperCase()}`, 'FCM: NON-DROP FRAME', ''];
-  let tot = 0;
-  films.forEach((f, i) => {
-    const d = f.secs;
-    lines.push(`${pad(i + 1).padStart(3, '0')}  ${(f.vid || 'AX').padEnd(10)}  V  C  ${tc(0)} ${tc(d)} ${tc(tot)} ${tc(tot + d)}`);
-    lines.push(`* FROM CLIP NAME: ${f.title.toUpperCase()}`);
-    const host = f.href.replace(/^https?:\/\/(www\.)?/, '').split('/')[0].toUpperCase();
-    lines.push(`* SOURCE: ${host}${f.stat ? ' — ' + f.stat.toUpperCase() : ''}`);
-    lines.push('');
-    tot += d;
-  });
-  lines.push(`* TRT ${tc(tot)} · ${films.length} EVENTS · 24 FPS`,
-    `* PULLED FROM THE ${FILMS.length}-CLIP SEQUENCE AT ALNIMERI.COM/REEL/${code.toUpperCase()}`,
-    '* SEND THE BRIEF: AHMED@ALNIMERI.COM', '');
-  return lines.join('\n');
-}
-
 export async function onRequestGet({ params, env, request }) {
-  let code = String(params.code || '').toLowerCase();
-  const wantEdl = code.endsWith('.edl');
-  if (wantEdl) code = code.slice(0, -4);
+  const code = String(params.code || '').toLowerCase();
   const films = decode(code);
   if (!films) {
     // Same 404 as the rest of the site, so a mistyped link still reads as the deck.
     const nf = env.ASSETS ? await env.ASSETS.fetch(new URL('/404.html', request.url)) : null;
     return new Response(nf ? await nf.text() : 'No such reel.', {
       status: 404, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
-  }
-  if (wantEdl) {
-    return new Response(edl(code, films), {
-      headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
   }
   return new Response(page(code, films), {
     headers: { 'content-type': 'text/html; charset=utf-8',

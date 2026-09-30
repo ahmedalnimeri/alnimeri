@@ -17,7 +17,8 @@ python3 -m http.server 4321
 |---|---|
 | `index.html` | Everything — markup, meta tags, JSON-LD |
 | `styles.css` | Single stylesheet; palette lives in `:root` |
-| `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, the pull-a-reel bin, the On Set gate and the brief dialog |
+| `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, the pull-a-reel bin and the brief dialog |
+| `design-*.css` / `design-*.js` | One design layer per area: `hover` (home films and /reel/), `filmpages` (/work/ and the film pages), `about`, `compositions` (the home services) and `ending` (the home page's end credits). Stamped with their own md5 and served immutable |
 | `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes |
 
 ## Adding or changing a video
@@ -36,15 +37,17 @@ Set `data-portrait="true"` and add `tile--tall` for vertical pieces.
 After touching the tiles in `index.html`, regenerate everything that derives from them, in this order:
 
 ```sh
-python3 bin-stamp-assets.py && python3 bin-build-work-pages.py && python3 bin-build-edl.py \
+python3 bin-build-home-art.py && python3 bin-stamp-assets.py && python3 bin-build-work-pages.py \
   && python3 bin-build-about-strip.py \
   && python3 bin-build-onset.py && python3 bin-build-about-said.py \
   && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-reel.py \
   && python3 bin-stamp-assets.py
 ```
 
-`bin-build-onset.py` renders About section 006 (On Set) from `assets/onset.json`: frame count, year span,
-ticks and pin length are derived from the list. `grade SRC NAME [GRAVITY]` makes the 1200 and 700 frames.
+`bin-build-home-art.py` builds the home page's four compositions ("What are we making?") from the tiles.
+
+`bin-build-onset.py` renders About's On Set from `assets/onset.json`: the prints grouped by year, each laid
+out by its `shape`. `grade SRC NAME [GRAVITY]` makes the 1200 and 700 frames.
 
 `bin-build-reel.py` compiles the film list and `reel.tpl.html` into `functions/_lib/reel.js`,
 which the `/reel/<code>` function renders at the edge. It also reads the `?v=` numbers, so run it
