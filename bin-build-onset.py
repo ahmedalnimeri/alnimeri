@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Render About section 006, On Set, from assets/onset.json.
 
-The gate's markup carries numbers that must agree with the frames: the frame
-count in the rail and on the slate, the year span, one tick per frame, one year
-cell per distinct year, and the pin length. Typed by hand they drift the moment a
-frame is added, so they are derived here from one list.
+The board groups the frames by the year they were taken, in the order they
+happened, and lays each print out by its "shape" (wide, side, mid, half,
+full). Every shape keeps the photograph whole at 3:2; they differ in size
+and placement only. Typed by hand the grouping drifts the moment a frame is
+added, so it is derived here from one list.
 
   python3 bin-build-onset.py seed                      # write assets/onset.json from about.html (once)
   python3 bin-build-onset.py grade SRC NAME [GRAVITY]  # grade a photo into assets/onset/NAME(.jpg|-700.jpg)
@@ -48,62 +49,61 @@ def grade(src, name, gravity='center'):
         subprocess.run(base + ['-resize', f'{w}x{h}^', '-gravity', gravity, '-extent', f'{w}x{h}'] + look + [out], check=True)
         print('wrote', out)
 
+# How each print sits on the board. "shape" in assets/onset.json picks one;
+# the value is the print's rendered width, for the srcset.
+SHAPES = {
+    'wide': '(max-width: 700px) 100vw, 46vw',
+    'side': '(max-width: 700px) 50vw, 29vw',
+    'mid':  '(max-width: 700px) 50vw, 38vw',
+    'half': '(max-width: 700px) 100vw, 38vw',
+    'full': '(max-width: 700px) 100vw, 78vw',
+}
+
 def render(frames):
-    n = len(frames)
-    yy = []
+    # One group per year, in the order the frames happened. Groups of three
+    # alternate which side the wide print stands on, so the board never
+    # repeats itself down the page.
+    groups = []
     for f in frames:
-        c = str(f['year'])[2:]
-        if c not in yy: yy.append(c)
-    cells = ''.join(f'<span>{i + 1:02d}</span>' for i in range(n))
-    ycells = ''.join(f'<span>{c}</span>' for c in yy)
-    figs, ticks = [], []
-    for i, f in enumerate(frames):
-        no = f'{i + 1:02d}'; name = f['name']
-        img = (f'''<img class="os-fr__img" src="assets/onset/{name}.jpg"
-                     srcset="assets/onset/{name}-700.jpg 700w, assets/onset/{name}.jpg 1200w"
-                     sizes="(max-width: 900px) 100vw, 70vw"
-                     alt="{esc(f['alt'])}" width="1200" height="800"
-                     loading="{'eager' if i == 0 else 'lazy'}" decoding="async">''')
-        if i:
-            # Stacked in the gate, every frame sits inside the browser's lazy-
-            # load distance, so loading=lazy fetched all of them at page open.
-            # Frames after the first wait in data-* until main.js sees the
-            # section coming; without JS the <noscript> copy is the picture.
+        if groups and groups[-1][0] == f['year']:
+            groups[-1][1].append(f)
+        else:
+            groups.append((f['year'], [f]))
+    out, flip = [], False
+    for year, fs in groups:
+        cls = ''
+        if any(f.get('shape') == 'side' for f in fs):
+            cls = ' set__group--flip' if flip else ''
+            flip = not flip
+        prints = []
+        for f in fs:
+            shape = f.get('shape', 'mid')
+            if shape not in SHAPES: sys.exit(f"unknown shape {shape!r} for {f['name']}")
+            name = f['name']
+            img = (f'''<img class="set__img" src="assets/onset/{name}-700.jpg"
+                 srcset="assets/onset/{name}-700.jpg 700w, assets/onset/{name}.jpg 1200w"
+                 sizes="{SHAPES[shape]}"
+                 alt="{esc(f['alt'])}" width="1200" height="800"
+                 loading="lazy" decoding="async">''')
+            # The prints wait in data-* until design-about.js sees them a screen
+            # away: the board sits inside the browser's own lazy-load distance
+            # (it put five prints on the wire at page open on a desktop).
+            # Without JS the <noscript> copy is the picture.
             img = (img.replace(' src="', ' data-src="', 1).replace('srcset="', 'data-srcset="', 1)
                    + '<noscript>' + img + '</noscript>')
-        figs.append(f'''              <figure class="os-fr" data-os-yr="{str(f['year'])[2:]}">
-                <div class="os-fr__win">{img}</div>
-                <figcaption class="os-fr__cap"><span class="os-fr__no">FR {no}</span><span class="os-fr__yr">{f['year']}</span><span class="os-fr__lbl">{esc(f['label'])}</span></figcaption>
-              </figure>''')
-        ticks.append(f'''            <button class="os-tick" type="button" aria-label="Frame {no}, {f['year']}, {esc(f['label'])}"><span class="os-tick__no" aria-hidden="true">{no}</span><span class="os-tick__bar"><span class="os-tick__fill"></span></span></button>''')
-    return f'''{START}
-    <div class="os-stage" style="--os-n: {n}">
-      <div class="os-pin">
-        <div class="os-gate">
-          <div class="os-screen">
-
-            <div class="os-rail" aria-hidden="true">
-              <div>
-                <span class="os-rail__k">Frame</span>
-                <span class="os-count"><span class="os-win"><span class="os-reel" data-os-reel="no">{cells}</span></span></span>
-                <span class="os-rail__k">of {n:02d}</span>
-              </div>
-              <div>
-                <span class="os-rail__k">Year</span>
-                <span class="os-year"><span>20</span><span class="os-win"><span class="os-reel" data-os-reel="yr">{ycells}</span></span></span>
-              </div>
-            </div>
-
-            <div class="os-frames">
-{chr(10).join(figs)}
-            </div>
-          </div>
-
-          <div class="os-ticks" role="group" aria-label="Go to frame">
-{chr(10).join(ticks)}
-          </div>
+            prints.append(f'''          <figure class="set__print set__print--{shape}">
+            <div class="set__win">{img}</div>
+            <figcaption class="set__cap">{esc(f['label'])}</figcaption>
+          </figure>''')
+        out.append(f'''      <div class="set__group{cls}">
+        <h3 class="set__yr">{year}</h3>
+        <div class="set__prints">
+{chr(10).join(prints)}
         </div>
-      </div>
+      </div>''')
+    return f'''{START}
+    <div class="set">
+{chr(10).join(out)}
     </div>
     {END}
 '''
@@ -119,13 +119,13 @@ def build():
     if START in sec:
         new = re.sub(re.escape(START) + r'[\s\S]*?' + re.escape(END) + r'\n?', lambda m: block, sec, count=1)
     else:
-        a = sec.index('    <div class="os-stage"')
+        a = sec.index('    <div class="set"')
         new = sec[:a] + block + '  '
     out = page[:s] + new + page[e:]
     # assert the RESULT, not the precondition
     sec2 = out[out.index('<section class="section" id="onset">'):]
     sec2 = sec2[:sec2.index('</section>')]
-    assert sec2.count('<figure class="os-fr"') == len(frames) and sec2.count('class="os-tick"') == len(frames)
+    assert sec2.count('<figure class="set__print') == len(frames)
     assert sec2.count(START) == 1 and sec2.count(END) == 1
     open(PAGE, 'w').write(out)
     yrs = [f['year'] for f in frames]
