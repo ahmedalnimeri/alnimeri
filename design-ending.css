@@ -23,7 +23,9 @@
 .ending__stage {
   position: relative; flex: 1 0 auto;
   display: grid; place-items: center;
-  padding: clamp(40px, 7vh, 80px) 0;
+  /* --stage-pad: design-ending.js closes this air up when the card and the
+     rows would not otherwise fit the screen under the bar */
+  padding: var(--stage-pad, clamp(40px, 7vh, 80px)) 0;
 }
 
 /* while the credits are still rolling, a long soft black head over the top
@@ -203,6 +205,16 @@
 @media (max-width: 999px) and (max-height: 799px) {
   .ending__roll { --rows: 1; }
 }
+/* set by design-ending.js when not even one row fits above the card (a short
+   phone, the card lengthened by the visitor's clock): the card holds the
+   screen alone rather than leave a frame under the bar */
+@media (max-width: 999px) {
+  .ending--bare .ending__roll { display: none; }
+}
+/* what design-ending.js measures to fit the last frame changes size at once:
+   under reduced motion styles.css gives every property a 0.01ms transition,
+   and a measurement taken mid-way would read the size before the change */
+.ending__stage, .ending__roll, .ending__roll::before { transition-property: none; }
 @media (max-width: 560px) {
   .contact.ending .contact__head { font-size: clamp(38px, 11vw, 46px); }
   .contact.ending .contact__sub { margin-top: 12px; font-size: 15px; line-height: 1.55; }

@@ -73,7 +73,57 @@
     });
   };
 
-  var ticking = false, live = false;
+  /* ---- the last frame fits the screen ------------------------------------
+     The card is not a fixed height: at the edge the page adds a line with the
+     visitor's clock beside Dubai's, and some screens are short. When the card
+     and the resting rows are taller than the screen under the bar, the top
+     of the section, and a row of frames with it, would sit under the bar. So
+     the last frame gives way: on narrow screens it rests on one row fewer
+     (none on the smallest, where the card holds the screen alone); on wide
+     ones the air above and below the card closes up. Measured as the ending
+     comes on screen and on resize, never while scrolling. */
+  var stage = sec.querySelector('.ending__stage');
+  var card = sec.querySelector('.ending__card');
+  var narrow = window.matchMedia && matchMedia('(max-width: 999px)');
+  var fit = function () {
+    sec.style.removeProperty('--stage-pad');
+    roll.style.removeProperty('--rows');
+    sec.classList.remove('ending--bare');
+    var room = parseFloat(getComputedStyle(sec).minHeight) || 0;
+    if (!room || !stage || !card) return;
+    // how far the section runs past the screen under the bar, and how far it
+    // may: as far as the black above the resting rows (or above the card)
+    var over = function () { return sec.offsetHeight - room; };
+    var clear = function () {
+      var top = sec.getBoundingClientRect().top;
+      var c = card.getBoundingClientRect().top - top;
+      if (sec.classList.contains('ending--bare')) return c;
+      var head = parseFloat(getComputedStyle(roll, '::before').height) || 0;
+      return Math.min(c, roll.getBoundingClientRect().top - top + head);
+    };
+    if (over() <= clear() + 1) return;
+    if (narrow && narrow.matches) {
+      var rows = parseInt(getComputedStyle(roll).getPropertyValue('--rows'), 10) || 1;
+      while (rows > 0 && over() > clear() + 1) {
+        rows--;
+        if (rows) roll.style.setProperty('--rows', rows);
+        else sec.classList.add('ending--bare');
+      }
+    } else {
+      var pad = parseFloat(getComputedStyle(stage).paddingTop) || 0;
+      sec.style.setProperty('--stage-pad', Math.max(0, pad - over() / 2).toFixed(1) + 'px');
+    }
+  };
+  // after a resize has settled (under reduced motion every size change is a
+  // 0.01ms transition, so the first frame after it still has the old sizes)
+  var fitting = 0;
+  var onResize = function () {
+    clearTimeout(fitting);
+    fitting = setTimeout(function () { fit(); if (live) paint(); }, 120);
+  };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (near) fit(); });
+
+  var ticking = false, live = false, near = false;
   var paint = function () {
     ticking = false;
     var r = sec.getBoundingClientRect();
@@ -86,18 +136,27 @@
     es.forEach(function (e) {
       if (e.isIntersecting) {
         if (!built) build();
+        if (!near) {
+          near = true;
+          fit();
+          addEventListener('resize', onResize);
+        }
         if (!reduce && !live) {
           live = true;
           sec.classList.add('is-rolling');
           addEventListener('scroll', onScroll, { passive: true });
-          addEventListener('resize', onScroll);
           paint();
         }
-      } else if (live) {
-        live = false;
-        sec.classList.remove('is-rolling');
-        removeEventListener('scroll', onScroll);
-        removeEventListener('resize', onScroll);
+      } else {
+        if (near) {
+          near = false;
+          removeEventListener('resize', onResize);
+        }
+        if (live) {
+          live = false;
+          sec.classList.remove('is-rolling');
+          removeEventListener('scroll', onScroll);
+        }
       }
     });
   }, { rootMargin: '40% 0px' }).observe(sec);
