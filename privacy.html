@@ -12,7 +12,15 @@
 <meta name="theme-color" content="#0a0a0c">
 <meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://alnimeri.com/privacy">
-<link rel="stylesheet" href="styles.css?v=101">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://alnimeri.com/privacy">
+<meta property="og:title" content="Privacy — Ahmed El-Nimeri">
+<meta property="og:description" content="What alnimeri.com records about visitors, why, how long it is kept, and how to have it deleted.">
+<meta property="og:image" content="https://alnimeri.com/assets/og-home-2.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="styles.css?v=102">
 </head>
 <body>
 
@@ -30,7 +38,7 @@
   <section class="pagehead">
     <p class="hero__eyebrow">Privacy</p>
     <h1 class="pagehead__title">What this site records.</h1>
-    <p class="pagehead__lede">Plainly, and only what is true of this site. Last updated 30 July 2026.</p>
+    <p class="pagehead__lede">Plainly, and only what is true of this site. Last updated 30 September 2026.</p>
   </section>
 
   <section class="section">
@@ -64,12 +72,10 @@
         which is aggregate and cookie-free — which is why you were not asked to accept anything.</p>
 
       <h2>The slate</h2>
-      <p>The line under the headline naming your city, your clock and the distance the reel travelled
+      <p>The line above the headline naming your city, your clock and the distance the reel travelled
         is written at the edge from the same geolocation Cloudflare attaches to every request; it is
         read once to render the page and is not kept beyond the visit log described above. Where you
-        came in from is read from the referrer your browser sends, if it sends one. If you leave the
-        sequence part-way, the clip you were on is kept in your browser's own storage so the deck can
-        offer to resume — on that device only, never sent anywhere, cleared when you reach OUT.
+        came in from is read from the referrer your browser sends, if it sends one.
         Crawlers get the page without any of it.</p>
 
       <h2>Pulled reels</h2>
@@ -93,21 +99,24 @@
 
       <h2>The brief form</h2>
       <p>The form behind &ldquo;Get in touch&rdquo; saves what you type &mdash; your name, company,
-        what the film is about, its timing, and the email or WhatsApp number you give &mdash; in this
-        site&rsquo;s own database on Cloudflare, so it reaches me. It is kept for a year and used only
-        to reply to you. If saving fails, your own email app opens with the same message instead, and
-        nothing is sent until you send it.</p>
+        what the film is about, who it is for, its timing, the film you came from if you opened it
+        on a film&rsquo;s page, the email or WhatsApp number you give, and the message the form writes
+        from them &mdash; in this site&rsquo;s own database on Cloudflare, so it reaches me. With it go
+        your IP address (so no more than five briefs an hour come from one sender), your country and
+        your browser. It is kept for a year and used only to reply to you. If saving fails,
+        you&rsquo;re offered a link to send the same message from your own email app; nothing is sent
+        until you send it.</p>
 
       <h2>Your rights</h2>
       <p>If you are in the UK, EU, or another region with equivalent law, you can ask what is
         held about you and ask for it to be deleted. Email
-        <a href="mailto:ahmed@alnimeri.com">ahmed@alnimeri.com</a> from the network you
+        <!--email_off--><a href="mailto:ahmed@alnimeri.com">ahmed@alnimeri.com</a><!--/email_off--> from the network you
         visited on, or tell me the approximate date and time, and I will find and remove it.
-        Given the ninety-day window, it may already be gone.</p>
+        Visit rows are kept for ninety days and briefs for a year, so it may already be gone.</p>
 
       <h2>Contact</h2>
       <p>Ahmed El-Nimeri · Dubai, United Arab Emirates ·
-        <a href="mailto:ahmed@alnimeri.com">ahmed@alnimeri.com</a></p>
+        <!--email_off--><a href="mailto:ahmed@alnimeri.com">ahmed@alnimeri.com</a><!--/email_off--></p>
     </div>
   </section>
 
@@ -120,6 +129,6 @@
     </div>
   </section>
 </main>
-<script src="main.js?v=101" defer></script>
+<script src="main.js?v=102" defer></script>
 </body>
 </html>

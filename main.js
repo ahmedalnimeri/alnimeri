@@ -17,13 +17,36 @@
   cutEl.setAttribute('aria-hidden', 'true');
   document.body.appendChild(cutEl);
 
+  /* A keystroke belongs to whatever the visitor is typing in, or to an open
+     dialog (the brief, the reel sheet), never to the deck behind it. */
+  function busy(e) {
+    var t = e.target;
+    return e.defaultPrevented || !!document.querySelector('dialog[open], .sheet.is-open') ||
+      !!(t && t.closest && t.closest('input, textarea, select, [contenteditable]'));
+  }
+
+  /* An aria-modal layer makes the rest of the page inert while it is up, so
+     Tab — even out of the player's iframe — cannot reach what is behind it.
+     Only what this layer switched off is switched back on. */
+  function seal(keep, mark) {
+    [].forEach.call(document.body.children, function (el) {
+      if (keep.indexOf(el) > -1 || /^(DIALOG|SCRIPT)$/.test(el.tagName) || el.inert) return;
+      el.setAttribute(mark, ''); el.inert = true;
+    });
+  }
+  function unseal(mark) {
+    [].forEach.call(document.querySelectorAll('[' + mark + ']'), function (el) { el.removeAttribute(mark); el.inert = false; });
+  }
+
   /* ---- lightbox ---------------------------------------------------- */
 
   var lb      = document.querySelector('.lb');
   var frame   = lb && lb.querySelector('.lb__frame');
   var caption = lb && lb.querySelector('.lb__cap');
   var closeBtn= lb && lb.querySelector('.lb__close');
-  var opener  = null;
+  var opener  = null;       // what focus returns to when the player closes
+  var posterFrom = null;    // a reel's current tile, for its still and source
+  var runFrom = null;       // where the visitor was when a reel started
 
   function open(id, title, portrait) {
     if (!lb) return;
@@ -32,7 +55,8 @@
     // Paint the poster the visitor just tapped behind the player. iOS blocks
     // the unmuted autoplay, so the frame would otherwise be black until they
     // press play — the tile's own facade pattern, carried into the dialog.
-    var poster = opener && opener.querySelector('.tile__img');
+    var from = posterFrom || opener; posterFrom = null;
+    var poster = from && from.querySelector('.tile__img');
     frame.style.backgroundImage = poster ? 'url("' + (poster.currentSrc || poster.src) + '")' : '';
     frame.innerHTML =
       '<iframe src="https://player.vimeo.com/video/' + id +
@@ -41,7 +65,7 @@
       'title="' + title.replace(/"/g, '&quot;') + '"></iframe>';
     caption.textContent = title;
     // Source metadata, read off the tile's own chip — never invented.
-    var dur = opener && opener.querySelector('.tile__dur');
+    var dur = from && from.querySelector('.tile__dur');
     if (dur) {
       var src = document.createElement('span');
       src.className = 'lb__src';
@@ -52,6 +76,7 @@
     document.body.classList.add('is-locked');
     lb.setAttribute('aria-hidden', 'false');
     lb.classList.add('is-visible');
+    seal([lb, cutEl], 'data-lb-inert');
     closeBtn.focus();
   }
 
@@ -66,7 +91,12 @@
       frame.innerHTML = '';
       frame.style.backgroundImage = '';
     }, 60);
-    if (opener) { opener.focus(); opener = null; }
+    unseal('data-lb-inert');
+    // Back to where the visitor was, without scrolling: after a reel that is
+    // where they started it, not the tile of the last clip played.
+    var back = run ? runFrom : opener;
+    opener = null; runFrom = null;
+    if (back && back !== document.body && back.focus) back.focus({ preventScroll: true });
     if (run) endRun();
   }
 
@@ -82,15 +112,23 @@
 
   if (closeBtn) closeBtn.addEventListener('click', close);
   if (lb) lb.addEventListener('click', function (e) { if (e.target === lb) close(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !document.querySelector('dialog[open]')) close();
+  });
 
   // Keep tab focus inside the lightbox while it's open. The previous version
   // forced focus back to the close button on every Tab, which kept focus in
   // the dialog but made the player itself unreachable — a keyboard user could
-  // open a film and never start it. Cycle between the two real stops instead.
+  // open a film and never start it. Cycle through what is really there: the
+  // close button, the player or the end card's buttons, and the reel's
+  // previous/next. Once focus is inside the player's iframe this page no
+  // longer sees Tab; the inert page behind (seal) keeps it in the dialog then.
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Tab' || !lb || !lb.classList.contains('is-open')) return;
-    var stops = [closeBtn, frame.querySelector('iframe')].filter(Boolean);
+    if (document.querySelector('dialog[open]')) return;
+    var stops = [].filter.call(lb.querySelectorAll('button, a[href], iframe'), function (el) {
+      return !el.disabled && !el.closest('[hidden]') && el.getClientRects().length > 0;
+    });
     if (!stops.length) return;
     e.preventDefault();
     var i = stops.indexOf(document.activeElement);
@@ -198,13 +236,13 @@
     if (!run) return;
     if (i >= run.list.length) return finish();
     if (i < 0) i = 0;
-    run.i = i; run.seen = 0; run.last = 0; run.lastAt = Date.now();
+    run.i = i; run.seen = 0; run.last = 0; run.lastAt = Date.now(); run.done = false;
     var c = run.list[i];
     lb.classList.add('is-running');
     lb.classList.remove('is-manual');
     var mount = function () {
       projecting = true;
-      opener = c.link;              // so the tile's own still paints behind the player
+      posterFrom = c.link;          // so the tile's own still paints behind the player
       open(c.id, c.title, c.portrait);
       projecting = false;
       hud.hidden = false;
@@ -222,6 +260,9 @@
 
   function finish() {
     if (!run) return;
+    // The end card stays put: the patrol and a late 'ended' must not step
+    // past the last clip again and rebuild it (it threw away focus each time).
+    run.done = true;
     var total = run.total, n = run.list.length;
     frame.innerHTML = '';
     frame.style.backgroundImage = '';
@@ -232,7 +273,7 @@
       '<p class="lb__outhead">That was the reel.</p>' +
       '<p class="lb__outsub">I tell stories through visuals.</p>' +
       '<div class="lb__outacts">' +
-        '<a class="btn btn--solid" href="mailto:ahmed@alnimeri.com">Send the brief</a>' +
+        '<a class="btn btn--solid" href="/#contact">Send the brief</a>' +
         '<button type="button" class="btn btn--ghost" data-again>Run it again</button>' +
         '<button type="button" class="btn btn--ghost" data-back>Back to the deck</button>' +
       '</div>';
@@ -265,8 +306,9 @@
         return i ? '<span class="lb__tick" style="left:' + (offs[i] / total * 100) + '%"></span>' : '';
       }).join('');
     if (patrol) clearInterval(patrol);
+    runFrom = document.activeElement;
     patrol = setInterval(function () {
-      if (!run || !lb.classList.contains('is-open')) return;
+      if (!run || run.done || !lb.classList.contains('is-open')) return;
       // Nothing from the player at all: the protocol is blocked, so say so
       // rather than guessing when a clip ended.
       if (!run.seen) {
@@ -294,6 +336,7 @@
       post({ method: 'play' });
       return;
     }
+    if (run.done) return;
     if (d.event === 'ended' || d.event === 'finish') { step(run.i + 1); return; }
     var s = d.data && typeof d.data.seconds === 'number' ? d.data.seconds : null;
     if (s === null) return;
@@ -302,19 +345,24 @@
   });
 
   document.addEventListener('keydown', function (e) {
-    if (!run || !lb.classList.contains('is-open')) return;
+    if (!run || !lb.classList.contains('is-open') || busy(e)) return;
     if (e.key === 'ArrowRight' || e.key === 'n') { e.preventDefault(); step(run.i + 1); }
     else if (e.key === 'ArrowLeft' || e.key === 'p') { e.preventDefault(); step(run.i - 1); }
   });
 
-  // R runs the reel, the way E exports it.
+  // R runs the reel.
   document.addEventListener('keydown', function (e) {
-    if (e.key !== 'r' || e.metaKey || e.ctrlKey || e.altKey) return;
-    var t = e.target;
-    if (t && (/^(INPUT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable)) return;
+    if (e.key !== 'r' || e.metaKey || e.ctrlKey || e.altKey || busy(e)) return;
     if (lb && lb.classList.contains('is-open')) return;
     startRun(null);
   });
+
+  // The end card's "Send the brief" opens the brief (its window listener is
+  // registered later, so this one runs first): the player closes under it.
+  window.addEventListener('click', function (e) {
+    if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey &&
+        e.target.closest && e.target.closest('.lb__out a[href="/#contact"]')) close();
+  }, true);
 
   // The bin lives in another module; it asks for a screening by event.
   document.addEventListener('reel:run', function (e) {
@@ -416,14 +464,6 @@
 
     host.appendChild(f);
     return f;
-  }
-
-  /* Hero loop — deferred so it never competes with first paint. */
-  var heroBg = document.querySelector('[data-bg-video]');
-  if (heroBg && motionOK && dataOK) {
-    var startHero = function () { mountLoop(heroBg, heroBg.dataset.bgVideo); };
-    if ('requestIdleCallback' in window) requestIdleCallback(startHero, { timeout: 2500 });
-    else setTimeout(startHero, 1200);
   }
 
   /* Tile previews — pointer devices only. Touch has no hover state, and
@@ -925,9 +965,9 @@
 // The viewer marks tiles as selects. The bin at the foot of the screen keeps
 // count and TRT, and mints a link that IS the cut: one character per film, in
 // the order they chose (the same alphabet the edge uses, keyed to DOM order).
-// /reel/<code> renders that cut with its own stamps and EDL. Nothing about the
+// /reel/<code> renders that cut, with its running time. Nothing about the
 // viewer travels with the link; the selection lives in localStorage until
-// they clear it or reach OUT with a reel already sent.
+// they clear it.
 (function () {
   if (!/^\/(index\.html)?$/.test(location.pathname)) return;
   var tiles = [].slice.call(document.querySelectorAll('article.tile'));
@@ -989,7 +1029,7 @@
       '<button type="button" class="btn btn--ghost" data-act="copy">Copy link</button>' +
       '<a class="btn btn--ghost" data-act="open" href="#">Open the reel</a>' +
     '</div>' +
-    '<p class="sheet__note">Anyone with the link sees these films, in this order, with the stamps recomputed. The link carries the cut and nothing about you.</p>' +
+    '<p class="sheet__note">Anyone with the link sees these films, in this order. The link carries the cut and nothing about you.</p>' +
     '</div>';
   document.body.appendChild(sheet);
 
@@ -1009,6 +1049,23 @@
     bin.classList.toggle('is-up', sel.length > 0);
     lift();
     if (!sel.length) closeSheet();
+    // An empty bin is invisible (opacity 0), so it leaves the Tab order and
+    // the accessibility tree too: Enter on its hidden "Screen it" ran the reel.
+    bin.inert = !sel.length;
+  }
+
+  // The sheet is aria-modal: while it is up the page behind is inert, and
+  // closing it puts focus back where it was ("Pull reel →").
+  var sheetFrom = null;
+  function sealSheet() {
+    var keep = [sheet, document.querySelector('.cut')];
+    [].forEach.call(document.body.children, function (el) {
+      if (keep.indexOf(el) > -1 || /^(DIALOG|SCRIPT)$/.test(el.tagName) || el.inert) return;
+      el.setAttribute('data-sheet-inert', ''); el.inert = true;
+    });
+  }
+  function unsealSheet() {
+    [].forEach.call(document.querySelectorAll('[data-sheet-inert]'), function (el) { el.removeAttribute('data-sheet-inert'); el.inert = false; });
   }
 
   function openSheet() {
@@ -1025,14 +1082,20 @@
       list.appendChild(li);
     });
     sheet.querySelector('[data-act="share"]').hidden = !navigator.share;
+    if (!sheet.classList.contains('is-open')) sheetFrom = document.activeElement;
     sheet.classList.add('is-open'); sheet.setAttribute('aria-hidden', 'false');
     document.body.classList.add('is-locked');
+    sealSheet();
     sheet.querySelector('.sheet__close').focus();
   }
   function closeSheet() {
     if (!sheet.classList.contains('is-open')) return;
     sheet.classList.remove('is-open'); sheet.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('is-locked');
+    unsealSheet();
+    var back = sheetFrom; sheetFrom = null;
+    // (after Clear the bin is on its way out, so focus is left where it is)
+    if (sel.length && back && back !== document.body && back.focus && document.contains(back)) back.focus({ preventScroll: true });
   }
 
   // The timeline transport already owns the bottom edge. The bin is a tray,
@@ -1189,12 +1252,35 @@
     }
   }
 
+  // Frames after the first arrive with data-src/data-srcset (see
+  // bin-build-onset.py): stacked, they would all sit inside the browser's
+  // lazy-load distance and download with the page. They are put on the wire
+  // when the section comes near, and ease in on load like any late frame.
+  function hydrate(img) {
+    var src = img.getAttribute('data-src');
+    if (!src) return;
+    img.parentNode.parentNode.classList.add('os-wait');
+    img.addEventListener('load', landed);
+    img.addEventListener('error', landed);
+    var set = img.getAttribute('data-srcset');
+    if (set) { img.srcset = set; img.removeAttribute('data-srcset'); }
+    img.src = src; img.removeAttribute('data-src');
+  }
+  function hydrateAll() { for (var i = 0; i < imgs.length; i++) hydrate(imgs[i]); }
+  // Stacked (rise, static), each frame is fetched once it is within a screen
+  // and a half of the window: the section starts high on a phone, so asking
+  // for the whole column at once would be the page-open download again.
+  var inRange = [];
+  function hydrateNear() { for (var i = 0; i < N; i++) { if (inRange[i]) hydrate(imgs[i]); } }
+  window.addEventListener('beforeprint', hydrateAll);
+
   // Frames stacked in the gate are all "near" at once, so ask for them early
   // rather than letting an aperture open onto a picture still on the wire.
   function noop() {}
   function warm() {
     if (warmed) return;
     warmed = true;
+    hydrateAll();
     for (var i = 0; i < imgs.length; i++) {
       if (imgs[i].loading === 'lazy') imgs[i].loading = 'eager';
       if (imgs[i].decode) imgs[i].decode().then(noop, noop);
@@ -1395,6 +1481,7 @@
       riseIO = new IntersectionObserver(onRise, { rootMargin: '0px', threshold: 0.05 });
       for (var i = 0; i < N; i++) riseIO.observe(figs[i]);
     }
+    if (mode !== 'gate') { if (hasIO) hydrateNear(); else hydrateAll(); }
     if (keep >= 0) restore(keep);
     if (mode === 'gate') schedule();
   }
@@ -1416,6 +1503,14 @@
         clearStates();
       }
     }, { rootMargin: '25% 0px 25% 0px' }).observe(stage);
+    var aheadIO = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        var at = indexOf(entries[i].target);
+        if (at >= 0) inRange[at] = entries[i].isIntersecting;
+      }
+      if (mode !== 'gate') hydrateNear(); else if (inRange.indexOf(true) > -1) warm();
+    }, { rootMargin: '150% 0px 150% 0px' });
+    for (var fi = 0; fi < N; fi++) aheadIO.observe(figs[fi]);
   }
 
   if (hasRO) {
@@ -1432,44 +1527,12 @@
   window.addEventListener('orientationchange', onResize, { passive: true });
 
   setMode();
-})();
-
-
-// ---- 004 Match Cut (home) ---------------------------------------------------
-// Muted and looping, and it plays only while it is on screen: nothing loads
-// until it comes near, and it stops the moment it leaves. Visitors who ask for
-// reduced motion get the poster and the controls instead of an autoplay.
-(function () {
-  // Match Cut as the section's ground: play the render that fits the screen
-  // (landscape or vertical) only while the section is in view; a visible
-  // control pauses it, and reduced motion starts it paused.
-  var sec = document.querySelector('.mcbg'); if (!sec) return;
-  var vids = [].slice.call(sec.querySelectorAll('.mcbg__video'));
-  var btn = sec.querySelector('.mcbg__toggle');
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var held = !!reduce, inView = false;
-  function label() { if (btn) btn.textContent = held ? 'Play the cut' : 'Pause the cut'; }
-  function sync() {
-    vids.forEach(function (v) {
-      var shown = window.getComputedStyle(v).display !== 'none';
-      // Posters are held in data-poster: a hidden <video> still downloads its
-      // poster, and the section is the last thing on the page — so the image
-      // is only worth fetching once the section is actually in view.
-      if (shown && inView && !v.poster && v.getAttribute('data-poster')) v.poster = v.getAttribute('data-poster');
-      if (shown && inView && !held) {
-        if (v.preload !== 'auto') v.preload = 'auto';
-        var p = v.play(); if (p && p.catch) p.catch(function () { held = true; label(); });
-      } else if (!v.paused) { v.pause(); }
-    });
-  }
-  if (btn) btn.addEventListener('click', function () { held = !held; label(); sync(); });
-  label();
-  window.addEventListener('resize', sync);
-  if (!('IntersectionObserver' in window)) { inView = true; sync(); return; }
-  new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) { inView = e.isIntersecting && e.intersectionRatio >= 0.2; });
-    sync();
-  }, { threshold: [0, 0.2, 0.5] }).observe(sec);
+  // The desktop gate can be jumped into (End, the skip link, a dragged
+  // scrollbar), so once the page has loaded and gone quiet its frames come
+  // in anyway — out of the first load, never missing when the gate opens.
+  var idleWarm = function () { if (mode === 'gate') hydrateAll(); };
+  var afterLoad = function () { if ('requestIdleCallback' in window) requestIdleCallback(idleWarm, { timeout: 3000 }); else setTimeout(idleWarm, 2000); };
+  if (document.readyState === 'complete') afterLoad(); else window.addEventListener('load', afterLoad, { once: true });
 })();
 
 
@@ -1477,9 +1540,10 @@
 // Ahmed: "Get in touch" should open a form the visitor builds, "as if filling
 // the blanks: Hi, I'm… I want to ask about…". Every contact link on the site
 // opens it: #contact, /#contact and the mailto:ahmed@ links (the commission
-// cards pre-select their kind of film; a film page names its film). It writes
-// the email for them and opens their email app; there is no mail server yet,
-// so a copy button covers a machine with no email app. Without JavaScript,
+// cards pre-select their kind of film; a film page names its film). The brief
+// is saved to the site's own database (/api/brief); if that fails, the visitor
+// gets a link that opens their email app with the same message written out,
+// and a copy button covers a machine with no email app. Without JavaScript,
 // the links still go to the contact section and the plain address.
 (function () {
   if (!window.HTMLDialogElement) return;
@@ -1487,7 +1551,7 @@
     ['brand', 'a brand or campaign film'],
     ['events', 'an event or conference film'],
     ['documentary', 'a documentary'],
-    ['post', 'creative direction or post-production'],
+    ['post', 'creative direction or post-production', 'post-production'],
     ['other', 'something else']
   ];
   var d = document.createElement('dialog');
@@ -1498,28 +1562,54 @@
       '<button class="brief__close" type="button" aria-label="Close">×</button>' +
       '<p class="brief__eyebrow" id="brief-title">Send the brief</p>' +
       '<p class="brief__sentence">' +
-        'Hi Ahmed, I’m <input name="name" placeholder="your name" aria-label="Your name" autocomplete="name" required> ' +
-        'from <input name="org" placeholder="your company" aria-label="Company or organisation" autocomplete="organization">. ' +
+        'Hi Ahmed, I’m <input name="name" maxlength="120" placeholder="your name" aria-label="Your name" autocomplete="name" required> ' +
+        'from <span class="brief__tie"><input name="org" maxlength="160" placeholder="your company" aria-label="Company or organisation" autocomplete="organization">.</span> ' +
         'I’d like to talk about <select name="kind" aria-label="What it is about">' +
-          KINDS.map(function (k) { return '<option value="' + k[0] + '">' + k[1] + '</option>'; }).join('') +
+          KINDS.map(function (k) {
+            // a phone is too narrow for the long label inside a select; it shows the
+            // short one, and the message still carries the full words (data-full)
+            var narrow = k[2] && window.matchMedia && window.matchMedia('(max-width: 480px)').matches;
+            return '<option value="' + k[0] + '" data-full="' + k[1] + '">' + (narrow ? k[2] : k[1]) + '</option>';
+          }).join('') +
         '</select> ' +
-        'for <input name="for" placeholder="who it’s for" aria-label="Who it is for, or where it will run">. ' +
-        'We’re hoping to have it by <input name="when" placeholder="a date or a month" aria-label="Timing">. ' +
-        'You can reach me at <input name="email" type="email" placeholder="your email" aria-label="Your email" autocomplete="email"> ' +
-        'or <input name="whatsapp" type="tel" placeholder="your WhatsApp" aria-label="Your WhatsApp number" autocomplete="tel">.' +
+        'for <span class="brief__tie"><input name="for" maxlength="300" placeholder="who it’s for" aria-label="Who it is for, or where it will run">.</span> ' +
+        'We’re hoping to have it by <span class="brief__tie"><input name="when" maxlength="120" placeholder="a date or a month" aria-label="Timing">.</span> ' +
+        'You can reach me at <input name="email" type="email" maxlength="200" placeholder="your email" aria-label="Your email" autocomplete="email"> ' +
+        'or <span class="brief__tie"><input name="whatsapp" type="tel" maxlength="40" placeholder="your WhatsApp" aria-label="Your WhatsApp number" autocomplete="tel">.</span>' +
       '</p>' +
+      // what happened to it is written here, never over the sentence: the
+      // sentence holds the fields, and a retry or a second brief needs them
+      '<p class="brief__sentence brief__result" aria-live="polite" hidden></p>' +
       '<input class="brief__trap" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">' +
       '<p class="brief__error" role="alert" hidden></p>' +
       '<div class="brief__actions">' +
         '<button class="btn btn--solid" type="submit">Send to Ahmed <span aria-hidden="true">↗</span></button>' +
         '<button class="brief__copy" type="button">Copy the message</button>' +
       '</div>' +
-      '<p class="brief__note">It comes straight to my inbox. I answer my own email.</p>' +
+      '<p class="brief__note">It comes straight to me. I answer my own email.</p>' +
     '</form>';
   document.body.appendChild(d);
 
   var f = d.querySelector('form'), err = d.querySelector('.brief__error');
   var field = function (n) { return f.elements[n]; };
+  var line = f.querySelector('.brief__sentence'), result = f.querySelector('.brief__result');
+  var btn = f.querySelector('button[type=submit]'), copyBtn = f.querySelector('.brief__copy');
+  var note = d.querySelector('.brief__note');
+  var SEND = btn.innerHTML, COPY = copyBtn.textContent, NOTE = note.textContent;
+  // back to the sentence, with what was typed still in it
+  var unsend = function () {
+    f.classList.remove('is-sent');
+    btn.classList.remove('is-done', 'is-busy');
+    result.hidden = true; result.textContent = '';
+    line.hidden = false;
+  };
+  var reset = function () {
+    unsend();
+    btn.innerHTML = SEND; btn.disabled = false;
+    copyBtn.hidden = false; copyBtn.textContent = COPY;
+    note.textContent = NOTE;
+    delete f.dataset.payload; delete f.dataset.mailto; delete f.dataset.delivered;
+  };
   var about = '';   // a film named by the page the visitor came from
 
   // blanks grow with what is typed, so the sentence stays a sentence
@@ -1539,7 +1629,7 @@
     el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', function () { fit(el); err.hidden = true; });
   });
 
-  var kindLabel = function () { var k = field('kind'); return k.options[k.selectedIndex].text; };
+  var kindLabel = function () { var o = field('kind').options[field('kind').selectedIndex]; return o.getAttribute('data-full') || o.text; };
   var reach = function (email, wa) {
     if (email && wa) return 'You can reach me at ' + email + ', or on WhatsApp at ' + wa + '.';
     if (wa) return 'You can reach me on WhatsApp at ' + wa + '.';
@@ -1575,14 +1665,18 @@
 
   var opener = null;
   var open = function (kind, film) {
+    if (d.open) return;
     opener = document.activeElement;
-    if (kind) field('kind').value = kind;
+    // a brief whose outcome is known (sent, or not sent): a fresh sentence,
+    // the same words in it. One still travelling keeps its "Sent" until it lands.
+    if (f.classList.contains('is-sent') && f.dataset.delivered === 'yes') reset();   // a failed one keeps its Try again
+    if (kind && field('kind')) field('kind').value = kind;
     about = film || '';
     err.hidden = true;
     d.showModal();
     fitAll();
     document.documentElement.classList.add('has-brief');
-    setTimeout(function () { field('name').focus(); }, 60);
+    setTimeout(function () { var n = field('name'); if (n && !line.hidden) n.focus(); }, 60);
   };
   var close = function () { d.close(); };
   d.addEventListener('close', function () {
@@ -1602,9 +1696,13 @@
   var NOTIFY_KEY = '';
   f.addEventListener('submit', function (e) {
     e.preventDefault();
+    if (btn.classList.contains('is-busy')) return;
+    if (f.classList.contains('is-sent')) {                      // "Try again": the same sentence, sent again
+      if (f.dataset.delivered !== 'no') return;
+      unsend(); note.textContent = NOTE; copyBtn.textContent = COPY;
+    }
     if (!valid()) return;
     if (field('_honey').value) return;                          // only a bot fills the hidden field
-    var note = d.querySelector('.brief__note');
     var payload = {
       name: field('name').value.trim(), company: field('org').value.trim(), about: kindLabel(),
       'for': field('for').value.trim(), timing: field('when').value.trim(), email: field('email').value.trim(),
@@ -1620,10 +1718,9 @@
     // (/api/brief) confirms it, usually well under a second, and never more
     // than a beat later: keepalive lets the brief finish travelling even if the
     // guest closes the tab. One quick retry; emailed too if NOTIFY_KEY is set.
-    // Only if nothing lands does the button read Not sent, with the email app
-    // offered instead.
-    var btn = f.querySelector('button[type=submit]');
-    var line = f.querySelector('.brief__sentence');
+    // Only if nothing lands does it say so — "that didn't reach me" — with a
+    // Try again button and the email app offered instead.
+    delete f.dataset.delivered;
     btn.disabled = true; btn.classList.add('is-busy'); btn.textContent = 'Sending…';
     var shown = false;
     var thank = function () {
@@ -1631,18 +1728,23 @@
       btn.classList.remove('is-busy'); btn.classList.add('is-done');
       btn.innerHTML = 'Sent <span aria-hidden="true">✓</span>';
       f.classList.add('is-sent');
-      line.textContent = 'Thank you, ' + sent.first + '. I’ll reply to ';
-      var b = document.createElement('b'); b.textContent = sent.email || ('your WhatsApp, ' + sent.wa); line.appendChild(b);
-      line.appendChild(document.createTextNode('.'));
-      f.querySelector('.brief__copy').hidden = true;
+      result.textContent = 'Thank you, ' + sent.first + '. I’ll reply to ';
+      var b = document.createElement('b'); b.textContent = sent.email || ('your WhatsApp, ' + sent.wa); result.appendChild(b);
+      result.appendChild(document.createTextNode('.'));
+      line.hidden = true; result.hidden = false;
+      copyBtn.hidden = true;
       note.textContent = 'I answer my own email, usually the same day.';
     };
     var beat = setTimeout(thank, 1200);
 
+    // Every attempt gives up after 8 s: a stalled connection must end in
+    // "that didn't reach me", not in a Sent that never arrived.
     var post = function (url, body, ok) {
-      return fetch(url, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(body) })
-        .then(function (r) { return r.json().then(function (j) { return ok(r, j); }); })
-        .catch(function () { return false; });
+      var ctl = window.AbortController ? new AbortController() : null;
+      var t = ctl && setTimeout(function () { ctl.abort(); }, 8000);
+      return fetch(url, { method: 'POST', keepalive: true, signal: ctl ? ctl.signal : undefined, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(body) })
+        .then(function (r) { return r.json().then(function (j) { clearTimeout(t); return ok(r, j); }); })
+        .catch(function () { clearTimeout(t); return false; });
     };
     var store = function (retry) {
       return post(ENDPOINT, payload, function (r, j) { return !!(r.ok && j.ok); })
@@ -1659,17 +1761,20 @@
       if (res[0] || res[1]) { f.dataset.delivered = 'yes'; clearTimeout(beat); thank(); return; }
       clearTimeout(beat); thank();
       f.dataset.delivered = 'no';
-      btn.classList.remove('is-done'); btn.textContent = 'Not sent';
-      f.querySelector('.brief__copy').hidden = false;
-      line.textContent = 'Sorry, ' + sent.first + ' — that didn’t reach me.';
+      btn.classList.remove('is-done'); btn.textContent = 'Try again'; btn.disabled = false;
+      copyBtn.hidden = false;
+      result.textContent = 'Sorry, ' + sent.first + ' — that didn’t reach me.';
       note.textContent = 'The connection dropped. ';
       var a = document.createElement('a'); a.href = href; a.textContent = 'Send it from your email app instead';
       note.appendChild(a); note.appendChild(document.createTextNode(' — it’s written out for you.'));
     });
   });
-  d.querySelector('.brief__copy').addEventListener('click', function () {
-    if (!valid()) return;
-    var b = this, text = message();
+  copyBtn.addEventListener('click', function () {
+    // after a send the sentence is put away: copy the message that was sent
+    var sentText = null;
+    if (f.classList.contains('is-sent') && f.dataset.payload) { try { sentText = JSON.parse(f.dataset.payload).message; } catch (x) {} }
+    if (!sentText && !valid()) return;
+    var b = this, text = sentText || message();
     var done = function () { b.textContent = 'Copied — paste it into an email to ahmed@alnimeri.com'; };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () {});
     else { var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (x) {} t.remove(); }

@@ -12,10 +12,16 @@
 // Pages serves the repository root, so build config is reachable as site
 // content. _redirects cannot cover it: a static file that exists is served
 // before redirects are consulted. Middleware runs first, so the block goes
-// here. wrangler.jsonc was answering 200 with the D1 database id in it.
-const BLOCKED = /^\/(reel\.tpl\.html|wrangler\.(jsonc|toml|json)|package(-lock)?\.json|README\.md|bin-[^/]*\.py)$/i;
+// here. wrangler.jsonc was answering 200 with the D1 database id in it; the
+// planning docs, the editor config and the database schema were public too.
+// Tested against the decoded path with repeated slashes collapsed, so neither
+// /%77rangler.jsonc nor //wrangler.jsonc can slip by; /reel.tpl is the
+// template's pretty URL (Pages strips .html).
+// (None of these may ever be listed in _routes.json's exclude.)
+const BLOCKED = /^\/(reel\.tpl(\.html)?\/?|wrangler\.(jsonc|toml|json)|package(-lock)?\.json|README\.md|bin-[^/]*\.py|schema\.sql|\.gitignore)$|^\/(docs|\.claude|\.git)(\/|$)/i;
 
-const ASSET = /\.(css|js|mjs|jpg|jpeg|png|svg|ico|webp|woff2?|pdf|xml|txt|map)$/i;
+// Not page views: files, including video (a Range request per chunk) and data.
+const ASSET = /\.(css|js|mjs|jpg|jpeg|png|svg|ico|webp|avif|gif|woff2?|pdf|xml|txt|map|mp4|webm|m4v|json|webmanifest|md|sql|edl)$/i;
 const BOT   = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|curl|wget|python-requests|monitor|preview/i;
 
 
@@ -45,7 +51,7 @@ const GREET = { nl:'Welkom', fr:'Bienvenue', de:'Willkommen', es:'Bienvenido', p
 const SOURCES = [
   [/instagram/i,                 'Instagram', '/work/el-fasher-city',  'El Fasher City — shot for the vertical screen'],
   [/^(t\.co|x\.com|twitter\.com)$/i, 'X',    '/work/solana-accelerate', 'Solana Accelerate — 1.4M views on X'],
-  [/linkedin|lnkd\.in/i,         'LinkedIn',  '/about',                'the CV and the credits'],
+  [/linkedin|lnkd\.in/i,         'LinkedIn',  '/cv',                   'the CV and the credits'],
   [/google\.|bing\.|duckduckgo|yandex|baidu/i, 'search', '/about',   'who is behind the work'],
   [/chatgpt|openai|claude\.ai|anthropic|perplexity|gemini\.google|copilot/i, 'an AI assistant', '/about', 'the record it was reading'],
   [/vimeo/i,                     'Vimeo',     '/work/',                'the full sequence with its view counts'],
@@ -64,11 +70,17 @@ function screening(cf, request) {
   const local = clock(cf.timezone), dubai = clock('Asia/Dubai');
   if (!local || !dubai) return null;
   const h = Number(dubai.slice(0, 2));
-  const reply = h >= 9 && h < 20 ? 'I answer my own email, usually the same day.'
-              : h >= 20 || h < 1 ? 'Late here — I answer my own email, first thing tomorrow.'
-              : 'It is the middle of the night in Dubai. I answer my own email, in the morning.';
   const cc = (cf.country || '').toUpperCase();
   const home = cf.timezone === 'Asia/Dubai';
+  // Follows "…I answer my own email. It is 01:37 here in Dubai." (a visitor in
+  // Dubai) or "It is 01:37 in Dubai, 22:37 in London." (anyone else) — so it
+  // never names the email or the city again, and says "here" only when the
+  // sentence before it has not.
+  const here = home ? '' : ' here';
+  const reply = h >= 9 && h < 20 ? 'I usually reply the same day.'
+              : h >= 20 || h < 1 ? `Late${here} — I’ll reply first thing tomorrow.`
+              : h >= 6           ? `Early${here} — I’ll reply this morning.`
+              : `The middle of the night${here} — I’ll reply in the morning.`;
 
   // Distance the reel travelled. Dubai, where it was cut.
   const lat = Number(cf.latitude), lon = Number(cf.longitude);
@@ -78,6 +90,8 @@ function screening(cf, request) {
   // Referrer → source name and a first film to hand them.
   let source = null, start = null;
   const refHost = (() => { try { return new URL(request.headers.get('Referer') || '').hostname.replace(/^www\./, ''); } catch { return ''; } })();
+  const refPath = (() => { try { return new URL(request.headers.get('Referer') || '').pathname; } catch { return ''; } })();
+  const internal = /(^|\.)alnimeri\.(com|pages\.dev)$/i.test(refHost) && /^\/(about(\.html)?|index\.html)?$/.test(refPath);
   if (refHost && !/alnimeri\.com$/i.test(refHost)) {
     for (const [re, name, href, label] of SOURCES) {
       if (re.test(refHost)) { source = name; start = { href, label }; break; }
@@ -88,12 +102,15 @@ function screening(cf, request) {
   const lang = (request.headers.get('Accept-Language') || '').split(',')[0].trim().toLowerCase().split('-')[0];
   const greet = (lang !== 'en' && GREET[lang]) ? GREET[lang] : null;
 
-  // Screening number: one anonymous first-party cookie, a counter and nothing else.
+  // Screening number: one anonymous first-party cookie, a counter and nothing
+  // else. A visit is a screening, not a page view: moving between pages of
+  // this site (the Referer is the site itself) keeps the number it has.
   const m = /(?:^|;\s*)scr=(\d{1,3})(?:;|$)/.exec(request.headers.get('Cookie') || '');
-  const seen = Math.min(999, (m ? Number(m[1]) : 0) + 1);
+  const bumped = !internal || !m;
+  const seen = bumped ? Math.min(999, (m ? Number(m[1]) : 0) + 1) : Number(m[1]);
 
   return { city: cf.city, cc, tz: cf.timezone, local, dubai, reply, home,
-           km, source, start, greet, seen };
+           km, source, start, greet, lang, seen, bumped };
 }
 
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -110,7 +127,7 @@ function personalise(res, sc) {
     (sc.km ? `<span class="screening__sep">·</span><span><b>${sc.km.toLocaleString('en-GB')}</b> km from Dubai</span>` : '') +
     (sc.source ? `<span class="screening__sep">·</span><span>via ${esc(sc.source)}</span>` : '') +
     (sc.seen > 1 ? `<span class="screening__sep">·</span><span>Welcome back</span>` : '') +
-    (sc.greet ? `<span class="screening__sep">·</span><span class="screening__ar">${esc(sc.greet)}</span>` : '') +
+    (sc.greet ? `<span class="screening__sep">·</span><span class="screening__ar" lang="${esc(sc.lang)}">${esc(sc.greet)}</span>` : '') +
     `</p>`;
   const start = sc.start
     ? `<p class="hero__start">Came in from ${esc(sc.source)}? <a href="${esc(sc.start.href)}">Start with ${esc(sc.start.label)} &rarr;</a></p>`
@@ -127,11 +144,15 @@ function personalise(res, sc) {
     .on('p.contact__sub', { element(e) { e.append(contact, { html: true }); } })
     .on('div.hero__cta', { element(e) { if (start) e.after(start, { html: true }); } })
     .transform(res);
-  // The counter behind "Screening 3": a number, one year, first-party, nothing else.
-  out.headers.append('Set-Cookie', `scr=${sc.seen}; Max-Age=31536000; Path=/; SameSite=Lax; Secure`);
-  // Personalised HTML must not be served to the next visitor from the edge.
-  out.headers.set('Cache-Control', 'private, no-store');
-  out.headers.set('Vary', 'CF-IPCountry');
+  // The counter behind "Screening 3": a number, one year, first-party, nothing
+  // else — and only written when it changed.
+  if (sc.bumped) out.headers.append('Set-Cookie', `scr=${sc.seen}; Max-Age=31536000; Path=/; SameSite=Lax; Secure`);
+  // Personalised HTML must not be served to the next visitor from the edge:
+  // private keeps it out of every shared cache. no-cache rather than no-store,
+  // because no-store also shuts the page out of the back/forward cache, and
+  // Back from a film page would then reload home and restart the slideshow.
+  // (Vary on CF-IPCountry meant nothing to a browser cache, the only one left.)
+  out.headers.set('Cache-Control', 'private, no-cache');
   return out;
 }
 
@@ -140,10 +161,14 @@ export async function onRequest(context) {
 
   try {
     const url = new URL(request.url);
-    if (BLOCKED.test(url.pathname)) {
+    let path = url.pathname;
+    try { path = decodeURIComponent(path); } catch {}
+    path = path.replace(/\/{2,}/g, '/');
+    if (BLOCKED.test(path)) {
       return new Response('Not found', { status: 404 });
     }
-    if (!ASSET.test(url.pathname)) {
+    // Page views only: not files, and not the site's own API calls.
+    if (!ASSET.test(url.pathname) && !url.pathname.startsWith('/api/')) {
       const cf = request.cf || {};
       const ua = request.headers.get('User-Agent') || '';
       const row = [
@@ -177,7 +202,8 @@ export async function onRequest(context) {
       if (env.DB && Math.random() < 0.005) {
         waitUntil(
           env.DB.prepare(
-            `DELETE FROM visits WHERE ts < datetime('now', '-90 days')`
+            // ts is stored as an ISO string ('…T…Z'), so compare against one
+            `DELETE FROM visits WHERE ts < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-90 days')`
           ).run().catch((e) => console.log('d1-purge-failed: ' + e.message))
         );
       }

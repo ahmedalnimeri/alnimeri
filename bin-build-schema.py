@@ -29,7 +29,7 @@ for blk in re.findall(r'<article class="tile[\s\S]+?</article>', s):
     fig  = re.search(r'tile__stat"[^>]*>\s*([\d.]+)([KM]?)\s+(views|reactions)', blk)
     name = title.replace('&amp;', '&')
     kindtxt = (kind.group(1) if kind else '').replace('&amp;', '&').replace(' · ', ' — ')
-    poster = re.search(r'src="assets/(posters/[^"?]+)', blk)
+    poster = re.search(r'<img\s(?:[^>]*\s)?src="assets/(posters/[^"?]+)', blk)
     v = {
         "@type": "VideoObject" if vid else "Movie",
         "name": name,
@@ -72,6 +72,7 @@ person = {
   "knowsLanguage": [{"@type": "Language", "name": "English"},
                     {"@type": "Language", "name": "Arabic"}],
   "knowsAbout": ["Storytelling", "Film direction", "Documentary filmmaking",
+                 "Event filmmaking",
                  "Cinematography", "Video editing", "Colour grading",
                  "Motion graphics", "Animation", "Brand storytelling"],
   "sameAs": ["https://vimeo.com/nimeri", "https://www.instagram.com/by_nimeri",
@@ -94,7 +95,9 @@ for d in re.findall(r'<details[\s\S]*?</details>', s):
         faq_items.append({"@type": "Question", "name": _clean(q.group(1)),
                           "acceptedAnswer": {"@type": "Answer", "text": _clean(a.group(1))}})
 faq = ([{"@type": "FAQPage", "@id": "https://alnimeri.com/#faq",
-         "url": "https://alnimeri.com/#questions",
+         # the section has no id of its own (one would add a clip to the
+         # timeline HUD, which lists every main > section[id]); its heading does
+         "url": "https://alnimeri.com/#questions-title",
          "isPartOf": {"@id": "https://alnimeri.com/#website"},
          "mainEntity": faq_items}] if faq_items else [])
 
@@ -124,3 +127,25 @@ block = '<script type="application/ld+json">' + json.dumps(graph, ensure_ascii=F
 s = re.sub(r'<script type="application/ld\+json">.*?</script>', block, s, count=1, flags=re.S)
 open('index.html', 'w').write(s)
 print(f"schema rebuilt: {len(videos)} VideoObject entries, {len(graph['@graph'])} nodes")
+
+# /about and /cv carry the same Person (@id #person) in their own graphs, so a
+# page read on its own still resolves AboutPage/ProfilePage.mainEntity. It is
+# the same node, so it comes from the same dict: names, sameAs, employer. Only
+# jobTitle stays as each page has it until one wording is settled.
+for page in ('about.html', 'cv.html'):
+    src = open(page).read()
+    m = re.search(r'(<script type="application/ld\+json">)(.*?)(</script>)', src, flags=re.S)
+    if not m:
+        raise SystemExit(f'{page}: no JSON-LD block')
+    data = json.loads(m.group(2))
+    nodes = data.get('@graph', [])
+    at = [i for i, n in enumerate(nodes) if n.get('@type') == 'Person' and n.get('@id') == person['@id']]
+    if len(at) != 1:
+        raise SystemExit(f'{page}: expected one Person node, found {len(at)}')
+    node = dict(person)
+    node['jobTitle'] = nodes[at[0]].get('jobTitle', person['jobTitle'])
+    nodes[at[0]] = node
+    out = src[:m.start(2)] + json.dumps(data, ensure_ascii=False, indent=2) + src[m.end(2):]
+    if out != src:
+        open(page, 'w').write(out)
+    print(f"{page}: Person node synced with the home graph (jobTitle: {node['jobTitle']})")

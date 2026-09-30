@@ -6,7 +6,7 @@ the bytes do. Posters get overwritten in place — an Al Doroub poster was
 replaced and Cloudflare kept serving the previous file from its edge
 indefinitely.
 
-Covers four reference shapes, because a URL this script misses is a URL that
+Covers these reference shapes, because a URL this script misses is a URL that
 can go stale behind an immutable header:
 
   src="assets/..."           in the HTML pages
@@ -14,9 +14,11 @@ can go stale behind an immutable header:
   href="/assets/..."         root-relative refs (the LCP preload)
   srcset="a 640w, b 1280w"   responsive posters
   url("assets/...")          backgrounds in the stylesheet
+  refinement.css?v=, motion.js?v=   the home page's own sheet and script,
+                             stamped with md5[:8] (served immutable)
 
 Fonts and favicons are excluded by design — see the note at EXCLUDE.
-Run this after touching anything under assets/.
+Run this after touching anything under assets/, refinement.css or motion.js.
 """
 import re, hashlib, os, sys
 
@@ -80,6 +82,23 @@ def process(text, missing):
         return f'url("{new}")'
 
     text = re.sub(r'url\("(/?assets/[^"]+)"\)', css, text)
+
+    # The home page's own stylesheet and script carry their content hash as
+    # ?v=, and _headers serves them immutable on the strength of it. A hand-
+    # typed hash has drifted from the bytes before, so it is always rewritten
+    # here from the file itself.
+    def own(m):
+        nonlocal n
+        path = m.group(1)
+        if not os.path.exists(path):
+            missing.append(path)
+            return m.group(0)
+        new = f'{path}?v={digest(path)}'
+        if new != m.group(0):
+            n += 1
+        return new
+
+    text = re.sub(r'(?<![\w/.-])(refinement\.css|motion\.js)\?v=[a-f0-9]+', own, text)
     return text, n
 
 total, allmissing = 0, []

@@ -2,9 +2,9 @@
 """Compile the film list and the reel page template into one edge module.
 
 /reel/<code> is a viewer's own cut of the selects: an ordered subset of the
-tiles, rendered at the edge with its SC/IN stamps recomputed by the same rule
-the home page uses. The function that renders it needs the films and the
-template as code, because a Pages Function cannot read the repository.
+tiles, rendered at the edge with its running time summed by the same rule the
+home page uses. The function that renders it needs the films and the template
+as code, because a Pages Function cannot read the repository.
 
 Everything here is lifted from index.html — titles, durations, posters (with
 their content hashes), figures. Nothing is typed twice. Run after any change to
@@ -36,7 +36,8 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
     if not m:
         sys.exit('tile without a duration: ' + b[:100])
     secs = int(m.group(1)) * 60 + int(m.group(2))
-    srcset = field(b, r'srcset="([^"]+)"')
+    # The tile's own <img>, not a WebP <source> the <picture> may lead with.
+    srcset = field(b, r'<img\s(?:[^>]*\s)?srcset="([^"]+)"')
     films.append({
         'title':    field(b, r'data-title="([^"]+)"'),
         'vid':      field(b, r'data-video="(\d+)"'),
@@ -46,7 +47,7 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
         'secs':     secs,
         'stat':     field(b, r'tile__stat"[^>]*>\s*([^<]+?)\s*<'),
         'statref':  field(b, r'tile__stat"[^>]*href="([^"]+)"'),
-        'poster':   field(b, r'\bsrc="(assets/posters/[^"]+)"'),
+        'poster':   field(b, r'<img\s(?:[^>]*\s)?src="(assets/posters/[^"]+)"'),
         'srcset':   srcset,
         'alt':      field(b, r'alt="([^"]+)"'),
         'w':        field(b, r'width="(\d+)"'),

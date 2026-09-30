@@ -11,7 +11,7 @@ truth, so a film added or reordered there regenerates correctly here. Asset
 URLs are copied already-stamped, since bin-stamp-assets.py does not reach
 into this directory.
 """
-import re, os, json, html, sys
+import re, os, json, html, sys, subprocess
 from urllib.parse import urlencode, quote
 
 WORDS = {14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen',
@@ -56,14 +56,42 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
         'stat':    field(b, r'tile__stat"[^>]*>\s*([^<]+?)\s*<'),
         'statref': field(b, r'tile__stat"[^>]*href="([^"]+)"'),
         'href':    field(b, r'class="tile__link" href="([^"]+)"'),
-        'poster':  field(b, r'src="(assets/posters/[^"]+)"'),
-        'srcset':  field(b, r'srcset="([^"]+)"'),
+        # Anchored on the tile's <img>: a <picture> may put a WebP <source>
+        # first, and its srcset is not the one the cards are built from.
+        'poster':  field(b, r'<img\s(?:[^>]*\s)?src="(assets/posters/[^"]+)"'),
+        'srcset':  field(b, r'<img\s(?:[^>]*\s)?srcset="([^"]+)"'),
         'alt':     field(b, r'alt="([^"]+)"'),
         'portrait': field(b, r'data-portrait="(\w+)"') == 'true',
     })
 
 if len(films) < 10 or len(films) not in WORDS:
     sys.exit(f'unexpected film count: {len(films)} (add it to WORDS)')
+
+def pixels(path):
+    """The real size of a share image, read off the file (as the about
+    builder does), so og:image:width/height never guess."""
+    out = subprocess.run(['sips', '-g', 'pixelWidth', '-g', 'pixelHeight', path],
+                         capture_output=True, text=True).stdout
+    w, h = re.search(r'pixelWidth: (\d+)', out), re.search(r'pixelHeight: (\d+)', out)
+    if not (w and h):
+        sys.exit('cannot read size of ' + path)
+    return int(w.group(1)), int(h.group(1))
+
+AR_SCRIPT = re.compile('[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]')
+
+def named(t):
+    """A name written in Arabic script is marked as Arabic, so a screen reader
+    does not read it with an English voice. Inline, so the caption's own
+    alignment is untouched; isolated (dir=auto) only when the name has no Latin
+    letters, so a mixed name keeps the order it is shown in today."""
+    if not AR_SCRIPT.search(t):
+        return t
+    return '<span lang="ar"' + ('' if re.search('[A-Za-z]', t) else ' dir="auto"') + '>' + t + '</span>'
+
+def nowrap_last(stat):
+    """'293K views on X' must not leave the X alone on a line."""
+    head, _, tail = stat.rpartition(' ')
+    return head + '&nbsp;' + tail if head else stat
 
 def iso_dur(d):
     m, s = (int(x) for x in d.split(':'))
@@ -89,18 +117,22 @@ HEAD = '''<!doctype html>
 <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<meta property="og:type" content="video.other">
+<meta property="og:type" content="{og_type}">
 <meta property="og:title" content="{title} — Ahmed El-Nimeri">
 <meta property="og:description" content="{desc}">
 <meta property="og:url" content="https://alnimeri.com/work/{slug}">
 <meta property="og:image" content="https://alnimeri.com/{poster}">
+<meta property="og:image:width" content="{ogw}">
+<meta property="og:image:height" content="{ogh}">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{title} — Ahmed El-Nimeri">
+<meta name="twitter:description" content="{desc}">
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/poppins-600.woff2" crossorigin>
 <link rel="stylesheet" href="/styles.css?v={ver}">
 <script type="application/ld+json">{schema}</script>
 </head>
 <body>
-<a class="skip" href="#film">Skip to the film</a>
+<a class="skip" href="#film">{skip}</a>
 <header class="masthead">
   <a class="masthead__mark" href="/" aria-label="Ahmed El-Nimeri — home"><img class="mark" src="/{mark}" alt="" width="32" height="30" aria-hidden="true"><span>Ahmed El-Nimeri</span></a>
   <nav class="masthead__nav" aria-label="Primary">
@@ -198,21 +230,26 @@ def year_of(f):
 _card_n = [0]
 
 def card(f, eager_first=0):
-    """The first cards on /work/ are on screen when the page opens; lazy-loading
-    them delays the very thing the visitor came to look at."""
+    """The first card on /work/ is on screen when the page opens (the LCP on a
+    phone); lazy-loading it delays the very thing the visitor came to look at.
+    Only that one is eager: three more eager posters competed with it for the
+    phone's bandwidth, and the cards beside it load lazily in time anyway.
+    Cards are 270-312px wide from 1024px up (the column is 1320px of content,
+    like the masthead's), about 44vw from 600 to 900px and about 90vw below
+    that, which is what sizes says."""
     alt = html.escape(html.unescape(f['title']), quote=True)
     n = _card_n[0]; _card_n[0] += 1
     eager = n < eager_first
     img = ''
     if f['srcset']:
-        img = ('<img srcset="' + rooted_srcset(f['srcset']) + '" sizes="(max-width: 560px) 92vw, (max-width: 900px) 46vw, 31vw"'
+        img = ('<img srcset="' + rooted_srcset(f['srcset']) + '" sizes="(max-width: 560px) 90vw, (max-width: 900px) 44vw, 312px"'
                ' src="' + rooted(f['poster']) + '" alt="Still from ' + alt + '"'
                ' width="1280" height="720" ' + ('loading="eager"' + (' fetchpriority="high"' if n == 0 else '') if eager else 'loading="lazy"') + ' decoding="async">')
     yr = year_of(f)
-    bits = [f['kind'], f['dur']] + ([yr] if yr else []) + ([f['stat']] if f['stat'] else [])
+    bits = [f['kind'], f['dur']] + ([yr] if yr else []) + ([nowrap_last(f['stat'])] if f['stat'] else [])
     return ('<li class="filmcard"><a href="/work/' + f['slug'] + '">' + img
             + '<span class="filmcard__name">' + f['title'] + '</span>'
-            + '<span class="filmcard__meta">' + ' &middot; '.join(bits) + '</span></a></li>')
+            + '<span class="filmcard__meta">' + '&nbsp;&middot; '.join(bits) + '</span></a></li>')   # no line starts with ·
 
 
 for i, f in enumerate(films):
@@ -224,7 +261,7 @@ for i, f in enumerate(films):
     title_txt = html.unescape(f['title'])
 
     desc = (f"{title_txt} — {kind} directed by Ahmed El-Nimeri. "
-            f"{stat_txt.capitalize()}. " if stat_txt else
+            f"{stat_txt[:1].upper() + stat_txt[1:]}. " if stat_txt else
             f"{title_txt} — {kind} directed by Ahmed El-Nimeri. ")
     desc += f"Running time {f['dur']}."
     desc = html.escape(desc, quote=True)
@@ -295,7 +332,7 @@ for i, f in enumerate(films):
             items.append(
                 f'<figure class="said">'
                 f'<blockquote class="said__en">{html.escape(en)}</blockquote>'
-                f'<figcaption class="said__by">{html.escape(q.get("by", ""))}</figcaption></figure>')
+                f'<figcaption class="said__by">{named(html.escape(q.get("by", "")))}</figcaption></figure>')
         reception = f'''<section class="reception" aria-labelledby="said-{f['slug']}">
     <h2 class="reception__head" id="said-{f['slug']}">What people said</h2>
     <p class="reception__sub">Unedited comments on the <a href="{rec['url']}" target="_blank" rel="noopener">original post</a>
@@ -330,12 +367,15 @@ for i, f in enumerate(films):
     a film director and Associate Creative Director based in Dubai. Every figure on this site links
     to the published post it came from.</p>
   {related}
-  <div class="film__note"><h2>Have a project in mind?</h2><p>Tell me what you’re making and when you need it. A few lines are enough.</p><a class="btn btn--solid" href="{enquiry}">Send the brief ↗</a></div>
+  <div class="film__note"><h2>Have a project in mind?</h2><p>Tell me what you’re making and when you need it. A few lines are enough.</p><!--email_off--><a class="btn btn--solid" href="{enquiry}">Send the brief ↗</a><!--/email_off--></div>
   <nav class="film__nav" aria-label="Films">{''.join(nav)}</nav>
 </section>
 '''
+    _poster = f['poster'].split('?')[0]
+    ogw, ogh = pixels(_poster)
     page = (HEAD.format(title=html.escape(title_txt, quote=True), desc=desc, slug=f['slug'],
-                        poster=f['poster'].split('?')[0], ver=VER, mark=MARK,
+                        poster=_poster, ogw=ogw, ogh=ogh, og_type='video.other', skip='Skip to the film',
+                        ver=VER, mark=MARK,
                         schema=json.dumps(schema, ensure_ascii=False))
             + body + FOOT.format(ver=VER))
     open(f"work/{f['slug']}.html", 'w').write(page)
@@ -352,7 +392,7 @@ for cid, label, _n in CATEGORIES:
     count = str(len(groups[cid])) + (' film' if len(groups[cid]) == 1 else ' films')
     sections.append('<section class="filmcat" id="' + cid + '">'
                     '<h2 class="filmcat__head">' + label + ' <span>' + count + '</span></h2>'
-                    '<ol class="filmcards">' + ''.join(card(f, eager_first=4) for f in groups[cid]) + '</ol></section>')
+                    '<ol class="filmcards">' + ''.join(card(f, eager_first=1) for f in groups[cid]) + '</ol></section>')
 rows = '<nav class="filmcats" aria-label="Kinds of film">' + nav + '</nav>' + ''.join(sections)
 
 total = sum(int(f['dur'].split(':')[0]) * 60 + int(f['dur'].split(':')[1]) for f in films)
@@ -364,11 +404,11 @@ idx_schema = {
     "hasPart": [{"@type": "WebPage", "name": html.unescape(f['title']),
                  "url": f"https://alnimeri.com/work/{f['slug']}"} for f in films]}
 
-idx = (HEAD.format(title='All films', slug='', poster='assets/og-work.jpg', ver=VER, mark=MARK,
-                   desc=f'Every film by Ahmed El-Nimeri on this site — {COUNT} pieces, {TRT} total running time, each with its published view count and source.',
+_ogw, _ogh = pixels('assets/og-work.jpg')
+idx = (HEAD.format(title='All films', slug='', poster='assets/og-work.jpg', ogw=_ogw, ogh=_ogh,
+                   og_type='website', skip='Skip to the films', ver=VER, mark=MARK,
+                   desc=f'Every film by Ahmed El-Nimeri on this site — {COUNT} pieces, {TRT} total running time, each with its running time and, where published, its view count and source.',
                    schema=json.dumps(idx_schema, ensure_ascii=False))
-       .replace('<link rel="canonical" href="https://alnimeri.com/work/">',
-                '<link rel="canonical" href="https://alnimeri.com/work/">')
        + f'''<section class="film" id="film">
   <div class="slate">
     <h1 class="slate__title">All films</h1>

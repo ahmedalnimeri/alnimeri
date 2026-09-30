@@ -183,7 +183,7 @@
 /* the numbers: four columns split by hairlines */
 #numbers .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 0; padding-top: 0; max-width: 1320px; margin: 0 auto; }
 #numbers .stats > div { padding: 6px 28px; border-left: 1px solid var(--line); }
-#numbers .stats > div:first-child { border-left: 0; padding-left: 0; }
+#numbers .stats > div:first-child { border-left: 0; padding-left: 28px; }   /* both sides padded, so centred text sits on the cell's centre */
 
 @media (max-width: 900px) {
   .commission .commission__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -197,7 +197,7 @@
   .commission .commission__card { border-left: 0; padding: 26px 0 8px; border-top: 1px solid var(--line); }
   .commission .commission__card:first-child { border-top: 0; }
   #numbers .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 28px; }
-  #numbers .stats > div:nth-child(3) { border-left: 0; padding-left: 0; }
+  #numbers .stats > div:nth-child(3) { border-left: 0; padding-left: 28px; }
 }
 
 /* alignment pass: everything hangs off the same 1320px column as the bar */
@@ -317,7 +317,9 @@
 .contact__inner > * { grid-column: 1; }
 .contact__inner > .contact__face { grid-column: 2; grid-row: 1 / span 9; margin: 0; align-self: center; }
 .contact__cut {
-  display: block; width: 100%; aspect-ratio: 9 / 16; object-fit: cover;
+  /* height:auto, or the height="1280" attribute wins over aspect-ratio and
+     the box becomes a 1280px-tall sliver that crops the face */
+  display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover;
   border: 1px solid var(--line); border-radius: 14px; background: #0b0c0d;
 }
 .contact__face figcaption { margin-top: 14px; font-size: 13px; line-height: 1.5; color: var(--fg-faint); }
@@ -335,6 +337,14 @@
 .contact__inner > :not(.contact__face) { margin-left: 0; margin-right: 0; text-align: left; }
 .contact .brief-guide { max-width: 560px; }
 .contact .lockup { height: clamp(90px, 10vw, 140px); }
+/* between 761 and 1050px the address sits in the narrow left column and broke
+   as "ahmed@alnimeri.co / m"; sized to that column it stays on one line */
+@media screen and (min-width: 761px) and (max-width: 1050px) {
+  .contact__inner .contact__mail { font-size: calc((90vw - 380px) / 11); }
+}
+
+/* the edge's screening slate follows the hero copy's left edge */
+.hero--editorial .screening { justify-content: flex-start; text-align: left; }
 
 /* the whole opening — line, picture and its caption — fits one screen */
 @media (min-width: 901px) {
@@ -353,16 +363,23 @@
 /* the slideshow bar: one segment per film, the current one filling */
 .twoshot__bar { display: flex; gap: 6px; margin-top: 14px; }
 .twoshot__seg { flex: 1; height: 16px; padding: 7px 0; border: 0; background: none; cursor: pointer; }
+/* The fill is a transform on its own layer, so it runs on the compositor: a
+   background-size fill repainted the page every frame for the whole visit.
+   animationend from ::after still reaches the <i> that motion.js listens on. */
 .twoshot__seg i {
   display: block; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, .16);
-  background-image: linear-gradient(#fff, #fff); background-repeat: no-repeat; background-size: 0% 100%;
+  position: relative; overflow: hidden;
 }
-.twoshot__seg.is-done i { background-size: 100% 100%; background-image: linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,.55)); }
-.twoshot__seg.is-on i { animation: seg-fill 4.2s linear forwards; }
-.twoshot__seg:first-child.is-on i { animation-duration: 5.4s; }            /* the first film holds while the line resolves */
-@keyframes seg-fill { to { background-size: 100% 100%; } }
-.twoshot.is-held .twoshot__seg.is-on i, .twoshot.is-away .twoshot__seg.is-on i { animation-play-state: paused; }
-.twoshot.is-still .twoshot__seg.is-on i { animation: none; background-size: 100% 100%; }
+.twoshot__seg i::after {
+  content: ''; position: absolute; inset: 0; background: #fff;
+  transform-origin: 0 50%; transform: scaleX(0);
+}
+.twoshot__seg.is-done i::after { transform: none; background: rgba(255, 255, 255, .55); }
+.twoshot__seg.is-on i::after { animation: seg-fill 4.2s linear forwards; }
+.twoshot__seg:first-child.is-on i::after { animation-duration: 5.4s; }     /* the first film holds while the line resolves */
+@keyframes seg-fill { to { transform: none; } }
+.twoshot.is-held .twoshot__seg.is-on i::after, .twoshot.is-away .twoshot__seg.is-on i::after { animation-play-state: paused; }
+.twoshot.is-still .twoshot__seg.is-on i::after { animation: none; transform: none; }
 .twoshot__seg:hover i { background-color: rgba(255, 255, 255, .3); }
 .twoshot__seg:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .twoshot__cap { margin-top: 10px; }

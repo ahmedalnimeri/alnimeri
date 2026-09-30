@@ -5,7 +5,7 @@
  * The code is the cut: one character per film, in the order the viewer put
  * them (keys in _lib/reel.js, generated from the tiles). Nothing is stored —
  * the link carries the whole selection, so it works forever, needs no
- * database, and says nothing about who made it. Stamps, TRT and the EDL are
+ * database, and says nothing about who made it. The TRT and the EDL are
  * derived from the chosen films by the same running sum as the home page.
  */
 import { FILMS, ALPHABET, TEMPLATE } from '../_lib/reel.js';
@@ -31,7 +31,7 @@ export function decode(code) {
   return films;
 }
 
-function tile(f, n, at) {
+function tile(f, n) {
   const play = f.vid
     ? `data-video="${f.vid}" data-title="${esc(f.title)}" data-portrait="${f.portrait}"`
     : `target="_blank" rel="noopener" data-title="${esc(f.title)}"`;
@@ -48,7 +48,6 @@ function tile(f, n, at) {
             <span class="tile__dur">${mmss(f.secs)}</span>
           </a>
           <div class="tile__meta">
-            <span class="tile__idx">SC ${pad(n)} &middot; IN ${mmss(at)}</span>
             <div>
               <h3 class="tile__name">${esc(f.title)}</h3>
               <p class="tile__kind">${esc(f.kind)}</p>
@@ -60,7 +59,7 @@ function tile(f, n, at) {
 
 export function page(code, films) {
   let at = 0; const tiles = [];
-  films.forEach((f, i) => { tiles.push(tile(f, i + 1, at)); at += f.secs; });
+  films.forEach((f, i) => { tiles.push(tile(f, i + 1)); at += f.secs; });
   const n = films.length, names = films.map((f) => f.title);
   const trt = mmss(at);
   const list = names.length > 3 ? `${names.slice(0, 3).join(', ')} and ${names.length - 3} more` : names.join(', ');
@@ -75,6 +74,8 @@ export function page(code, films) {
     TITLE: esc(title), DESC: esc(desc), HEADLINE: esc(headline),
     NAMES: names.map((t, i) => `<span>${pad(i + 1)} ${esc(t)}</span>`).join('<span class="screening__sep">·</span>'),
     OG_IMAGE: `https://alnimeri.com/${first}`,
+    // the first film's poster at its real size: a vertical film is 1280x2276
+    OG_W: String(films[0].w || 1280), OG_H: String(films[0].h || 720),
     TILES: tiles.join('\n'),
   };
   return TEMPLATE.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in fill ? fill[k] : m));

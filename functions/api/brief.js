@@ -86,10 +86,9 @@ export async function onRequestPost({ request, env, waitUntil }) {
     }
     if (!res.meta || !res.meta.changes) return json({ ok: false, error: 'rate' }, 429);
 
-    // a year, as promised; checked on roughly one brief in twenty, after replying
-    if (Math.random() < 0.05) {
-      waitUntil(env.DB.prepare(`DELETE FROM briefs WHERE ts < datetime('now', '-365 days')`).run().catch(() => {}));
-    }
+    // a year, as the privacy page promises: one statement on a tiny table,
+    // after the reply has gone
+    waitUntil(env.DB.prepare(`DELETE FROM briefs WHERE ts < datetime('now', '-365 days')`).run().catch(() => {}));
     return json({ ok: true, id: res.meta.last_row_id });
   } catch (e) {
     console.log('brief-store-failed: ' + e.message);

@@ -59,12 +59,20 @@ def render(frames):
     figs, ticks = [], []
     for i, f in enumerate(frames):
         no = f'{i + 1:02d}'; name = f['name']
-        figs.append(f'''              <figure class="os-fr" data-os-yr="{str(f['year'])[2:]}">
-                <div class="os-fr__win"><img class="os-fr__img" src="assets/onset/{name}.jpg"
+        img = (f'''<img class="os-fr__img" src="assets/onset/{name}.jpg"
                      srcset="assets/onset/{name}-700.jpg 700w, assets/onset/{name}.jpg 1200w"
                      sizes="(max-width: 900px) 100vw, 70vw"
                      alt="{esc(f['alt'])}" width="1200" height="800"
-                     loading="{'eager' if i < 3 else 'lazy'}" decoding="async"></div>
+                     loading="{'eager' if i == 0 else 'lazy'}" decoding="async">''')
+        if i:
+            # Stacked in the gate, every frame sits inside the browser's lazy-
+            # load distance, so loading=lazy fetched all of them at page open.
+            # Frames after the first wait in data-* until main.js sees the
+            # section coming; without JS the <noscript> copy is the picture.
+            img = (img.replace(' src="', ' data-src="', 1).replace('srcset="', 'data-srcset="', 1)
+                   + '<noscript>' + img + '</noscript>')
+        figs.append(f'''              <figure class="os-fr" data-os-yr="{str(f['year'])[2:]}">
+                <div class="os-fr__win">{img}</div>
                 <figcaption class="os-fr__cap"><span class="os-fr__no">FR {no}</span><span class="os-fr__yr">{f['year']}</span><span class="os-fr__lbl">{esc(f['label'])}</span></figcaption>
               </figure>''')
         ticks.append(f'''            <button class="os-tick" type="button" aria-label="Frame {no}, {f['year']}, {esc(f['label'])}"><span class="os-tick__no" aria-hidden="true">{no}</span><span class="os-tick__bar"><span class="os-tick__fill"></span></span></button>''')

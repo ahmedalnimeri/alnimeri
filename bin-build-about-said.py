@@ -40,15 +40,26 @@ if len(short) < 8:
 # The site shows the translation only. The Arabic stays in reception.json,
 # where the applications document reads it — it is the original, and losing it
 # would lose the evidence.
+AR_SCRIPT = re.compile('[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]')
+
+def named(t):
+    """A name written in Arabic script is marked as Arabic, so a screen reader
+    does not read it with an English voice. Inline, so nothing moves; isolated
+    (dir=auto) only when the name has no Latin letters, so a mixed name keeps
+    the order it is shown in today."""
+    if not AR_SCRIPT.search(t):
+        return t
+    return '<span lang="ar"' + ('' if re.search('[A-Za-z]', t) else ' dir="auto"') + '>' + t + '</span>'
+
 def pill(q):
     return (f'<span class="say"><span class="say__t">{html.escape(q["en"])}</span>'
-            f'<span class="say__u">{html.escape(q["by"])}</span></span>')
+            f'<span class="say__u">{named(html.escape(q["by"]))}</span></span>')
 
 def card(q):
     en, by = q['en'].strip(), q['by']
     where = q.get('where', '')
     cls = ' said--lead' if q.get('feature') else ''
-    meta = html.escape(by) + (f' &middot; {html.escape(where)}' if where else '')
+    meta = named(html.escape(by)) + (f' &middot; {html.escape(where)}' if where else '')
     return (f'<figure class="said{cls}">'
             f'<blockquote class="said__en">{html.escape(en)}</blockquote>'
             f'<figcaption class="said__by">{meta}</figcaption></figure>')

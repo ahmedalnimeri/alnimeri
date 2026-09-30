@@ -42,11 +42,29 @@ def dims(path):
         sys.exit('cannot read size of ' + path)
     return int(w.group(1)), int(h.group(1))
 
+# The gates are small (a 16:9 gate is 78vw on phones, 260px on tablets and
+# small laptops, 22.2vw up to 420px), so each frame carries the tile's whole
+# srcset and a sizes that says so: a 1440 desktop takes the 480 file, a DPR3
+# phone still gets the 1280. Tall gates are 3:4 at the same height, 0.42x as
+# wide, and the vertical posters are narrower than 3:4, so their width is what
+# has to be covered.
+SIZES_WIDE = '(max-width: 560px) 78vw, (max-width: 1168px) 260px, (max-width: 1888px) 22.2vw, 420px'
+SIZES_TALL = '(max-width: 560px) 33vw, (max-width: 1168px) 110px, (max-width: 1888px) 9.4vw, 177px'
+
+def rooted_srcset(ss):
+    return ', '.join('/' + c.strip() for c in ss.split(',') if c.strip())
+
 frames = []
 for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
     title = (re.search(r'data-title="([^"]+)"', b) or [None, ''])[1]
-    poster = re.search(r'srcset="(assets/posters/[^ ]+-768\.jpg\?h=[a-f0-9]+)', b)
-    full   = re.search(r'\bsrc="(assets/posters/[^"]+)"', b)
+    # Anchored on the tile's own <img>, and on the -768 file wherever it sits
+    # in the srcset: the srcsets lead with -480, and a regex that wanted -768
+    # first silently fell back to the 1280 poster for every frame. The vertical
+    # posters' true 768-wide files are -768w.jpg (the old -768.jpg ones were
+    # 432 and 576 wide).
+    srcset = re.search(r'<img\s(?:[^>]*\s)?srcset="([^"]+)"', b)
+    poster = re.search(r'(assets/posters/[^ ",]+-768w?\.jpg\?h=[a-f0-9]+) \d+w', srcset.group(1) if srcset else '')
+    full   = re.search(r'<img\s(?:[^>]*\s)?src="(assets/posters/[^"]+)"', b)
     if not full:
         sys.exit('no poster for ' + title)
     small = poster.group(1) if poster else full.group(1)
@@ -58,6 +76,8 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
         sys.exit(f'no film page work/{slug}.html for {title}')
     frames.append({'title': title, 'slug': slug, 'small': small, 'w': w, 'h': h,
                    'shape': shape,
+                   'srcset': (f' srcset="{rooted_srcset(srcset.group(1))}" sizes="{SIZES_TALL if shape else SIZES_WIDE}"'
+                              if srcset and poster else ''),
                    'kind': (re.search(r'tile__kind">([^<]*)<', b) or [None, ''])[1]})
 
 if len(frames) != _n:
@@ -70,7 +90,7 @@ frames.sort(key=rank)   # stable: unlisted films keep front-page order at the en
 
 items = ''.join(f'''
       <a class="reel__frame{f['shape']}" href="/work/{f['slug']}" aria-label="{html.escape(html.unescape(f['title']), quote=True)} — {html.unescape(f['kind'])}">
-        <img src="/{f['small']}" alt="Still from {f['title']}" width="{f['w']}" height="{f['h']}" loading="lazy" decoding="async">
+        <img src="/{f['small']}"{f['srcset']} alt="Still from {f['title']}" width="{f['w']}" height="{f['h']}" loading="lazy" decoding="async">
         <span class="reel__label">{f['title']}</span>
       </a>''' for f in frames)
 
@@ -86,7 +106,9 @@ strip = f'''
 '''
 
 page = open('about.html').read()
-page = re.sub(r'\n *<!-- Frames from his own films[\s\S]*?</section>\n', '\n', page)
+# (removed whole, leading newline included, so a rebuild puts back exactly what
+# it took out; replacing it with a newline grew the page by a blank line a run)
+page = re.sub(r'\n *<!-- Frames from his own films[\s\S]*?</section>\n', '', page)
 # The strip follows the opening plate. Anchor on that section's own close, not
 # on the contents of its last paragraph: those change (a CV link, a re-hashed
 # PDF), and an exact-text anchor then fails silently on every rebuild.

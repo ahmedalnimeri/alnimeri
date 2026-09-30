@@ -17,17 +17,17 @@ python3 -m http.server 4321
 |---|---|
 | `index.html` | Everything — markup, meta tags, JSON-LD |
 | `styles.css` | Single stylesheet; palette lives in `:root` |
-| `main.js` | Lightbox and scroll reveal, nothing else |
-| `assets/posters/` | Poster frames, one JPEG per video, committed |
-| `assets/work.json` | Record of the curated selection (not loaded at runtime) |
+| `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, the pull-a-reel bin, the On Set gate and the brief dialog |
+| `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes |
 
 ## Adding or changing a video
 
 1. Find the Vimeo ID (the number in `vimeo.com/1234567890`).
-2. Save its poster as `assets/posters/<id>.jpg`.
+2. Save its poster as `assets/posters/<id>.jpg`, and make the `-480`/`-768` JPEG and
+   `-480`/`-768`/`-1280` WebP sizes next to it (new file names if a poster ever changes).
 3. Copy an existing `<article class="tile">` block in `index.html` and update
-   `data-video`, `data-title`, the `src`, the `alt`, the duration and the title.
-4. Renumber the `tile__idx` spans if the order changed.
+   `data-video`, `data-title`, BOTH srcsets (the WebP `<source>` and the `<img>`), the `src`,
+   the `alt`, the duration and the title.
 
 Set `data-portrait="true"` and add `tile--tall` for vertical pieces.
 
@@ -36,8 +36,9 @@ Set `data-portrait="true"` and add `tile--tall` for vertical pieces.
 After touching the tiles in `index.html`, regenerate everything that derives from them, in this order:
 
 ```sh
-python3 bin-build-work-pages.py && python3 bin-build-edl.py && python3 bin-build-about-strip.py \
-  && python3 bin-build-onset.py \
+python3 bin-stamp-assets.py && python3 bin-build-work-pages.py && python3 bin-build-edl.py \
+  && python3 bin-build-about-strip.py \
+  && python3 bin-build-onset.py && python3 bin-build-about-said.py \
   && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-reel.py \
   && python3 bin-stamp-assets.py
 ```
@@ -58,14 +59,10 @@ Cloudflare Pages, free tier:
 3. Build command: **none**. Output directory: **`/`**. It is already static.
 4. Add `alnimeri.com` and `www.alnimeri.com` as custom domains.
 
-Then in **Porkbun DNS** — leave the nameservers alone:
-
-- `ALIAS` on `alnimeri.com` → the `*.pages.dev` hostname
-- `CNAME` on `www` → the same hostname
-
-> **Do not move the nameservers to Cloudflare.** Email for this domain runs on
-> Porkbun-managed MX, SPF and DKIM records. Moving nameservers without
-> recreating them silently breaks inbound mail.
+DNS: the domain is registered at Porkbun, but its nameservers are Cloudflare's,
+so every record lives in the Cloudflare dashboard. Mail to ahmed@alnimeri.com
+arrives through Cloudflare Email Routing; its MX and SPF records are managed
+there too, so check Email Routing after any DNS change.
 
 ## Known gaps
 

@@ -20,6 +20,15 @@
 /main.js
   Cache-Control: public, max-age=604800, must-revalidate
 
+# The home page's refinement sheet and motion script carry md5[:8] of their own
+# bytes as ?v= (rewritten by bin-stamp-assets.py on every run), so a new edit
+# is always a new URL and the old one never needs revalidating.
+/refinement.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/motion.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # The visit log is private and must never be cached or indexed.
 /api/*
   Cache-Control: no-store

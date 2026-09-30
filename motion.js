@@ -25,6 +25,20 @@
     var cap = two.querySelector('.twoshot__label');
     var frame = two.querySelector('.twoshot__frame');
     var cur = 0;
+    // Only the first film is in the markup with a real src; the others carry
+    // data-srcset/data-src, because stacked in the frame they sit inside the
+    // viewport and loading=lazy would fetch all six at first paint. Each film
+    // is put on the wire before it can be needed: the next one whenever a film
+    // comes up (4.2 s ahead), one under the pointer or focus before its click,
+    // and the rest once the page has loaded and gone idle.
+    var hydrate = function (k) {
+      var sh = shots[(k + shots.length) % shots.length];
+      if (!sh) return;
+      [].forEach.call(sh.querySelectorAll('source[data-srcset], img[data-srcset], img[data-src]'), function (el) {
+        if (el.dataset.srcset) { el.srcset = el.dataset.srcset; el.removeAttribute('data-srcset'); }
+        if (el.dataset.src) { el.src = el.dataset.src; el.removeAttribute('data-src'); }
+      });
+    };
     var bar = document.createElement('div');
     bar.className = 'twoshot__bar'; bar.setAttribute('role', 'tablist'); bar.setAttribute('aria-label', 'Films');
     var segs = shots.map(function (sh, k) {
@@ -32,6 +46,7 @@
       b.type = 'button'; b.className = 'twoshot__seg'; b.setAttribute('role', 'tab');
       b.setAttribute('aria-label', 'Show ' + sh.dataset.title);
       b.innerHTML = '<i></i>';
+      ['pointerenter', 'pointerdown', 'focus'].forEach(function (t) { b.addEventListener(t, function () { hydrate(k); }); });
       b.addEventListener('click', function () { show(k); });
       bar.appendChild(b);
       return b;
@@ -39,13 +54,15 @@
     frame.insertAdjacentElement('afterend', bar);
     var show = function (i) {
       cur = (i + shots.length) % shots.length;
+      hydrate(cur); hydrate(cur + 1);
+      var again = segs[cur].classList.contains('is-on');
       shots.forEach(function (x, k) { x.classList.toggle('is-on', k === cur); });
       segs.forEach(function (sg, k) {
         sg.classList.toggle('is-done', k < cur);
         sg.classList.remove('is-on');
         sg.setAttribute('aria-selected', k === cur ? 'true' : 'false');
       });
-      void segs[cur].offsetWidth;                 // restart the fill
+      if (again) void segs[cur].offsetWidth;      // restart the fill (only a re-shown segment needs it)
       segs[cur].classList.add('is-on');
       var s = shots[cur];
       if (cap) { cap.querySelector('b').textContent = s.dataset.title; cap.querySelector('span').textContent = s.dataset.kind; cap.href = s.getAttribute('href'); }
@@ -61,7 +78,7 @@
     });
     // swipe on touch screens
     var x0 = null;
-    frame.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse') x0 = e.clientX; });
+    frame.addEventListener('pointerdown', function (e) { hydrate(cur + 1); hydrate(cur - 1); if (e.pointerType !== 'mouse') x0 = e.clientX; });
     frame.addEventListener('pointerup', function (e) {
       if (x0 === null) return;
       var dx = e.clientX - x0; x0 = null;
@@ -70,6 +87,9 @@
     document.addEventListener('visibilitychange', function () { two.classList.toggle('is-away', document.hidden); });
     if (reduce) two.classList.add('is-still');
     show(0);
+    var rest = function () { shots.forEach(function (sh, k) { hydrate(k); }); };
+    var idle = function () { if ('requestIdleCallback' in window) requestIdleCallback(rest, { timeout: 3000 }); else setTimeout(rest, 2000); };
+    if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true });
   }
 
   if (reduce) {
@@ -123,20 +143,30 @@
   var depthEls = [].slice.call(document.querySelectorAll('#work .tile__img, .commission__still img'));
   if (depthEls.length && 'IntersectionObserver' in window) {
     var live = new Set();
+    var ticking = false;
+    var later = function () { if (!ticking) { ticking = true; requestAnimationFrame(paint); } };
     var io = new IntersectionObserver(function (es) {
       es.forEach(function (e) { e.isIntersecting ? live.add(e.target) : live.delete(e.target); });
+      // A jump (a hard cut, the timeline, keyboard focus) brings pictures in
+      // after the scroll's own paint ran: repaint, or they keep a stale offset.
+      later();
     }, { rootMargin: '10% 0px' });
     depthEls.forEach(function (el) { io.observe(el); });
-    var ticking = false;
     var paint = function () {
       ticking = false;
-      var vh = innerHeight;
+      var vh = innerHeight, at = [];
+      // Read everything, then write, so one frame costs one style pass.
       live.forEach(function (el) {
         var r = el.getBoundingClientRect();
-        el.style.setProperty('--py', ((((r.top + r.height / 2) - vh / 2) / vh) * -22).toFixed(1) + 'px');
+        // scale(1.08) overscans the frame by 4% of its height on each side;
+        // shifting further than that showed a black band inside the frame.
+        var o = el.offsetHeight * 0.04;
+        var v = (((r.top + r.height / 2) - vh / 2) / vh) * -22;
+        at.push([el, Math.max(-o, Math.min(o, v))]);
       });
+      at.forEach(function (p) { p[0].style.setProperty('--py', p[1].toFixed(1) + 'px'); });
     };
-    addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(paint); } }, { passive: true });
+    addEventListener('scroll', later, { passive: true });
     paint();
   }
 

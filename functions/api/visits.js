@@ -20,17 +20,21 @@
  * strings, and in the first two days it caught 0 of 215 rows while 96% of the
  * traffic was machines. Two signals actually work:
  *
- *   1. Path allowlist. The site has three pages. A request for anything else
- *      is a scanner, so this is an allowlist rather than a blocklist of probe
- *      patterns — it needs no upkeep when they invent new ones.
+ *   1. Path allowlist. The site's pages are home, About, CV, Privacy, the
+ *      /work/ index with one page per film, and pulled reels (/reel/<code>).
+ *      A request for anything else is a scanner, so this is an allowlist
+ *      rather than a blocklist of probe patterns — it needs no upkeep when
+ *      they invent new ones.
  *   2. Network. Consumer ISPs carry people; hosting providers, clouds and VPN
  *      resellers carry scripts. Matching on the datacenter side is the safer
  *      direction: a missed hosting company shows one extra row, whereas an
  *      ISP allowlist would silently drop real visitors on carriers not listed.
  */
 
-// The real pages. Assets never reach here — the middleware skips them.
-const PAGES = ['/', '/index.html', '/about', '/about.html', '/privacy', '/privacy.html'];
+// The real pages. Assets never reach here — the middleware skips them. The
+// film pages and pulled reels are matched by prefix below.
+const PAGES = ['/', '/index.html', '/about', '/about.html', '/cv', '/cv.html',
+               '/privacy', '/privacy.html', '/work', '/work/'];
 
 // Substrings of the network name that mean "machine". Matched case-insensitively.
 const DATACENTER = [
@@ -79,9 +83,11 @@ export async function onRequestGet({ request, env }) {
   const where = [];
   const binds = [];
   if (!bots) where.push('is_bot = 0');
-  if (days) where.push(`ts >= datetime('now', '-${days} days')`);
+  // ts is stored as an ISO string ('2026-09-30T…Z'); datetime() writes a space
+  // there instead, and 'T' sorts after ' ', so compare like with like.
+  if (days) where.push(`ts >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-${days} days')`);
   if (humans) {
-    where.push(`path IN (${PAGES.map(() => '?').join(',')})`);
+    where.push(`(path IN (${PAGES.map(() => '?').join(',')}) OR ((path LIKE '/work/%' OR path LIKE '/reel/%') AND path NOT LIKE '%.%'))`);
     binds.push(...PAGES);
     // A null network is kept — unknown is not the same as datacenter.
     where.push(`(asn IS NULL OR (${DATACENTER.map(() => 'lower(asn) NOT LIKE ?').join(' AND ')}))`);
