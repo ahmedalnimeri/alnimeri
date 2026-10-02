@@ -118,12 +118,19 @@
 
 /* ---------- the credit: one line under the picture, the way a film ends ---------- */
 .fp-credit { margin: 18px 0 0; font-size: 14px; letter-spacing: -0.005em; line-height: 1.5; color: var(--fg-faint); }
-.fp-credit a { color: var(--fg); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size .5s var(--ease); }
+.fp-credit a { white-space: nowrap; color: var(--fg); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size .5s var(--ease); }
 .fp-credit a:hover, .fp-credit a:focus-visible { background-size: 100% 1px; }
 
 /* ---------- house lights: down while the film plays ---------- */
 .fp-head, .fp-credit, .fp > :not(.fp-hero) { transition: opacity 1.2s var(--ease); }
 .fp-lights-down .fp-head, .fp-lights-down .fp-credit, .fp-lights-down .fp > :not(.fp-hero) { opacity: .16; }
+/* on a page with further films, the lights stay on the one that is playing
+   (is-on: its frame's holder) and go down on the rest, the page's own film
+   included */
+.fp-stage, .fp-also__head, .fp-also__film, .fp-also__film > * { transition: opacity 1.2s var(--ease); }
+.fp-lights-down .fp > .fp-also { opacity: 1; }
+.fp-lights-down .fp-stage:not(.is-on), .fp-lights-down .fp-also__head,
+.fp-lights-down .fp-also__film:not(.is-on), .fp-lights-down .fp-also__film.is-on > :not(.fp-frame) { opacity: .16; }
 .fp-lights-down .fp-light { opacity: .5; }
 .fp-lights-down .masthead { opacity: .16; transition: opacity 1.2s var(--ease); }
 .fp-lights-down .masthead:hover, .fp-lights-down .masthead:focus-within { opacity: 1; }
@@ -145,6 +152,20 @@
 @media (max-width: 899px) {
   .fp-film--portrait .fp-frame { aspect-ratio: 9 / 16; width: min(100%, 62svh); margin-inline: auto; }
 }
+
+/* ---------- further films on the same page ----------
+   An entry with more than one film (Badr Airlines) hangs the others under its
+   own: each in its own frame, with its own play control, its own running time
+   and its own credit, or none where none is stated. Two to a row, the same
+   frame and the same play control as the film above them. */
+.fp-also { max-width: var(--fp-w); margin: clamp(72px, 12vh, 128px) auto 0; }
+.fp-also__head { margin: 0 0 clamp(24px, 4vh, 40px); font-size: clamp(22px, 2.3vw, 30px); font-weight: 500; letter-spacing: -0.022em; line-height: 1.15; color: var(--fg); }
+.fp-also__films { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(36px, 6vh, 56px) clamp(16px, 1.8vw, 26px); }
+.fp-also .fp-frame { box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .7); }
+.fp-also__name { margin: 16px 0 0; font-size: 17px; font-weight: 500; letter-spacing: -0.014em; line-height: 1.3; color: var(--fg); }
+.fp-also .fp-meta { margin-top: 4px; font-size: 14px; }
+.fp-also .fp-credit { margin-top: 6px; font-size: 13px; }
+@media (max-width: 700px) { .fp-also__films { grid-template-columns: 1fr; } }
 
 /* ---------- what people said ---------- */
 .fp .reception { max-width: var(--fp-w); margin: clamp(72px, 12vh, 128px) auto 0; padding-top: 0; border-top: 0; }
@@ -307,8 +328,8 @@
 .fp-index:has(.fp-cat:target) .fp-tabs__row > a[data-cat="all"] { color: var(--fg-dim); border-color: transparent; background: none; }
 
 /* one wall, read left to right like a page: every film in the same frame,
-   and the first film of whatever is showing hung large. With one size of
-   cell and one 2x2 lead, seventeen films fill five rows of four exactly. */
+   and the first film of whatever is showing hung large: one size of cell
+   and one 2x2 lead. */
 .fp-wall {
   position: relative; max-width: var(--fp-w); margin: 0 auto;
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-flow: row dense;
@@ -320,6 +341,11 @@
 .fp-wall .fp-card { display: flex; flex-direction: column; min-width: 0; }
 .fp-wall .fp-card > a { display: flex; flex-direction: column; flex: 1 1 auto; }
 .fp-wall .fp-card.is-lead { grid-row: span 2; grid-column: span 2; }
+/* the wall ends whole (script, which also sets these stills' shape): a film
+   left alone in the last row hangs across it; in a last row one film short,
+   the last film takes two cells at the row's height */
+.fp-wall .fp-card.is-wide { grid-column: 1 / -1; }
+.fp-wall .fp-card.is-pair { grid-column: span 2; }
 .fp-wall .fp-card--portrait .fp-card__still { aspect-ratio: 16 / 9; }
 .fp-wall .fp-card.is-lead .fp-card__still { aspect-ratio: auto; flex: 1 1 auto; min-height: 240px; }
 @media (max-width: 1100px) { .fp-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

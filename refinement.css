@@ -352,3 +352,20 @@
 .twoshot__seg:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .twoshot__cap { margin-top: 10px; }
 .twoshot__frame { touch-action: pan-y; }
+
+/* Selected films, two to a row: an odd number of films left the last row
+   with one tile alone. One scope film spans its row at the shape it was shot
+   (60 Secs of New York, 2.37:1: its picture inside the 16:9 poster, as
+   measured in bin-build-home-art.py's CROP), so the letterbox falls outside
+   the tile and every row is whole. On a phone, one column, it is a tile like
+   the others. */
+@media screen and (min-width: 561px) {
+  #work .grid > .tile--scope { grid-column: 1 / -1; }
+  #work .tile--scope .tile__link { aspect-ratio: 768 / 324; }
+  /* the picture's 1.08 overscan grows mostly leftward, into the clouds, so
+     the Solana mark near its right edge stays whole. Three quarters, not the
+     right edge itself: the hover push (design-hover.js, up to 1.06 and a pan
+     of half its growth) still needs a margin on the right, or pointing at
+     the right of the frame would open a gap there. */
+  .has-motion #work .tile--scope .tile__img { transform-origin: 75% 50%; }
+}

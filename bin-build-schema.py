@@ -5,7 +5,7 @@ The VideoObject list must be derived from the DOM, not maintained by hand —
 swapping two tiles once left the schema advertising films that were no longer
 on the page.
 """
-import re, json
+import re, json, os
 
 s = open('index.html').read()
 METADATA = json.load(open('assets/video-metadata.json'))
@@ -16,7 +16,10 @@ def iso(d):
     return f"PT{m}M{sec}S"
 
 videos = []
-for blk in re.findall(r'<article class="tile[\s\S]+?</article>', s):
+# The front page's own films: the films in <template id="more-films"> are not
+# on this page (each has its own page and its own schema).
+_grid = re.sub(r'<template id="more-films">[\s\S]*?</template>', '', s)
+for blk in re.findall(r'<article class="tile[\s\S]+?</article>', _grid):
     title = re.search(r'data-title="([^"]*)"', blk).group(1)
     vm = re.search(r'data-video="(\d+)"', blk)
     vid = vm.group(1) if vm else None
@@ -30,16 +33,40 @@ for blk in re.findall(r'<article class="tile[\s\S]+?</article>', s):
     name = title.replace('&amp;', '&')
     kindtxt = (kind.group(1) if kind else '').replace('&amp;', '&').replace(' · ', ' — ')
     poster = re.search(r'<img\s(?:[^>]*\s)?src="assets/(posters/[^"?]+)', blk)
-    v = {
-        "@type": "VideoObject" if vid else "Movie",
-        "name": name,
-        "description": f"{kindtxt} by Ahmed El-Nimeri." if kindtxt else "Film by Ahmed El-Nimeri.",
-        "creator": {"@id": "https://alnimeri.com/#person"},
-        "director": {"@id": "https://alnimeri.com/#person"},
-    }
+    # No role is named and nothing claims a director (Ahmed, 2026-10-03:
+    # roles are for /cv only). data-credit on the tile says which relation
+    # the data may claim: none (his own film) -> creator; "contributor" ->
+    # contributor; "none" -> no relation at all (bin-build-work-pages.py).
+    credit = re.search(r'data-credit="([^"]*)"', blk)
+    credit = credit.group(1) if credit else None
+    if credit not in (None, 'contributor', 'none'):
+        raise SystemExit(f'{name}: data-credit="{credit}" (contributor or none)')
+    if credit is None:
+        v = {
+            "@type": "VideoObject" if vid else "Movie",
+            "name": name,
+            "description": f"{kindtxt} by Ahmed El-Nimeri." if kindtxt else "Film by Ahmed El-Nimeri.",
+            "creator": {"@id": "https://alnimeri.com/#person"},
+        }
+    elif credit == 'contributor':
+        v = {"@type": "VideoObject" if vid else "Movie", "name": name,
+             "description": (f"{kindtxt}, from the portfolio of Ahmed El-Nimeri." if kindtxt
+                             else "From the portfolio of Ahmed El-Nimeri."),
+             "contributor": {"@id": "https://alnimeri.com/#person"}}
+    else:
+        v = {"@type": "VideoObject" if vid else "Movie", "name": name}
+        if kindtxt:
+            v["description"] = f"{kindtxt}."
+
     if vid:
         v["uploadDate"] = METADATA[vid]["uploadDate"]
-    if poster: v["thumbnailUrl"] = f"https://alnimeri.com/assets/{poster.group(1)}"
+    # The thumbnail is a still of the film this object describes: the film's
+    # own when it has one (Badr Airlines' tile leads with the Captain still,
+    # but plays, and is described as, the brand film), else the tile's.
+    if vid and os.path.exists(f'assets/posters/{vid}.jpg'):
+        v["thumbnailUrl"] = f"https://alnimeri.com/assets/posters/{vid}.jpg"
+    elif poster:
+        v["thumbnailUrl"] = f"https://alnimeri.com/assets/{poster.group(1)}"
     # Only films with a Vimeo master can be embedded; the rest live on X only.
     if vid: v["embedUrl"] = f"https://player.vimeo.com/video/{vid}"
     if dur:  v["duration"] = iso(dur.group(1))
