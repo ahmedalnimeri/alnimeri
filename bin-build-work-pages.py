@@ -319,12 +319,11 @@ for i, f in enumerate(films):
         "@context": "https://schema.org",
         "@type": "VideoObject" if f["vid"] else "Movie",
         "name": title_txt,
-        "description": f"{kind} directed, shot and edited by Ahmed El-Nimeri.",
+        "description": f"{kind}, from the portfolio of Ahmed El-Nimeri.",
         "duration": iso_dur(f['dur']),
         "thumbnailUrl": f"https://alnimeri.com/{f['poster'].split('?')[0]}",
         "url": f"https://alnimeri.com/work/{f['slug']}",
         "creator": {"@type": "Person", "name": "Ahmed El-Nimeri", "@id": "https://alnimeri.com/#person"},
-        "director": {"@type": "Person", "name": "Ahmed El-Nimeri", "@id": "https://alnimeri.com/#person"},
     }
     if f['vid']:
         schema['uploadDate'] = METADATA[f['vid']]['uploadDate']
@@ -388,8 +387,8 @@ for i, f in enumerate(films):
     if stat_txt and f['statref']:
         meta.append(f'<a href="{f["statref"]}" target="_blank" rel="noopener">{stat_txt} <span aria-hidden="true">&#8599;</span></a>')
 
-    # and under the picture, the one credit, the way a film ends
-    credit = '<span>Directed, shot and edited by</span> <a href="/about">Ahmed El-Nimeri</a>'
+    # No credit line under the picture: Ahmed asked for the credits to come off
+    # every film (2026-10-03), so nothing here states a role.
 
     # What the audience said, in their own words, off the original post.
     rec = RECEPTION.get(f['slug'])
@@ -457,7 +456,6 @@ for i, f in enumerate(films):
       <p class="fp-meta">{''.join(meta)}</p>
     </header>
     {player}
-    <p class="fp-credit">{credit}</p>
   </div>
   {reception}
   {related}
