@@ -26,6 +26,8 @@ bin-stamp-assets.py afterwards to hash the poster URLs.
 import os, re, html
 
 SRC = open('index.html').read()
+# the front page's own films: <template id="more-films"> is never rendered
+SRC = re.sub(r'<template id="more-films">[\s\S]*?</template>', '', SRC)
 
 films = {}
 for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
@@ -70,7 +72,7 @@ CHAPTERS = [
     ('brand', 'Brand &amp; campaign films',
      'A launch, a brand story or a campaign that needs a film. Direction, cinematography and editing, shaped around your audience.',
      ('/work/#brand', 'See all brand &amp; campaign films'), 'Brand%20%2F%20campaign%20film%20enquiry',
-     ['Solana Accelerate', 'Token Supercycle', '60 Secs of New York']),
+     ['Solana Accelerate', 'Badr Airlines', '60 Secs of New York']),
     ('events', 'Event &amp; conference films',
      'Conferences, launches and summits. Speaker films, multi-camera coverage and recaps cut on site, while the event is still happening.',
      ('/work/#events', 'See all event &amp; conference films'), 'Event%20%2F%20conference%20film%20enquiry',

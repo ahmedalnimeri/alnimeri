@@ -14,8 +14,13 @@ into this directory.
 import re, os, json, html, sys, subprocess
 from urllib.parse import urlencode, quote
 
-WORDS = {14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen',
-         18: 'eighteen', 19: 'nineteen', 20: 'twenty'}
+WORDS = {1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten',
+         11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen',
+         18: 'eighteen', 19: 'nineteen', 20: 'twenty', 21: 'twenty-one',
+         22: 'twenty-two', 23: 'twenty-three', 24: 'twenty-four', 25: 'twenty-five',
+         26: 'twenty-six', 27: 'twenty-seven', 28: 'twenty-eight', 29: 'twenty-nine',
+         30: 'thirty'}
+NUMBER = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
 
 SRC = open('index.html').read()
 METADATA = json.load(open('assets/video-metadata.json'))
@@ -48,12 +53,30 @@ def slugify(t):
     t = re.sub(r'[^a-z0-9]+', '-', t)
     return t.strip('-')
 
-films = []
-for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
+# The films on the front page are the grid's tiles. The rest wait in
+# <template id="more-films"> (never rendered on the front page, so neither
+# the grid, its reel nor its bin sees them): films that are on /work/ and
+# have their own page, and, marked data-part-of, the further films on an
+# entry's page. Every one is the same tile, read the same way.
+_more = re.search(r'<template id="more-films">([\s\S]*?)</template>', SRC)
+MORE_AT = _more.span() if _more else (len(SRC), len(SRC))
+
+films, parts = [], []
+for m_ in re.finditer(r'<article class="tile[\s\S]+?</article>', SRC):
+    b = m_.group(0)
     title = field(b, r'data-title="([^"]+)"')
     if not title:
         sys.exit('tile without a title')
-    films.append({
+    # The credit, as the film itself states it. No data-role: the front
+    # page's own films, "Directed, shot and edited by" (Ahmed's wording).
+    # data-role="": no role is stated anywhere, so no credit line at all.
+    role = re.search(r'data-role="([^"]*)"', b)
+    part_of = field(b, r'data-part-of="([^"]+)"')
+    (parts if part_of else films).append({
+        'home':    m_.start() < MORE_AT[0],
+        'part_of': part_of,
+        'role':    html.unescape(role.group(1)) if role else None,
+        'catx':    field(b, r'data-cat="(\w+)"'),
         'title':   title,
         'slug':    slugify(title),
         'vid':     field(b, r'data-video="(\d+)"'),
@@ -75,6 +98,24 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
 
 if len(films) < 10 or len(films) not in WORDS:
     sys.exit(f'unexpected film count: {len(films)} (add it to WORDS)')
+HOME = [f for f in films if f['home']]
+
+# An entry's further films hang on its page. The one that is the entry's own
+# film (the tile's data-video) is not shown twice: it gives the page its own
+# still, where the front page may lead with another frame (Badr Airlines
+# leads with the Captain still and plays the brand film).
+for f in films:
+    f['main'], f['more'] = f, []
+for p in parts:
+    host = next((f for f in films if f['slug'] == p['part_of']), None)
+    if not host:
+        sys.exit(f"data-part-of=\"{p['part_of']}\": no such film")
+    if p['vid'] and p['vid'] == host['vid']:
+        if p['dur'] != host['dur']:
+            sys.exit(f"{host['title']}: its own film runs {host['dur']} on the tile and {p['dur']} in its part")
+        host['main'] = p
+    else:
+        host['more'].append(p)
 
 def pixels(path):
     """The real size of a share image, read off the file (as the about
@@ -169,6 +210,8 @@ os.makedirs('work', exist_ok=True)
 _secs = sum(int(f['dur'].split(':')[0]) * 60 + int(f['dur'].split(':')[1]) for f in films)
 COUNT = WORDS.get(len(films), str(len(films)))
 TRT   = f'{_secs // 60}:{_secs % 60:02d}'
+# the front page shows some of them; /work/ shows them all
+HOME_COUNT, MORE_COUNT = WORDS.get(len(HOME), str(len(HOME))), len(films) - len(HOME)
 
 # ---- categories, shared by the film pages and the index ----------------
 # A client arrives knowing the KIND of film they need. Both the index and the
@@ -190,6 +233,13 @@ def category_of(kind):
         if any(n.lower() in k for n in needles):
             return cid
     return 'brand'
+
+# A film whose kind names no category says which one it belongs to on its
+# tile (data-cat): Stim is a TV commercial, shown for its post-production.
+for f in films:
+    f['cat'] = f['catx'] or category_of(f['kind'])
+    if f['cat'] not in BRIEF_KIND:
+        sys.exit(f"{f['title']}: no category '{f['cat']}'")
 
 def label_of(cid):
     return next(label for c, label, _n in CATEGORIES if c == cid)
@@ -278,7 +328,7 @@ def card(f, eager_first=0, sizes='(max-width: 700px) 46vw, (max-width: 1100px) 3
     else:
         bits = [f['kind'], f['dur']] + ([yr] if yr else []) + ([nowrap_last(f['stat'])] if f['stat'] else [])
     shape = ' fp-card--portrait' if f['portrait'] else ''
-    return ('<li class="fp-card' + shape + '" data-cat="' + category_of(f['kind']) + '">'
+    return ('<li class="fp-card' + shape + '" data-cat="' + f['cat'] + '">'
             # the cards on screen when the page opens are there from the first
             # frame: the picture a visitor came for never waits on a script
             + ('<a href="/work/' + f['slug'] + '">' if shown else
@@ -301,6 +351,79 @@ def kind_and_client(kind):
     return ' · '.join(kinds), ' · '.join(clients)
 
 
+PERSON = {"@type": "Person", "name": "Ahmed El-Nimeri", "@id": "https://alnimeri.com/#person"}
+LEGACY_CREDIT = 'Directed, shot and edited by'
+
+def credit_of(role):
+    """The credit under a picture, exactly as the film states it. None: the
+    front page's own films, in Ahmed's wording. Empty: no role is stated
+    anywhere, so there is no credit line at all (never a guess)."""
+    if role is None:
+        return f'<span>{LEGACY_CREDIT}</span> <a href="/about">Ahmed El-Nimeri</a>'
+    if not role:
+        return ''
+    return f'<span>{html.escape(role)} &mdash;</span> <a href="/about">Ahmed El-Nimeri</a>'
+
+def video_object(rec, name, kind, role, url):
+    """One film as schema.org data, claiming only the credit the page shows."""
+    v = {"@type": "VideoObject" if rec["vid"] else "Movie", "name": name}
+    if role is None:
+        v["description"] = f"{kind} directed, shot and edited by Ahmed El-Nimeri."
+    elif role:
+        v["description"] = f"{kind + '. ' if kind else ''}{role}: Ahmed El-Nimeri."
+    elif kind:
+        v["description"] = f"{kind}."
+    v.update({"duration": iso_dur(rec['dur']),
+              "thumbnailUrl": f"https://alnimeri.com/{rec['poster'].split('?')[0]}",
+              "url": url})
+    if role is None:
+        v["creator"], v["director"] = dict(PERSON), dict(PERSON)
+    elif role:
+        v["contributor"] = dict(PERSON)
+    if rec['vid']:
+        v['uploadDate'] = METADATA[rec['vid']]['uploadDate']
+        v['embedUrl'] = f"https://player.vimeo.com/video/{rec['vid']}"
+    if rec['statref']:
+        v['sameAs'] = rec['statref']
+    st = html.unescape(rec['stat'])
+    m = re.match(r'([\d.]+)([KM]?)', st)
+    if m:
+        n = float(m.group(1)) * {'K': 1e3, 'M': 1e6, '': 1}[m.group(2)]
+        v['interactionStatistic'] = {
+            "@type": "InteractionCounter",
+            "interactionType": {"@type": 'LikeAction' if 'reaction' in st else 'WatchAction'},
+            "userInteractionCount": int(n)}
+    return v
+
+PLAY_ICON = '<span class="fp-play__icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z"/></svg></span>'
+
+def play_of(rec):
+    """Play: the still becomes the Vimeo player (design-filmpages.js); without
+    JavaScript, a plain link to the film on Vimeo. A film with no Vimeo copy
+    opens its post instead."""
+    t = html.escape(html.unescape(rec['title']), quote=True)
+    if rec['vid']:
+        return (f'<a class="fp-play" href="https://vimeo.com/{rec["vid"]}" data-vid="{rec["vid"]}" data-title="{t}">'
+                f'{PLAY_ICON}<span class="fp-play__label">Play film</span><span class="fp-play__dur">{rec["dur"]}</span></a>')
+    if rec['statref']:
+        return (f'<a class="fp-play" href="{rec["statref"]}" target="_blank" rel="noopener">'
+                f'{PLAY_ICON}<span class="fp-play__label">Watch on {source_name(rec["statref"])}</span>'
+                f'<span class="fp-play__dur" aria-hidden="true">&#8599;</span></a>')
+    return ''
+
+def facts(rec, yr=''):
+    """The tile's own words (kind, and the client where it names one), then
+    year, running time and the published figure with its source."""
+    out = [f'<span>{html.escape(part.strip())}</span>' for part in html.unescape(rec['kind']).split('·') if part.strip()]
+    if yr:
+        out.append(f'<span>{yr}</span>')
+    out.append(f'<span>{rec["dur"]}</span>')
+    st = html.unescape(rec['stat'])
+    if st and rec['statref']:
+        out.append(f'<a href="{rec["statref"]}" target="_blank" rel="noopener">{st} <span aria-hidden="true">&#8599;</span></a>')
+    return ''.join(out)
+
+
 for i, f in enumerate(films):
     prev_f = films[i - 1] if i else None
     next_f = films[i + 1] if i + 1 < len(films) else None
@@ -309,44 +432,29 @@ for i, f in enumerate(films):
     stat_txt = html.unescape(f['stat'])
     title_txt = html.unescape(f['title'])
 
-    desc = (f"{title_txt} — {kind} directed by Ahmed El-Nimeri. "
-            f"{stat_txt[:1].upper() + stat_txt[1:]}. " if stat_txt else
-            f"{title_txt} — {kind} directed by Ahmed El-Nimeri. ")
+    # the credit claimed is only ever the one the page shows
+    if f['role'] is None:
+        desc = f"{title_txt} — {kind} directed by Ahmed El-Nimeri. "
+    elif f['role']:
+        desc = f"{title_txt} — {kind}. {f['role']}: Ahmed El-Nimeri. "
+    else:
+        desc = f"{title_txt} — {kind}. "
+    if stat_txt:
+        desc += f"{stat_txt[:1].upper() + stat_txt[1:]}. "
     desc += f"Running time {f['dur']}."
     desc = html.escape(desc, quote=True)
 
-    schema = {
-        "@context": "https://schema.org",
-        "@type": "VideoObject" if f["vid"] else "Movie",
-        "name": title_txt,
-        "description": f"{kind} directed, shot and edited by Ahmed El-Nimeri.",
-        "duration": iso_dur(f['dur']),
-        "thumbnailUrl": f"https://alnimeri.com/{f['poster'].split('?')[0]}",
-        "url": f"https://alnimeri.com/work/{f['slug']}",
-        "creator": {"@type": "Person", "name": "Ahmed El-Nimeri", "@id": "https://alnimeri.com/#person"},
-        "director": {"@type": "Person", "name": "Ahmed El-Nimeri", "@id": "https://alnimeri.com/#person"},
-    }
-    if f['vid']:
-        schema['uploadDate'] = METADATA[f['vid']]['uploadDate']
-        schema['embedUrl'] = f"https://player.vimeo.com/video/{f['vid']}"
-    if f['statref']:
-        schema['sameAs'] = f['statref']
-    m = re.match(r'([\d.]+)([KM]?)', stat_txt)
-    if m:
-        n = float(m.group(1)) * {'K': 1e3, 'M': 1e6, '': 1}[m.group(2)]
-        kindword = 'LikeAction' if 'reaction' in stat_txt else 'WatchAction'
-        schema['interactionStatistic'] = {
-            "@type": "InteractionCounter",
-            "interactionType": {"@type": kindword},
-            "userInteractionCount": int(n)}
+    _url = f"https://alnimeri.com/work/{f['slug']}"
+    # the page's own film, its still from that film; then any further films
+    schema = video_object(dict(f, poster=f['main']['poster']), title_txt, kind, f['role'], _url)
+    _others = [video_object(p, html.unescape(p['title']), html.unescape(p['kind']), p['role'], _url) for p in f['more']]
 
-    schema = {"@context": "https://schema.org", "@graph": [schema, {
+    schema = {"@context": "https://schema.org", "@graph": [schema] + _others + [{
         "@type": "BreadcrumbList",
         "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": "Ahmed El-Nimeri", "item": "https://alnimeri.com/"},
             {"@type": "ListItem", "position": 2, "name": "All films", "item": "https://alnimeri.com/work/"},
             {"@type": "ListItem", "position": 3, "name": title_txt}]}]}
-    schema["@graph"][0].pop("@context", None)
 
     enquiry = html.escape("mailto:ahmed@alnimeri.com?" + urlencode({"subject": "Project enquiry — " + title_txt, "body": "Hi Ahmed,\n\nI saw " + title_txt + " on your website and would like to discuss a project.\n\nWhat we’re making:\nTiming and location:\nBudget range (if known):\n\nName / company:\n"}, quote_via=quote), quote=True)
 
@@ -359,20 +467,12 @@ for i, f in enumerate(films):
     _t = html.escape(title_txt, quote=True)
     _sizes = ('(max-width: 700px) 70vw, 440px' if f['portrait']
               else '(max-width: 700px) 92vw, (max-width: 1400px) 80vw, 1180px')
-    _still = still(f, _sizes, eager=True, high=True, webp=True)
+    # (an entry's own film may have its own still, apart from its tile's: main)
+    _still = still(f['main'], _sizes, eager=True, high=True, webp=True)
     # the same file as the still (same srcset, same sizes), so the light it
     # throws on the page costs no second download
-    _light = still(f, _sizes, eager=True, webp=True).replace(' alt="Still from ' + _t + '"', ' alt=""')
-    _icon = '<span class="fp-play__icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z"/></svg></span>'
-    if f['vid']:
-        play = (f'<a class="fp-play" href="https://vimeo.com/{f["vid"]}" data-vid="{f["vid"]}" data-title="{_t}">'
-                f'{_icon}<span class="fp-play__label">Play film</span><span class="fp-play__dur">{f["dur"]}</span></a>')
-    elif f['statref']:
-        play = (f'<a class="fp-play" href="{f["statref"]}" target="_blank" rel="noopener">'
-                f'{_icon}<span class="fp-play__label">Watch on {source_name(f["statref"])}</span>'
-                f'<span class="fp-play__dur" aria-hidden="true">&#8599;</span></a>')
-    else:
-        play = ''
+    _light = still(f['main'], _sizes, eager=True, webp=True).replace(' alt="Still from ' + _t + '"', ' alt=""')
+    play = play_of(f)
     shape = ' fp-film--portrait' if f['portrait'] else ''
     player = (f'<div class="fp-stage">'
               f'<div class="fp-light" aria-hidden="true">{_light}</div>'
@@ -381,15 +481,31 @@ for i, f in enumerate(films):
     # One line of facts under the title, in the tile's own words (kind, and
     # the client where the tile names one), then year, running time and the
     # published figure with its source. Nothing is inferred.
-    meta = [f'<span>{html.escape(part.strip())}</span>' for part in html.unescape(f['kind']).split('·') if part.strip()]
-    if _yr:
-        meta.append(f'<span>{_yr}</span>')
-    meta.append(f'<span>{f["dur"]}</span>')
-    if stat_txt and f['statref']:
-        meta.append(f'<a href="{f["statref"]}" target="_blank" rel="noopener">{stat_txt} <span aria-hidden="true">&#8599;</span></a>')
+    meta = facts(f, _yr)
 
-    # and under the picture, the one credit, the way a film ends
-    credit = '<span>Directed, shot and edited by</span> <a href="/about">Ahmed El-Nimeri</a>'
+    # and under the picture, the one credit, the way a film ends: as the film
+    # states it, or none
+    credit = credit_of(f['role'])
+    credit = f'\n    <p class="fp-credit">{credit}</p>' if credit else ''
+
+    # Further films on this entry's page (data-part-of): each its own frame,
+    # its own play, its own facts and its own credit (or none).
+    also = ''
+    if f['more']:
+        _items = []
+        for p in f['more']:
+            _items.append(
+                f'<article class="fp-also__film reveal">'
+                f'<div class="fp-frame">{still(p, "(max-width: 700px) 92vw, (max-width: 1400px) 46vw, 640px", webp=True)}{play_of(p)}</div>'
+                f'<h3 class="fp-also__name">{p["title"]}</h3>'
+                f'<p class="fp-meta">{facts(p, year_of(p))}</p>'
+                + (f'<p class="fp-credit">{credit_of(p["role"])}</p>' if credit_of(p['role']) else '')
+                + '</article>')
+        _n = len(f['more'])
+        also = (f'\n  <section class="fp-also" aria-labelledby="also-head">\n'
+                f'    <h2 class="fp-also__head reveal" id="also-head">{NUMBER[_n].capitalize()} more {f["title"]} film{"s" if _n > 1 else ""}</h2>\n'
+                f'    <div class="fp-also__films">{"".join(_items)}</div>\n'
+                f'  </section>')
 
     # What the audience said, in their own words, off the original post.
     rec = RECEPTION.get(f['slug'])
@@ -421,8 +537,8 @@ for i, f in enumerate(films):
     # Hung on one line at one height, every still at its own shape, so a
     # vertical film stands as a vertical film. A kind with fewer than three
     # others is topped up from the rest of the work.
-    _cid = category_of(f['kind'])
-    _siblings = [g for g in films if category_of(g['kind']) == _cid and g['slug'] != f['slug']]
+    _cid = f['cat']
+    _siblings = [g for g in films if g['cat'] == _cid and g['slug'] != f['slug']]
     _more = (_siblings + [g for g in films[i + 1:] + films[:i] if g not in _siblings])[:3]
     _head = ('More ' + label_of(_cid).lower()) if len(_siblings) >= 3 else 'More films'
     _all = (f'<a href="/work/#{_cid}">All {label_of(_cid).lower()} <span aria-hidden="true">&#8599;</span></a>'
@@ -441,7 +557,7 @@ for i, f in enumerate(films):
         # the first frame (is-peek, design-filmpages.css); on a wider screen,
         # where it is well below the fold, it still arrives with the others.
         # (Not card()'s eager_first/shown_first: those count across every page.)
-        if k == 0 and not f['portrait'] and not reception:
+        if k == 0 and not f['portrait'] and not reception and not also:
             c = (c.replace('loading="lazy"', 'loading="eager"', 1)
                   .replace('class="fp-card', 'class="fp-card is-peek', 1))
         _hang.append(c)
@@ -454,11 +570,10 @@ for i, f in enumerate(films):
     <header class="fp-head">
       <p class="fp-crumbs"><a href="/work/">All films</a><span aria-hidden="true">/</span><a href="/work/#{_cid}">{label_of(_cid)}</a></p>
       <h1 class="fp-title">{f['title']}</h1>
-      <p class="fp-meta">{''.join(meta)}</p>
+      <p class="fp-meta">{meta}</p>
     </header>
-    {player}
-    <p class="fp-credit">{credit}</p>
-  </div>
+    {player}{credit}
+  </div>{also}
   {reception}
   {related}
   <section class="fp-close reveal" aria-labelledby="brief-head">
@@ -469,7 +584,7 @@ for i, f in enumerate(films):
   </section>
   <footer class="fp-foot">
     <nav class="fp-nav" aria-label="Films">{''.join(nav)}</nav>
-    <p class="fp-note">One of {COUNT} films in the <a href="/">selected work</a> of Ahmed El-Nimeri,
+    <p class="fp-note">One of {COUNT} films in the <a href="/work/">selected work</a> of Ahmed El-Nimeri,
       a film director and Associate Creative Director based in Dubai. Every figure on this site links
       to the published post it came from.</p>
   </footer>
@@ -485,12 +600,14 @@ for i, f in enumerate(films):
     open(f"work/{f['slug']}.html", 'w').write(page)
 
 # ---- the index -----------------------------------------------------------
+LEDE = (f'The same {COUNT} films as the <a href="/">front page</a>' if not MORE_COUNT else
+        f'The {HOME_COUNT} films on the <a href="/">front page</a> and {WORDS.get(MORE_COUNT, MORE_COUNT)} more')
 # One wall of stills, each at its own shape, and the kinds of film as tabs
 # above it. Choosing a kind re-hangs the wall (design-filmpages.js); the
 # sections and their ids stay in the markup, so /work/#documentary still
 # opens on the documentaries, with or without JavaScript.
 _card_n[0] = 0   # the film pages' related blocks ran first; the index starts fresh
-groups = {cid: [f for f in films if category_of(f['kind']) == cid] for cid, _l, _n in CATEGORIES}
+groups = {cid: [f for f in films if f['cat'] == cid] for cid, _l, _n in CATEGORIES}
 nav = ('<a href="#all" data-cat="all">All films <span>' + str(len(films)) + '</span></a>'
        + ''.join('<a href="#' + cid + '" data-cat="' + cid + '">' + label + ' <span>' + str(len(groups[cid])) + '</span></a>'
                  for cid, label, _n in CATEGORIES if groups[cid]))
@@ -528,15 +645,18 @@ idx_schema = {
     "hasPart": [{"@type": "WebPage", "name": html.unescape(f['title']),
                  "url": f"https://alnimeri.com/work/{f['slug']}"} for f in films]}
 
-_ogw, _ogh = pixels('assets/og-work.jpg')
-idx = (HEAD.format(title='All films', slug='', poster='assets/og-work.jpg', ogw=_ogw, ogh=_ogh,
+# the share card prints the count (bin-build-og.py); a new count is a new
+# file name, so no cache can go on showing the old number
+OG_WORK = 'assets/og-work-2.jpg'
+_ogw, _ogh = pixels(OG_WORK)
+idx = (HEAD.format(title='All films', slug='', poster=OG_WORK, ogw=_ogw, ogh=_ogh,
                    og_type='website', skip='Skip to the films', ver=VER, mark=MARK, dver=DVER,
-                   desc=f'Every film by Ahmed El-Nimeri on this site — {COUNT} pieces, {TRT} total running time, each with its running time and, where published, its view count and source.',
+                   desc=f'Every film on Ahmed El-Nimeri’s site — {COUNT} pieces, {TRT} total running time, each with its running time and, where published, its view count and source.',
                    schema=json.dumps(idx_schema, ensure_ascii=False))
        + f'''<section class="fp fp-index" id="film">
   <header class="fp-head">
     <h1 class="fp-title">All films</h1>
-    <p class="fp-lede">The same {COUNT} films as the <a href="/">front page</a>, by kind.
+    <p class="fp-lede">{LEDE}, by kind.
       Each page carries the film, its running time and, where published, the post its view count came from.</p>
   </header>
   {rows}
@@ -544,4 +664,10 @@ idx = (HEAD.format(title='All films', slug='', poster='assets/og-work.jpg', ogw=
 ''' + FOOT.format(ver=VER, djver=DJVER))
 open('work/index.html', 'w').write(idx)
 
-print(f'work/: {len(films)} film pages + index, TRT {total // 60}:{total % 60:02d}')
+# llms.txt names the count too
+_llms = open('llms.txt').read()
+_new = re.sub(r'All \d+ selected film pages', f'All {len(films)} selected film pages', _llms)
+if _new != _llms:
+    open('llms.txt', 'w').write(_new)
+
+print(f'work/: {len(films)} film pages ({len(HOME)} on the front page, {sum(len(g["more"]) for g in films)} further films on their pages) + index, TRT {total // 60}:{total % 60:02d}')

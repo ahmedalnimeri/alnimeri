@@ -13,62 +13,66 @@
   var EASE = 'cubic-bezier(.22,.61,.36,1)';
 
   /* ---- the still becomes the film ------------------------------------ */
-  var frame = d.querySelector('.fp-frame');
-  var play = frame && frame.querySelector('.fp-play');
-  if (frame && play) {
+  // Every frame on the page with a play control: the page's own film and, on
+  // an entry with more than one film, each of the others. One plays at a
+  // time (starting another puts the first back to its still), and the house
+  // lights follow the one that is playing.
+  var frames = [].slice.call(d.querySelectorAll('.fp-frame')).filter(function (f) { return f.querySelector('.fp-play'); });
+  var lights = function (down) { root.classList.toggle('fp-lights-down', !!down); };
+  var on = null, upTimer = 0;   // the frame that is playing
+  var up = function () { clearTimeout(upTimer); lights(false); };
+  // what the lights stay on: the film's stage, or a further film's block
+  var holder = function (frame) { return frame.closest('.fp-stage, .fp-also__film') || frame; };
+
+  var stop = function (frame) {
+    var f = frame.querySelector('iframe');
+    if (f) f.parentNode.removeChild(f);
+    frame.classList.remove('is-playing', 'is-loaded');
+    holder(frame).classList.remove('is-on');
+    if (on === frame) on = null;
+  };
+
+  var start = function (frame, play) {
+    if (on === frame) return;
+    if (on) stop(on);
+    on = frame;
+    var f = d.createElement('iframe');
+    f.src = 'https://player.vimeo.com/video/' + play.getAttribute('data-vid') + '?title=0&byline=0&portrait=0&dnt=1&autoplay=1';
+    f.title = play.getAttribute('data-title') || 'Film';
+    f.allow = 'autoplay; fullscreen; picture-in-picture';
+    f.setAttribute('allowfullscreen', '');
+    // focus stays on the page, so Escape still brings the lights up; Tab
+    // is the next step into the player's own controls
+    f.addEventListener('load', function () { if (f.parentNode === frame) frame.classList.add('is-loaded'); });
+    frame.appendChild(f);
+    frame.classList.add('is-playing');
+    holder(frame).classList.add('is-on');
+    // if the player is slow to answer, the still steps aside anyway
+    setTimeout(function () { if (f.parentNode === frame) frame.classList.add('is-loaded'); }, 2600);
+    lights(true);
+  };
+
+  frames.forEach(function (frame) {
+    var play = frame.querySelector('.fp-play');
     var vid = play.getAttribute('data-vid');
-    var lights = function (down) { root.classList.toggle('fp-lights-down', !!down); };
-    var playing = false;
-
-    var start = function () {
-      if (playing) return;
-      playing = true;
-      var f = d.createElement('iframe');
-      f.src = 'https://player.vimeo.com/video/' + vid + '?title=0&byline=0&portrait=0&dnt=1&autoplay=1';
-      f.title = play.getAttribute('data-title') || 'Film';
-      f.allow = 'autoplay; fullscreen; picture-in-picture';
-      f.setAttribute('allowfullscreen', '');
-      // focus stays on the page, so Escape still brings the lights up; Tab
-      // is the next step into the player's own controls
-      f.addEventListener('load', function () { frame.classList.add('is-loaded'); });
-      frame.appendChild(f);
-      frame.classList.add('is-playing');
-      // if the player is slow to answer, the still steps aside anyway
-      setTimeout(function () { frame.classList.add('is-loaded'); }, 2600);
-      lights(true);
-    };
-
     frame.addEventListener('click', function (e) {
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;   // a new tab stays a new tab
       if (!vid) { if (e.target.closest('.fp-play') !== play) play.click(); return; }
       e.preventDefault();
-      start();
+      start(frame, play);
     });
-
-    if (vid) {
-      // The lights follow the visitor's attention. Up: the pointer leaves the
-      // picture for a moment, a click or a tap anywhere else, Escape, focus
-      // moving on to the rest of the page, or the film scrolled away. Down
-      // again: back onto the picture, or into the player's own controls.
-      var upTimer = 0;
-      var up = function () { clearTimeout(upTimer); lights(false); };
-      d.addEventListener('keydown', function (e) { if (e.key === 'Escape') up(); });
-      // and moving on through the page from the keyboard brings them up too
-      d.addEventListener('focusin', function (e) { if (playing && !frame.contains(e.target)) up(); });
-      d.addEventListener('click', function (e) { if (playing && !frame.contains(e.target)) up(); });
-      frame.addEventListener('mouseleave', function () {
-        if (!playing) return;
-        clearTimeout(upTimer); upTimer = setTimeout(function () { lights(false); }, 900);
-      });
-      frame.addEventListener('mouseenter', function () { if (playing) { clearTimeout(upTimer); lights(true); } });
-      window.addEventListener('blur', function () {
-        setTimeout(function () { if (playing && d.activeElement === frame.querySelector('iframe')) { clearTimeout(upTimer); lights(true); } }, 0);
-      });
-      if ('IntersectionObserver' in window) {
-        new IntersectionObserver(function (es) {
-          es.forEach(function (en) { if (en.intersectionRatio < 0.45) up(); });
-        }, { threshold: [0, 0.45] }).observe(frame);
-      }
+    if (!vid) return;
+    // The lights follow the visitor's attention: the pointer leaving the
+    // picture for a moment brings them up, coming back takes them down.
+    frame.addEventListener('mouseleave', function () {
+      if (on !== frame) return;
+      clearTimeout(upTimer); upTimer = setTimeout(function () { lights(false); }, 900);
+    });
+    frame.addEventListener('mouseenter', function () { if (on === frame) { clearTimeout(upTimer); lights(true); } });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) {
+        es.forEach(function (en) { if (on === frame && en.intersectionRatio < 0.45) up(); });
+      }, { threshold: [0, 0.45] }).observe(frame);
     }
 
     // on a mouse, the control follows the pointer across the picture
@@ -81,7 +85,7 @@
       };
       var aim = function (nx, ny) { tx = nx; ty = ny; if (!raf) raf = requestAnimationFrame(place); };
       frame.addEventListener('pointermove', function (e) {
-        if (playing || e.pointerType !== 'mouse') return;
+        if (on === frame || e.pointerType !== 'mouse') return;
         var r = frame.getBoundingClientRect(), pw = play.offsetWidth / 2 + 16, ph = play.offsetHeight / 2 + 16;
         var cx = Math.max(pw, Math.min(r.width - pw, e.clientX - r.left));
         var cy = Math.max(ph, Math.min(r.height - ph, e.clientY - r.top));
@@ -89,6 +93,17 @@
       });
       frame.addEventListener('pointerleave', function () { aim(0, 0); });
     }
+  });
+
+  // Up: Escape, a click or a tap anywhere else, or focus moving on to the
+  // rest of the page. Down again: into the player's own controls.
+  if (frames.length) {
+    d.addEventListener('keydown', function (e) { if (e.key === 'Escape') up(); });
+    d.addEventListener('focusin', function (e) { if (on && !on.contains(e.target)) up(); });
+    d.addEventListener('click', function (e) { if (on && !on.contains(e.target)) up(); });
+    window.addEventListener('blur', function () {
+      setTimeout(function () { if (on && d.activeElement === on.querySelector('iframe')) { clearTimeout(upTimer); lights(true); } }, 0);
+    });
   }
 
   /* ---- the brief, with this kind of film already chosen ---------------- */
@@ -155,6 +170,17 @@
 
   var shown = function () { return cards.filter(function (c) { return c.getClientRects().length > 0; }); };
 
+  // Two to a row (a phone), a kind that would leave its last film alone in
+  // its row hangs that film across the row instead, so the wall ends whole.
+  var ends = function (mine, few) {
+    var cols = getComputedStyle(wall).gridTemplateColumns.split(' ').filter(Boolean).length;
+    var cells = few ? mine.length : mine.length + 3;   // the lead takes four cells
+    var last = cols === 2 && cells % 2 ? mine[mine.length - 1] : null;
+    cards.forEach(function (c) { c.classList.toggle('is-wide', c === last); });
+    var im = last && last.querySelector('img');
+    if (im && lead_sizes && im.getAttribute('sizes') !== lead_sizes) im.setAttribute('sizes', lead_sizes);
+  };
+
   var apply = function (cat, animate, to) {
     if (cat === current) return;
     var first = new Map();
@@ -180,6 +206,7 @@
     if (few) wall.setAttribute('data-few', mine.length); else wall.removeAttribute('data-few');
     var lead = few ? null : mine.filter(function (c) { return !c.classList.contains('fp-card--portrait'); })[0];
     cards.forEach(function (c) { c.classList.toggle('is-lead', c === lead); });
+    ends(mine, few);
     // a card hung large asks for a picture that size (the browser only ever
     // trades up, so going back to small costs nothing)
     mine.forEach(function (c) {
@@ -258,7 +285,11 @@
   edge();
   // the ink sits under the row's text only once the fonts have their widths
   if (d.fonts && d.fonts.ready) d.fonts.ready.then(function () { pill(current); edge(); });
-  window.addEventListener('resize', function () { pill(current); });
+  window.addEventListener('resize', function () {
+    pill(current);
+    var mine = cards.filter(function (c) { return current === 'all' || c.getAttribute('data-cat') === current; });
+    ends(mine, mine.length <= 4);
+  });
 
   // the tab bar draws its hairline only once it is holding its place
   if ('IntersectionObserver' in window) {

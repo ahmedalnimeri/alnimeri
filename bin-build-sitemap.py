@@ -37,7 +37,9 @@ def git(*args):
 
 def lastmod(filename):
     path = ROOT / filename
-    mtime = datetime.datetime.fromtimestamp(path.stat().st_mtime, datetime.timezone.utc).date().isoformat()
+    # the local date, as git's %cs gives a commit's: a page edited at 00:16 in
+    # Dubai is that day's change, before and after it is committed
+    mtime = datetime.date.fromtimestamp(path.stat().st_mtime).isoformat()
     try:
         if git('status', '--porcelain', '--', filename).strip() and meaningful(git('diff', 'HEAD', '--', filename)):
             return mtime

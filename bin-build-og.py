@@ -10,17 +10,23 @@ server, so the cards use the site's own typeface.
 import re, html, pathlib
 
 SRC = open('index.html').read()
-films = re.findall(r'<article class="tile[\s\S]+?</article>', SRC)
+# every film with a page of its own on /work/: the front page's grid and the
+# films in <template id="more-films">, but not a data-part-of film (one more
+# film on another film's page)
+films = [b for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC) if 'data-part-of=' not in b]
 durs = [re.search(r'tile__dur">([\d:]+)<', b).group(1) for b in films]
 secs = sum(int(d.split(':')[0]) * 60 + int(d.split(':')[1]) for d in durs)
 TRT = f'{secs // 60}:{secs % 60:02d}'
 N = len(films)
-WORDS = {14: 'Fourteen', 15: 'Fifteen', 16: 'Sixteen', 17: 'Seventeen', 18: 'Eighteen', 19: 'Nineteen', 20: 'Twenty'}
+WORDS = {14: 'Fourteen', 15: 'Fifteen', 16: 'Sixteen', 17: 'Seventeen', 18: 'Eighteen', 19: 'Nineteen', 20: 'Twenty',
+         21: 'Twenty-one', 22: 'Twenty-two', 23: 'Twenty-three', 24: 'Twenty-four', 25: 'Twenty-five',
+         26: 'Twenty-six', 27: 'Twenty-seven', 28: 'Twenty-eight', 29: 'Twenty-nine', 30: 'Thirty'}
 
 CARDS = [
     ('og-home', '/assets/posters/843280565.jpg', 'I tell stories', 'through visuals.',
      'Ahmed El-Nimeri &middot; Film director &amp; editor &middot; Dubai'),
-    ('og-work', '/assets/posters/1058181870.jpg', f'{WORDS.get(N, N)} films.', 'Brand, event, documentary, motion.',
+    # a new count is a new file name (og-work-2.jpg), so no cache keeps the old one
+    ('og-work-2', '/assets/posters/1058181870.jpg', f'{WORDS.get(N, N)} films.', 'Brand, event, documentary, motion.',
      'Ahmed El-Nimeri &middot; Selected work &middot; Dubai'),
     ('og-about', '/assets/portrait/beach-1280.jpg', 'Rooms, rigs and monitors.', 'And what people said after.',
      'Ahmed El-Nimeri &middot; About &middot; Dubai'),

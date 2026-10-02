@@ -967,7 +967,9 @@
 // ---- Pull a reel ------------------------------------------------------------
 // The viewer marks tiles as selects. The bin at the foot of the screen keeps
 // count and TRT, and mints a link that IS the cut: one character per film, in
-// the order they chose (the same alphabet the edge uses, keyed to DOM order).
+// the order they chose. Each tile carries its own character (data-key, written
+// by bin-build-reel.py and never given to another film), so a link someone
+// sent keeps naming the same films however the grid is re-hung.
 // /reel/<code> renders that cut, with its running time. Nothing about the
 // viewer travels with the link; the selection lives in localStorage until
 // they clear it.
@@ -976,6 +978,8 @@
   var tiles = [].slice.call(document.querySelectorAll('article.tile'));
   if (tiles.length < 2) return;
   var ALPHABET = '123456789abcdefghjkmnpqrstuvwxyz';
+  var keys = tiles.map(function (t, i) { return t.getAttribute('data-key') || ALPHABET[i]; });
+  var tileOf = function (k) { return tiles[keys.indexOf(k)]; };
   var KEY = 'bin', store = null;
   try { store = window.localStorage; } catch (e) {}
   var pad = function (n) { return (n < 10 ? '0' : '') + n; };
@@ -988,7 +992,7 @@
 
   // Selection: an ordered list of keys.
   var sel = [];
-  try { sel = (JSON.parse(store && store.getItem(KEY) || '[]') || []).filter(function (k) { return ALPHABET.indexOf(k) > -1 && ALPHABET.indexOf(k) < tiles.length; }); } catch (e) { sel = []; }
+  try { sel = (JSON.parse(store && store.getItem(KEY) || '[]') || []).filter(function (k) { return keys.indexOf(k) > -1; }); } catch (e) { sel = []; }
   var save = function () { try { sel.length ? store.setItem(KEY, JSON.stringify(sel)) : store.removeItem(KEY); } catch (e) {} };
 
   // One mark per tile, in the meta row.
@@ -999,7 +1003,7 @@
     b.setAttribute('aria-label', 'Add ' + nameOf(t) + ' to your reel');
     b.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
-      var k = ALPHABET[i], at = sel.indexOf(k);
+      var k = keys[i], at = sel.indexOf(k);
       if (at > -1) sel.splice(at, 1); else sel.push(k);
       save(); render();
     });
@@ -1037,11 +1041,11 @@
   document.body.appendChild(sheet);
 
   function code() { return sel.join(''); }
-  function trt() { return sel.reduce(function (s, k) { return s + secs(tiles[ALPHABET.indexOf(k)]); }, 0); }
+  function trt() { return sel.reduce(function (s, k) { return s + secs(tileOf(k)); }, 0); }
 
   function render() {
     tiles.forEach(function (t, i) {
-      var at = sel.indexOf(ALPHABET[i]), b = t.querySelector('.tile__mark');
+      var at = sel.indexOf(keys[i]), b = t.querySelector('.tile__mark');
       t.classList.toggle('is-selected', at > -1);
       if (b) {
         b.innerHTML = at > -1 ? 'Selected <b>' + (at + 1) + '</b>' : '+ Select';
@@ -1080,7 +1084,7 @@
     sheet.querySelector('[data-act="open"]').href = url;
     var list = sheet.querySelector('[data-list]'); list.innerHTML = '';
     sel.forEach(function (k, n) {
-      var t = tiles[ALPHABET.indexOf(k)], li = document.createElement('li');
+      var t = tileOf(k), li = document.createElement('li');
       li.innerHTML = '<span>' + nameOf(t).replace(/[&<>]/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]; }) + '</span><span>' + mmss(secs(t)) + '</span>';
       list.appendChild(li);
     });
@@ -1121,7 +1125,7 @@
   // Screen the cut before sending it: the projector takes DOM indices.
   bin.querySelector('.bin__screen').addEventListener('click', function () {
     document.dispatchEvent(new CustomEvent('reel:run', {
-      detail: { order: sel.map(function (k) { return ALPHABET.indexOf(k); }) } }));
+      detail: { order: sel.map(function (k) { return keys.indexOf(k); }) } }));
   });
   bin.querySelector('.bin__clear').addEventListener('click', function () { sel = []; save(); render(); });
   sheet.querySelector('.sheet__close').addEventListener('click', closeSheet);
@@ -1146,7 +1150,7 @@
   sheet.querySelector('[data-act="share"]').addEventListener('click', function () {
     if (!navigator.share) return;
     var n = sel.length, url = location.origin + '/reel/' + code();
-    var names = sel.map(function (k) { return nameOf(tiles[ALPHABET.indexOf(k)]); });
+    var names = sel.map(function (k) { return nameOf(tileOf(k)); });
     navigator.share({ title: n + ' film' + (n > 1 ? 's' : '') + ' by Ahmed El-Nimeri',
       text: 'A ' + mmss(trt()) + ' cut of Ahmed El-Nimeri’s work: ' + names.join(', ') + '.', url: url }).catch(function () {});
   });

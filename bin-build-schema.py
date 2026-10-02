@@ -16,7 +16,10 @@ def iso(d):
     return f"PT{m}M{sec}S"
 
 videos = []
-for blk in re.findall(r'<article class="tile[\s\S]+?</article>', s):
+# The front page's own films: the films in <template id="more-films"> are not
+# on this page (each has its own page and its own schema).
+_grid = re.sub(r'<template id="more-films">[\s\S]*?</template>', '', s)
+for blk in re.findall(r'<article class="tile[\s\S]+?</article>', _grid):
     title = re.search(r'data-title="([^"]*)"', blk).group(1)
     vm = re.search(r'data-video="(\d+)"', blk)
     vid = vm.group(1) if vm else None
@@ -30,13 +33,27 @@ for blk in re.findall(r'<article class="tile[\s\S]+?</article>', s):
     name = title.replace('&amp;', '&')
     kindtxt = (kind.group(1) if kind else '').replace('&amp;', '&').replace(' · ', ' — ')
     poster = re.search(r'<img\s(?:[^>]*\s)?src="assets/(posters/[^"?]+)', blk)
-    v = {
-        "@type": "VideoObject" if vid else "Movie",
-        "name": name,
-        "description": f"{kindtxt} by Ahmed El-Nimeri." if kindtxt else "Film by Ahmed El-Nimeri.",
-        "creator": {"@id": "https://alnimeri.com/#person"},
-        "director": {"@id": "https://alnimeri.com/#person"},
-    }
+    # The credit is only ever the one the film states (data-role on the tile);
+    # without one, the front page's own films, directed by him.
+    role = re.search(r'data-role="([^"]*)"', blk)
+    role = role.group(1).replace('&amp;', '&') if role else None
+    if role is None:
+        v = {
+            "@type": "VideoObject" if vid else "Movie",
+            "name": name,
+            "description": f"{kindtxt} by Ahmed El-Nimeri." if kindtxt else "Film by Ahmed El-Nimeri.",
+            "creator": {"@id": "https://alnimeri.com/#person"},
+            "director": {"@id": "https://alnimeri.com/#person"},
+        }
+    elif role:
+        v = {"@type": "VideoObject" if vid else "Movie", "name": name,
+             "description": f"{kindtxt}. {role}: Ahmed El-Nimeri." if kindtxt else f"{role}: Ahmed El-Nimeri.",
+             "contributor": {"@id": "https://alnimeri.com/#person"}}
+    else:
+        v = {"@type": "VideoObject" if vid else "Movie", "name": name}
+        if kindtxt:
+            v["description"] = f"{kindtxt}."
+
     if vid:
         v["uploadDate"] = METADATA[vid]["uploadDate"]
     if poster: v["thumbnailUrl"] = f"https://alnimeri.com/assets/{poster.group(1)}"

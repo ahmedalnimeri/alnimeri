@@ -352,3 +352,14 @@
 .twoshot__seg:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .twoshot__cap { margin-top: 10px; }
 .twoshot__frame { touch-action: pan-y; }
+
+/* Selected films, two to a row: an odd number of films left the last row
+   with one tile alone. One scope film spans its row at the shape it was shot
+   (60 Secs of New York, 2.37:1: its picture inside the 16:9 poster, as
+   measured in bin-build-home-art.py's CROP), so the letterbox falls outside
+   the tile and every row is whole. On a phone, one column, it is a tile like
+   the others. */
+@media screen and (min-width: 561px) {
+  #work .grid > .tile--scope { grid-column: 1 / -1; }
+  #work .tile--scope .tile__link { aspect-ratio: 768 / 324; }
+}
