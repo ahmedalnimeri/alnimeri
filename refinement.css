@@ -362,4 +362,10 @@
 @media screen and (min-width: 561px) {
   #work .grid > .tile--scope { grid-column: 1 / -1; }
   #work .tile--scope .tile__link { aspect-ratio: 768 / 324; }
+  /* the picture's 1.08 overscan grows mostly leftward, into the clouds, so
+     the Solana mark near its right edge stays whole. Three quarters, not the
+     right edge itself: the hover push (design-hover.js, up to 1.06 and a pan
+     of half its growth) still needs a margin on the right, or pointing at
+     the right of the frame would open a gap there. */
+  .has-motion #work .tile--scope .tile__img { transform-origin: 75% 50%; }
 }

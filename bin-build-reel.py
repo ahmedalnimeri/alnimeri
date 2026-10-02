@@ -69,8 +69,11 @@ for m_ in TILES:
     if not m:
         sys.exit('tile without a duration: ' + b[:100])
     secs = int(m.group(1)) * 60 + int(m.group(2))
-    # The tile's own <img>, not a WebP <source> the <picture> may lead with.
-    srcset = field(b, r'<img\s(?:[^>]*\s)?srcset="([^"]+)"')
+    # The tile's own <img>, not a WebP <source> the <picture> may lead with;
+    # up to 1280w (the full-row scope tile offers a 2560 file for its own
+    # size on the front page, which a reel's thirds never need).
+    srcset = ', '.join(c.strip() for c in field(b, r'<img\s(?:[^>]*\s)?srcset="([^"]+)"').split(',')
+                       if c.strip() and not (c.split()[-1].endswith('w') and int(c.split()[-1][:-1]) > 1280))
     films.append({
         'title':    field(b, r'data-title="([^"]+)"'),
         'vid':      field(b, r'data-video="(\d+)"'),

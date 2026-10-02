@@ -5,7 +5,7 @@ The VideoObject list must be derived from the DOM, not maintained by hand —
 swapping two tiles once left the schema advertising films that were no longer
 on the page.
 """
-import re, json
+import re, json, os
 
 s = open('index.html').read()
 METADATA = json.load(open('assets/video-metadata.json'))
@@ -56,7 +56,13 @@ for blk in re.findall(r'<article class="tile[\s\S]+?</article>', _grid):
 
     if vid:
         v["uploadDate"] = METADATA[vid]["uploadDate"]
-    if poster: v["thumbnailUrl"] = f"https://alnimeri.com/assets/{poster.group(1)}"
+    # The thumbnail is a still of the film this object describes: the film's
+    # own when it has one (Badr Airlines' tile leads with the Captain still,
+    # but plays, and is described as, the brand film), else the tile's.
+    if vid and os.path.exists(f'assets/posters/{vid}.jpg'):
+        v["thumbnailUrl"] = f"https://alnimeri.com/assets/posters/{vid}.jpg"
+    elif poster:
+        v["thumbnailUrl"] = f"https://alnimeri.com/assets/{poster.group(1)}"
     # Only films with a Vimeo master can be embedded; the rest live on X only.
     if vid: v["embedUrl"] = f"https://player.vimeo.com/video/{vid}"
     if dur:  v["duration"] = iso(dur.group(1))

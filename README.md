@@ -19,7 +19,7 @@ python3 -m http.server 4321
 | `styles.css` | Single stylesheet; palette lives in `:root` |
 | `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, the pull-a-reel bin and the brief dialog |
 | `design-*.css` / `design-*.js` | One design layer per area: `hover` (home films and /reel/), `filmpages` (/work/ and the film pages), `about`, `compositions` (the home services) and `ending` (the home page's end credits). Stamped with their own md5 and served immutable |
-| `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes (vertical films: `-768w` in place of `-768`) |
+| `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes (vertical films: `-768w` in place of `-768`). A vertical film may also have `<id>-card.jpg` (+ `-480`/`-768`, 16:9, cut from the same frame), which the `/work/` wall shows in place of a 9:16 poster cut down to its 16:9 cards (DP World at SailGP). `1083313331-2560.*` is offered only by the front page's full-row scope tile; the builders never pass anything wider than 1280w to the film pages, the About board or the reel |
 | `assets/reel-keys.json` | Every `/reel/<code>` character ever given, and the film it names (written by `bin-build-reel.py`) |
 
 ## Adding or changing a video

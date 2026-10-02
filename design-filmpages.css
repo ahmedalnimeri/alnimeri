@@ -341,8 +341,11 @@
 .fp-wall .fp-card { display: flex; flex-direction: column; min-width: 0; }
 .fp-wall .fp-card > a { display: flex; flex-direction: column; flex: 1 1 auto; }
 .fp-wall .fp-card.is-lead { grid-row: span 2; grid-column: span 2; }
-/* two to a row, a film left alone in the last row hangs across it (script) */
+/* the wall ends whole (script, which also sets these stills' shape): a film
+   left alone in the last row hangs across it; in a last row one film short,
+   the last film takes two cells at the row's height */
 .fp-wall .fp-card.is-wide { grid-column: 1 / -1; }
+.fp-wall .fp-card.is-pair { grid-column: span 2; }
 .fp-wall .fp-card--portrait .fp-card__still { aspect-ratio: 16 / 9; }
 .fp-wall .fp-card.is-lead .fp-card__still { aspect-ratio: auto; flex: 1 1 auto; min-height: 240px; }
 @media (max-width: 1100px) { .fp-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

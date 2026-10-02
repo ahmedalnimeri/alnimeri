@@ -61,6 +61,17 @@ def slugify(t):
 _more = re.search(r'<template id="more-films">([\s\S]*?)</template>', SRC)
 MORE_AT = _more.span() if _more else (len(SRC), len(SRC))
 
+def upto1280(ss):
+    """A tile's srcset, without the candidates wider than 1280w: the front
+    page's full-row scope tile offers a 2560 file for its own size, and a
+    film page or a card asking for that much would only get heavier."""
+    keep = []
+    for cand in ss.split(','):
+        bits = cand.strip().split()
+        if bits and not (len(bits) > 1 and bits[1].endswith('w') and int(bits[1][:-1]) > 1280):
+            keep.append(' '.join(bits))
+    return ', '.join(keep)
+
 films, parts = [], []
 for m_ in re.finditer(r'<article class="tile[\s\S]+?</article>', SRC):
     b = m_.group(0)
@@ -89,9 +100,9 @@ for m_ in re.finditer(r'<article class="tile[\s\S]+?</article>', SRC):
         # Anchored on the tile's <img>: a <picture> may put a WebP <source>
         # first, and its srcset is not the one the cards are built from.
         'poster':  field(b, r'<img\s(?:[^>]*\s)?src="(assets/posters/[^"]+)"'),
-        'srcset':  field(b, r'<img\s(?:[^>]*\s)?srcset="([^"]+)"'),
+        'srcset':  upto1280(field(b, r'<img\s(?:[^>]*\s)?srcset="([^"]+)"')),
         # and the WebP set of the same still, from that <source>
-        'webp':    field(b, r'<source type="image/webp" srcset="([^"]+)"'),
+        'webp':    upto1280(field(b, r'<source type="image/webp" srcset="([^"]+)"')),
         'alt':     field(b, r'alt="([^"]+)"'),
         'portrait': field(b, r'data-portrait="(\w+)"') == 'true',
     })
@@ -207,7 +218,11 @@ os.makedirs('work', exist_ok=True)
 
 # Counts printed in prose are derived, never typed: adding a tile to
 # index.html must move every 'one of N films' line with it.
-_secs = sum(int(f['dur'].split(':')[0]) * 60 + int(f['dur'].split(':')[1]) for f in films)
+# The running time is every film the site plays: each entry's own film and
+# the further films on its page (Badr Airlines holds three), so 'twenty-four
+# pieces' and the time beside it describe the same wall.
+EVERY = films + [p for f in films for p in f['more']]
+_secs = sum(int(f['dur'].split(':')[0]) * 60 + int(f['dur'].split(':')[1]) for f in EVERY)
 COUNT = WORDS.get(len(films), str(len(films)))
 TRT   = f'{_secs // 60}:{_secs % 60:02d}'
 # the front page shows some of them; /work/ shows them all
@@ -311,7 +326,24 @@ def still(f, sizes, eager=False, high=False, webp=False):
                 + img + '</picture>')
     return img
 
-def card(f, eager_first=0, sizes='(max-width: 700px) 46vw, (max-width: 1100px) 31vw, 320px', short=False, delay=0, shown_first=0):
+def wall_still(f):
+    """On the /work/ wall every film sits in the same 16:9 frame, and a
+    vertical film's 9:16 poster cut down to that is a face filling the card.
+    Where the vertical film has its own 16:9 still (<poster>-card.jpg and its
+    -480/-768 sizes, cut from the same frame), the wall shows that instead;
+    the film's page and the "more films" line keep the 9:16 poster."""
+    if not f['portrait'] or not f['poster']:
+        return f
+    base = f['poster'].split('?')[0][:-len('.jpg')] + '-card'
+    files = [(f'{base}-480.jpg', 480), (f'{base}-768.jpg', 768), (f'{base}.jpg', 1280)]
+    if not all(os.path.exists(p) for p, _w in files):
+        return f
+    # stamped here: bin-stamp-assets.py does not reach into work/
+    stamp = lambda p: f'{p}?h={_md5(p)}'
+    return dict(f, portrait=False, poster=stamp(f'{base}.jpg'), webp='',
+                srcset=', '.join(f'{stamp(p)} {w}w' for p, w in files))
+
+def card(f, eager_first=0, sizes='(max-width: 700px) 46vw, (max-width: 1100px) 31vw, 320px', short=False, delay=0, shown_first=0, wall=False):
     """The first card on /work/ is on screen when the page opens (the LCP on a
     phone); lazy-loading it delays the very thing the visitor came to look at.
     Only that one is eager: more eager posters competed with it for the
@@ -321,7 +353,7 @@ def card(f, eager_first=0, sizes='(max-width: 700px) 46vw, (max-width: 1100px) 3
     n = _card_n[0]; _card_n[0] += 1
     eager = n < eager_first
     shown = n < max(eager_first, shown_first)
-    img = still(f, sizes, eager=eager, high=eager and n == 0)
+    img = still(wall_still(f) if wall else f, sizes, eager=eager, high=eager and n == 0)
     yr = year_of(f)
     if short:
         bits = [kind_and_client(f['kind'])[0]] + ([yr] if yr else [])
@@ -447,7 +479,10 @@ for i, f in enumerate(films):
     _url = f"https://alnimeri.com/work/{f['slug']}"
     # the page's own film, its still from that film; then any further films
     schema = video_object(dict(f, poster=f['main']['poster']), title_txt, kind, f['role'], _url)
-    _others = [video_object(p, html.unescape(p['title']), html.unescape(p['kind']), p['role'], _url) for p in f['more']]
+    # (a further film whose tile names no kind is that entry's film: Captain
+    # is "Badr Airlines film.", claiming nothing its Vimeo title does not)
+    _others = [video_object(p, html.unescape(p['title']), html.unescape(p['kind']) or f"{title_txt} film", p['role'], _url)
+               for p in f['more']]
 
     schema = {"@context": "https://schema.org", "@graph": [schema] + _others + [{
         "@type": "BreadcrumbList",
@@ -569,7 +604,7 @@ for i, f in enumerate(films):
   <div class="fp-hero">
     <header class="fp-head">
       <p class="fp-crumbs"><a href="/work/">All films</a><span aria-hidden="true">/</span><a href="/work/#{_cid}">{label_of(_cid)}</a></p>
-      <h1 class="fp-title">{f['title']}</h1>
+      <h1 class="fp-title">{f['title'].replace(' — ', '&nbsp;— ').replace(' &mdash; ', '&nbsp;&mdash; ')}</h1>
       <p class="fp-meta">{meta}</p>
     </header>
     {player}{credit}
@@ -627,7 +662,7 @@ for cid, label, _n in CATEGORIES:
     few = ' data-few="' + str(len(groups[cid])) + '"' if len(groups[cid]) <= 4 else ''
     sections.append('<section class="fp-cat" id="' + cid + '"' + few + '>'
                     '<h2 class="fp-cat__head">' + label + ' <span>' + count + '</span></h2>'
-                    '<ol class="fp-cards">' + ''.join(card(f, eager_first=1, shown_first=5, delay=_delay()) for f in groups[cid]) + '</ol></section>')
+                    '<ol class="fp-cards">' + ''.join(card(f, eager_first=1, shown_first=5, delay=_delay(), wall=True) for f in groups[cid]) + '</ol></section>')
 # the first film on the wall is hung large (and asks for a picture that size);
 # the script moves this with the tabs
 LEAD_SIZES = '(max-width: 700px) 92vw, (max-width: 1100px) 64vw, 660px'
@@ -636,7 +671,7 @@ _wall = re.sub(r'sizes="[^"]*"', 'sizes="' + LEAD_SIZES + '"', _wall, count=1)
 rows = ('<nav class="fp-tabs" aria-label="Kinds of film"><div class="fp-tabs__row">' + nav + '</div></nav>'
         + '<div class="fp-wall fp-lights" id="all" data-lead-sizes="' + LEAD_SIZES + '">' + _wall + '</div>')
 
-total = sum(int(f['dur'].split(':')[0]) * 60 + int(f['dur'].split(':')[1]) for f in films)
+total = _secs
 idx_schema = {
     "@context": "https://schema.org", "@type": "CollectionPage",
     "name": "All films — Ahmed El-Nimeri",

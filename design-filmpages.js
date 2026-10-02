@@ -170,14 +170,31 @@
 
   var shown = function () { return cards.filter(function (c) { return c.getClientRects().length > 0; }); };
 
-  // Two to a row (a phone), a kind that would leave its last film alone in
-  // its row hangs that film across the row instead, so the wall ends whole.
+  // The wall ends whole. A film that would be left alone in the last row
+  // hangs across the row instead (is-wide); a last row one film short gives
+  // its last film two cells, at the row's height (is-pair).
   var ends = function (mine, few) {
-    var cols = getComputedStyle(wall).gridTemplateColumns.split(' ').filter(Boolean).length;
+    var cs = getComputedStyle(wall);
+    var tracks = cs.gridTemplateColumns.split(' ').filter(Boolean);
+    var cols = tracks.length;
     var cells = few ? mine.length : mine.length + 3;   // the lead takes four cells
-    var last = cols === 2 && cells % 2 ? mine[mine.length - 1] : null;
-    cards.forEach(function (c) { c.classList.toggle('is-wide', c === last); });
-    var im = last && last.querySelector('img');
+    var rem = cells % cols, end = mine[mine.length - 1];
+    var wide = cols > 1 && rem === 1 ? end : null;
+    var pair = cols > 2 && rem === cols - 1 ? end : null;
+    // The still's shape: a pair is exactly as tall as its row's 16:9 stills
+    // (two cells and the gap between them, over one cell's height), so the
+    // row's pictures and names stay on one line; a film across a wider wall
+    // takes the scope shape of the front page's full-row film, not a 16:9
+    // larger than the lead; on a phone, the 16:9 of every card.
+    var cw = parseFloat(tracks[0]) || 0, gap = parseFloat(cs.columnGap) || 0;
+    cards.forEach(function (c) {
+      c.classList.toggle('is-wide', c === wide);
+      c.classList.toggle('is-pair', c === pair);
+      var st = c.querySelector('.fp-card__still');
+      if (st) st.style.aspectRatio = c === pair && cw ? ((2 * cw + gap) / (cw * 9 / 16)).toFixed(4)
+        : c === wide && cols > 2 ? '768 / 324' : '';
+    });
+    var im = (wide || pair) && (wide || pair).querySelector('img');
     if (im && lead_sizes && im.getAttribute('sizes') !== lead_sizes) im.setAttribute('sizes', lead_sizes);
   };
 

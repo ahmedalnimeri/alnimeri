@@ -71,11 +71,13 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
     # file, not the name).
     cands = [c.strip().split()[0].split('?')[0] for c in srcset.group(1).split(',') if c.strip()] if srcset else []
     cands = cands or [full.replace('.jpg', '-480.jpg'), full.replace('.jpg', '-768.jpg')]
+    # (up to 1280 wide: a pin never needs the 2560 file the full-row scope
+    # tile offers for its own size)
     sizes = []
     for path in cands + [full]:
         if os.path.exists(path):
             w, h = dims(path)
-            if w not in {x[1] for x in sizes}:
+            if w not in {x[1] for x in sizes} and w <= 1280:
                 sizes.append((path, w, h))
     sizes.sort(key=lambda x: x[1])
     # The same still's WebP set, from the tile's <source>, each by its real
@@ -86,7 +88,7 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
         path = c.strip().split()[0].split('?')[0] if c.strip() else ''
         if path and os.path.exists(path):
             w, h = dims(path)
-            if w not in {x[1] for x in wsizes}:
+            if w not in {x[1] for x in wsizes} and w <= 1280:
                 wsizes.append((path, w, h))
     wsizes.sort(key=lambda x: x[1])
     fw, fh = dims(full)
