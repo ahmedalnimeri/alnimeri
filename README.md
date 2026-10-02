@@ -45,7 +45,7 @@ Attributes on the `<article>` the builders read:
   Ahmed. No attribute: one of his own films (schema `creator`); `contributor`: he worked
   on it (schema `contributor`); `none`: nothing is stated anywhere, so no relation at all.
   No role is written on any film, in the page or in its data: roles appear only on `/cv`
-  (his decision, 3 Oct 2026).
+  (his decision, 3 Oct 2026). `bin-check-claims.py` fails the build if one comes back.
 - `data-cat="motion"` — the `/work/` category, where the kind alone would file it
   elsewhere (Stim is a TV commercial shown for its post-production).
 - `data-part-of="<slug>"` — not an entry of its own but one more film on that entry's
@@ -65,8 +65,12 @@ python3 bin-build-home-art.py && python3 bin-stamp-assets.py && python3 bin-buil
   && python3 bin-build-about-strip.py \
   && python3 bin-build-onset.py && python3 bin-build-about-said.py \
   && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-reel.py \
-  && python3 bin-stamp-assets.py
+  && python3 bin-stamp-assets.py && python3 bin-check-claims.py
 ```
+
+`bin-check-claims.py` runs last and changes nothing: it exits non-zero if "directed by", a
+JSON-LD `"director"`, the old "Directed, shot and edited" line, an `fp-credit` line or a
+`data-role` attribute appears in any served `.html`, `llms.txt` or `functions/_lib/reel.js`.
 
 `bin-build-home-art.py` builds the home page's four compositions ("What are we making?") from the tiles.
 
