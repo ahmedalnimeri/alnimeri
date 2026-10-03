@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Fail the build if a film's credit comes back anywhere it is read.
+"""Fail the build if a film's credit, or a director's title for Ahmed, comes
+back anywhere it is read.
 
 Ahmed took the credits off every film on 3 Oct 2026: no "directed by", no
 schema "director", no role line under a picture. Roles are for /cv only, as
@@ -9,64 +10,161 @@ this runs at the end of the chain (bin-check.py runs it) and exits non-zero on
 the first sign of one.
 
 He is also never called a film director (Ahmed, 3 Oct 2026: "I'm not a film
-director I'm a creative director"): no "film director", no "Storyteller &
-Director", no "Director and …" as his title. "Creative director", "Associate
-Creative Director" and a credit's role on /cv ("Assistant Director") pass.
+director I'm a creative director"). Every "director" a visitor or a crawler
+can read must be "creative director" (his title, "Associate Creative
+Director"; the descriptor, "creative director and editor") or a credit role on
+/cv ("Assistant Director"). So "film director", "Storyteller", "directed by",
+a "Director:" credit line, "Director & Editor", a jobTitle "Director" and any
+other bare director fail. A third party's own title in a quote or a credit
+("Director of …") goes in THIRD_PARTY below, word for word, or it fails too.
 
-Checked: every .html the site serves, llms.txt, functions/_lib/reel.js and
-the rest of functions/ (the /reel/<code> pages are rendered there), and the
-scripts that write text into the page (main.js, motion.js, design-*.js).
-A "director" inside a JS string is written \\"director\\", so the quotes
-may be escaped. Run from anywhere; it reads the repo it sits in.
+Checked: every .html the site serves, llms.txt, sitemap*.xml, robots.txt and
+the other .txt files at the root, any web manifest, the data files in assets/
+that pages read (*.json), the stylesheets (their visible content: strings,
+comments out), functions/ (the /reel/<code> pages and the edge's lines are
+rendered there), the scripts that write text into the page (main.js,
+motion.js, design-*.js), the share-card text in bin-build-og.py (it exists
+only inside the rendered JPGs), and every PDF in assets/ (its text, through
+pdftotext or pypdf, and its title, subject and keywords). A "director" inside
+a JS string is written \\"director\\", so the quotes may be escaped. Run from
+anywhere; it reads the repo it sits in.
 """
-import re, sys, pathlib
+import ast, html, re, shutil, subprocess, sys, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent
-SKIP = {'.git', 'node_modules', 'docs'}
+SKIP = {'.git', 'node_modules', 'docs', '.claude'}
 
 # the claim itself, in any text a person or a machine reads
 CLAIM = re.compile(r'directed by|\\?"director\\?"', re.I)
-# a director's title for him: "Film director", "Storyteller & Director",
-# "Director and video producer" (not "Creative Director & Editor", not a
-# credit's "Assistant Director, Editor")
-TITLE = re.compile(r'film director|storyteller|(?<!creative )(?<!assistant )\bdirector (?:&amp;|&|and) ', re.I)
+# the titles he has been given and does not hold
+TITLE = re.compile(r'film[\s-]+director|storyteller', re.I)
+# a credit line: "Director: …", "Directed: …" (also "Creative Director: …";
+# roles are for /cv, as role names, never a "Role: name" line)
+CREDIT_COLON = re.compile(r'\b(?:directed|directors?)\s*(?:</?[a-z][^>]*>\s*)*:(?!//)', re.I)
+# any other director: it passes only as "creative director" or a credit's
+# "assistant director" (see allowed())
+DIRECTOR = re.compile(r'\bdirectors?\b', re.I)
 # the old credit line's wording, and the markup that carried a credit
 LEGACY = re.compile(r'directed, shot and edited', re.I)
 CREDIT_LINE = re.compile(r'class="fp-credit"')
 # a tile that carries a role for the builders to print
 ROLE_ATTR = re.compile(r'\sdata-role="')
+# Someone else's title, exactly as it is printed on the site (a quote's
+# author, a credit's client). Empty: no page names one today.
+THIRD_PARTY = []
+
+def allowed(text, m):
+    """True if this "director" is "creative director" / "assistant director",
+    or inside a THIRD_PARTY phrase."""
+    for phrase in THIRD_PARTY:
+        for t in re.finditer(re.escape(phrase), text, re.I):
+            if t.start() <= m.start() and m.end() <= t.end():
+                return True
+    before = text[max(0, m.start() - 60):m.start()]
+    before = re.sub(r'<[^>]*>', ' ', before)                       # Creative <b>Director</b>
+    before = before.replace('\\u00a0', ' ').replace('\\n', ' ')    # inside a JS/JSON string
+    before = re.sub(r'\s+', ' ', html.unescape(before).replace(' ', ' '))
+    return re.search(r'\b(?:creative|assistant) ?$', before, re.I) is not None
+
+def strip_css_comments(text):
+    # keep the line count, so a reported line is still the file's line
+    return re.sub(r'/\*[\s\S]*?\*/', lambda c: re.sub(r'[^\n]', ' ', c.group(0)), text)
+
+def og_card_strings(path):
+    """The string literals of bin-build-og.py that are not docstrings: the
+    share cards' lines, which end up only as pixels in assets/og-*.jpg."""
+    tree = ast.parse(path.read_text(encoding='utf-8'))
+    docs = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
+            body = getattr(node, 'body', [])
+            if body and isinstance(body[0], ast.Expr) and isinstance(getattr(body[0], 'value', None), ast.Constant):
+                docs.add(id(body[0].value))
+    lines = [''] * (len(path.read_text(encoding='utf-8').splitlines()) + 1)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docs:
+            lines[node.lineno - 1] += ' ' + node.value
+    return '\n'.join(lines)
+
+def pdf_text(path):
+    """A PDF's words and its title/subject/keywords, or None if nothing here
+    can read PDFs."""
+    if shutil.which('pdftotext') and shutil.which('pdfinfo'):
+        body = subprocess.run(['pdftotext', '-enc', 'UTF-8', str(path), '-'], capture_output=True, text=True)
+        info = subprocess.run(['pdfinfo', '-enc', 'UTF-8', str(path)], capture_output=True, text=True)
+        if body.returncode == 0 and info.returncode == 0:
+            meta = [l for l in info.stdout.splitlines() if re.match(r'(Title|Subject|Keywords|Author):', l)]
+            return body.stdout + '\n' + '\n'.join(meta)
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        return None
+    r = PdfReader(str(path))
+    meta = r.metadata or {}
+    return '\n'.join([p.extract_text() or '' for p in r.pages] +
+                     [f'{k[1:]}: {meta.get(k)}' for k in ('/Title', '/Subject', '/Keywords', '/Author') if meta.get(k)])
 
 def files():
-    for p in sorted(ROOT.rglob('*.html')):
-        if not SKIP.intersection(p.relative_to(ROOT).parts):
-            yield p
-    for rel in ('llms.txt', 'functions/_lib/reel.js', 'main.js'):
+    """(label, text) for everything a visitor or a crawler reads."""
+    def served(p):
+        return not SKIP.intersection(p.relative_to(ROOT).parts)
+    for rel in ('llms.txt', 'functions/_lib/reel.js', 'main.js', 'sitemap.xml'):
         if not (ROOT / rel).exists():
             sys.exit(f'bin-check-claims: {rel} is missing')
-    yield ROOT / 'llms.txt'
+    for p in sorted(ROOT.rglob('*.html')):
+        if served(p):
+            yield p, p.read_text(encoding='utf-8')
+    for pat in ('*.txt', 'sitemap*.xml', '*.webmanifest', 'manifest*.json', '*.js'):
+        for p in sorted(ROOT.glob(pat)):
+            yield p, p.read_text(encoding='utf-8')
     for p in sorted((ROOT / 'functions').rglob('*.js')):
-        yield p
-    for p in sorted(ROOT.glob('*.js')):
-        yield p
+        yield p, p.read_text(encoding='utf-8')
+    for p in sorted((ROOT / 'assets').glob('*.json')) + sorted((ROOT / 'assets').glob('*.webmanifest')):
+        yield p, p.read_text(encoding='utf-8')
+    for p in sorted(ROOT.glob('*.css')):
+        yield p, strip_css_comments(p.read_text(encoding='utf-8'))
+    og = ROOT / 'bin-build-og.py'
+    if og.exists():
+        yield og, og_card_strings(og)
+    for p in sorted((ROOT / 'assets').rglob('*.pdf')):
+        t = pdf_text(p)
+        if t is None:
+            sys.exit(f'bin-check-claims: cannot read {p.relative_to(ROOT)} '
+                     '(install poppler for pdftotext, or pip install pypdf)')
+        yield p, t
 
 bad = []
 n = 0
-for p in files():
+for p, text in files():
     n += 1
     rel = p.relative_to(ROOT).as_posix()
-    text = p.read_text(encoding='utf-8')
-    checks = [(CLAIM, 'a director claim'), (TITLE, 'a film director title'), (LEGACY, 'the old credit line'),
+    if p.suffix == '.pdf':
+        rel += ' (its text)'
+    elif p.name == 'bin-build-og.py':
+        rel += ' (share-card text)'
+    hits = []
+    checks = [(CLAIM, 'a director claim'), (TITLE, 'a title he does not hold'),
+              (CREDIT_COLON, 'a "Director:" credit line'), (LEGACY, 'the old credit line'),
               (CREDIT_LINE, 'a credit line under a film'), (ROLE_ATTR, 'a data-role on a tile')]
     for pat, what in checks:
         for m in pat.finditer(text):
-            line = text.count('\n', 0, m.start()) + 1
-            snip = re.sub(r'\s+', ' ', text[max(0, m.start() - 50):m.end() + 30])
-            bad.append(f'  {rel}:{line}: {what}: …{snip}…')
+            hits.append((m.start(), m.end(), what))
+    for m in DIRECTOR.finditer(text):
+        if any(s <= m.start() < e or m.start() <= s < m.end() for s, e, _w in hits):
+            continue        # already reported as one of the above
+        if not allowed(text, m):
+            hits.append((m.start(), m.end(), 'a director, not "creative director"'))
+    for s, e, what in sorted(hits):
+        line = text.count('\n', 0, s) + 1
+        snip = re.sub(r'\s+', ' ', text[max(0, s - 50):e + 30])
+        bad.append(f'  {rel}:{line}: {what}: …{snip}…')
 
 if bad:
-    print(f'bin-check-claims: {len(bad)} claim(s) found — roles belong on /cv only:', file=sys.stderr)
+    print(f'bin-check-claims: {len(bad)} claim(s) found — he is a creative director; roles belong on /cv only:',
+          file=sys.stderr)
     print('\n'.join(bad[:60]), file=sys.stderr)
     if len(bad) > 60:
         print(f'  … and {len(bad) - 60} more', file=sys.stderr)
     sys.exit(1)
-print(f'claims: clean ({n} files, no "directed by", no "director", no film director title, no credit line)')
+print(f'claims: clean ({n} files incl. PDFs and share-card text; no "directed by", no "director" but '
+      f'"creative director", no film director or storyteller, no credit line)')

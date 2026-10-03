@@ -1,8 +1,17 @@
-# Nothing here yet.
-#
 # www -> apex is not done from this file: Cloudflare Pages only matches
 # path-relative sources in _redirects, not hostnames, and it serves an
 # existing static file before consulting redirects at all. It is the first
 # thing functions/_middleware.js does: a 301 from www.alnimeri.com to the same
 # path on alnimeri.com. Static files on www (excluded from the middleware in
 # _routes.json) still answer there; every page's canonical tag names the apex.
+
+# Files that called Ahmed a film director (Ahmed, 3 Oct 2026: "I'm not a film
+# director I'm a creative director"). They are gone from assets/, so these
+# rules answer instead (Pages consults _redirects only when no file matches):
+# an old link to the CV, or a share that still names an old card, lands on the
+# current one. The first CV PDF ("Storyteller · Film Director · Associate
+# Creative Director") has been unlinked since 30 Sep 2026; the two home cards
+# read "Film director & editor".
+/assets/Ahmed_ElNimeri_CV.pdf /assets/Ahmed_ElNimeri_CV-2026-09.pdf 301
+/assets/og-home.jpg /assets/og-home-3.jpg 301
+/assets/og-home-2.jpg /assets/og-home-3.jpg 301

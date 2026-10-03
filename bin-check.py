@@ -18,8 +18,9 @@ generated functions/_lib files. Checked:
      match the films: all of them, the front page's, or the rest. The two
      counts that are hand-kept facts, not counts of these pages (66 published
      for Solana, 14 past half a million), pass only in their own sentence.
-  4. Claims: bin-check-claims.py (no "directed by", no "director", no credit
-     line), run as it is.
+  4. Claims: bin-check-claims.py (no "directed by", no "director" but
+     "creative director", no film director or storyteller, no credit line, in
+     the pages, data, scripts, share-card text and the CV PDF), run as it is.
   5. Internal links: every href, src, srcset and poster on a page reaches a file,
      a pretty URL or a Function route, and every #fragment an id on its page.
   6. Share images: every og:image and twitter:image is a file here.

@@ -32,8 +32,9 @@ SOL_N = len(_sol)
 
 CARDS = [
     # He is a creative director, never a film director (Ahmed, 3 Oct 2026). The
-    # card that said so was og-home-2.jpg; a new line is a new file name, so no
-    # cache goes on showing the old one.
+    # cards that said so were og-home.jpg and og-home-2.jpg (removed; _redirects
+    # sends both here); a new line is a new file name, so no cache goes on
+    # showing the old one.
     ('og-home-3', '/assets/posters/843280565.jpg', 'I tell stories', 'through visuals.',
      'Ahmed El-Nimeri &middot; Creative director &amp; editor &middot; Dubai'),
     # a new count is a new file name (og-work-3.jpg), so no cache keeps the old one
