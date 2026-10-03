@@ -14,12 +14,10 @@ into this directory.
 import re, os, json, html, sys, subprocess
 from urllib.parse import urlencode, quote
 
-WORDS = {1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten',
-         11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen',
-         18: 'eighteen', 19: 'nineteen', 20: 'twenty', 21: 'twenty-one',
-         22: 'twenty-two', 23: 'twenty-three', 24: 'twenty-four', 25: 'twenty-five',
-         26: 'twenty-six', 27: 'twenty-seven', 28: 'twenty-eight', 29: 'twenty-nine',
-         30: 'thirty'}
+_ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven',
+         'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen']
+_TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
+WORDS = {n: _ONES[n] if n < 20 else _TENS[n // 10] + ('-' + _ONES[n % 10] if n % 10 else '') for n in range(1, 100)}
 NUMBER = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
 
 SRC = open('index.html').read()
@@ -49,7 +47,8 @@ def field(block, pat, default=''):
 
 def slugify(t):
     t = html.unescape(t).lower()
-    t = t.replace('&', ' and ').replace('“', '').replace('”', '').replace('"', '')
+    # an apostrophe joins its word (Israel’s Taqueria -> israels-taqueria)
+    t = t.replace('&', ' and ').replace('“', '').replace('”', '').replace('"', '').replace('’', '').replace("'", '')
     t = re.sub(r'[^a-z0-9]+', '-', t)
     return t.strip('-')
 
@@ -95,7 +94,11 @@ for m_ in re.finditer(r'<article class="tile[\s\S]+?</article>', SRC):
         'catx':    field(b, r'data-cat="(\w+)"'),
         'title':   title,
         'slug':    slugify(title),
-        'vid':     field(b, r'data-video="(\d+)"'),
+        # the film the site can play: a Vimeo id (digits) or, with
+        # data-provider="youtube", a YouTube id; neither on a film that lives
+        # only on its post (X), which the page links to instead
+        'vid':     field(b, r'data-video="([\w-]+)"'),
+        'provider': (field(b, r'data-provider="(\w+)"') or 'vimeo') if field(b, r'data-video="([\w-]+)"') else '',
         'kind':    field(b, r'tile__kind">([^<]*)<'),
         'dur':     field(b, r'tile__dur">([^<]+)<'),
         'idx':     field(b, r'tile__idx">([^<]+)<'),
@@ -111,6 +114,11 @@ for m_ in re.finditer(r'<article class="tile[\s\S]+?</article>', SRC):
         'alt':     field(b, r'alt="([^"]+)"'),
         'portrait': field(b, r'data-portrait="(\w+)"') == 'true',
     })
+
+for f in films + parts:
+    ok = {'vimeo': r'\d+', 'youtube': r'[\w-]{11}', '': ''}.get(f['provider'])
+    if ok is None or not re.fullmatch(ok, f['vid']):
+        sys.exit(f"{f['title']}: data-video=\"{f['vid']}\" does not fit provider \"{f['provider']}\" (vimeo digits, or youtube)")
 
 if len(films) < 10 or len(films) not in WORDS:
     sys.exit(f'unexpected film count: {len(films)} (add it to WORDS)')
@@ -167,7 +175,18 @@ def source_name(url):
     h = re.sub(r'^https?://(www\.)?', '', url).split('/')[0]
     return {'x.com': 'X', 'vimeo.com': 'Vimeo', 'www.instagram.com': 'Instagram',
             'instagram.com': 'Instagram', 'www.tiktok.com': 'TikTok',
-            'www.facebook.com': 'Facebook'}.get(h, h)
+            'www.facebook.com': 'Facebook', 'youtube.com': 'YouTube',
+            'youtu.be': 'YouTube'}.get(h, h)
+
+# Where each provider's film is watched, embedded (schema) and played (the
+# facade in design-filmpages.js and main.js turns into this on Play).
+def watch_url(rec):
+    return (f"https://www.youtube.com/watch?v={rec['vid']}" if rec['provider'] == 'youtube'
+            else f"https://vimeo.com/{rec['vid']}")
+
+def embed_url(rec):
+    return (f"https://www.youtube.com/embed/{rec['vid']}" if rec['provider'] == 'youtube'
+            else f"https://player.vimeo.com/video/{rec['vid']}")
 
 HEAD = '''<!doctype html>
 <html lang="en" class="no-js" data-theme="dark">
@@ -242,10 +261,13 @@ CATEGORIES = [
     ('events',      'Event &amp; conference films',    ('Event promo', 'Event film')),
     ('documentary', 'Documentary &amp; human stories', ('Documentary', 'Feature documentary')),
     ('motion',      'Motion, animation &amp; post',    ('Animation', 'Motion graphics', 'Visuals')),
+    # last: the wall's last film is hung across its row, and a music video
+    # is the picture that carries a row best
+    ('music',       'Music videos',                    ('Music video',)),
 ]
 
 # the brief's own names for the kinds of film (main.js, KINDS)
-BRIEF_KIND = {'brand': 'brand', 'events': 'events', 'documentary': 'documentary', 'motion': 'post'}
+BRIEF_KIND = {'brand': 'brand', 'events': 'events', 'documentary': 'documentary', 'music': 'other', 'motion': 'post'}
 
 def category_of(kind):
     k = html.unescape(kind).lower()
@@ -286,6 +308,10 @@ def year_of(f):
     Vimeo, which is not the same thing — The Greatest Sudanese Sit-In is about
     2019 and was uploaded in 2025 — so it is never used for a printed year."""
     import time
+    # A YouTube film's date is the one its own watch page shows as published
+    # (assets/video-metadata.json, read off the page), so it may be printed.
+    if f.get('provider') == 'youtube' and f.get('vid') in METADATA:
+        return METADATA[f['vid']]['uploadDate'][:4]
     ref = f.get('statref') or ''
     secs = None
     try:
@@ -410,7 +436,7 @@ def video_object(rec, name, kind, credit, url):
         v["contributor"] = dict(PERSON)
     if rec['vid']:
         v['uploadDate'] = METADATA[rec['vid']]['uploadDate']
-        v['embedUrl'] = f"https://player.vimeo.com/video/{rec['vid']}"
+        v['embedUrl'] = embed_url(rec)
     if rec['statref']:
         v['sameAs'] = rec['statref']
     st = html.unescape(rec['stat'])
@@ -426,12 +452,14 @@ def video_object(rec, name, kind, credit, url):
 PLAY_ICON = '<span class="fp-play__icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z"/></svg></span>'
 
 def play_of(rec):
-    """Play: the still becomes the Vimeo player (design-filmpages.js); without
-    JavaScript, a plain link to the film on Vimeo. A film with no Vimeo copy
-    opens its post instead."""
+    """Play: the still becomes the player (design-filmpages.js): Vimeo's, or
+    YouTube's privacy-enhanced one for a film on YouTube (data-provider).
+    Without JavaScript, a plain link to the film there. A film with neither
+    (on X only) opens its post instead."""
     t = html.escape(html.unescape(rec['title']), quote=True)
     if rec['vid']:
-        return (f'<a class="fp-play" href="https://vimeo.com/{rec["vid"]}" data-vid="{rec["vid"]}" data-title="{t}">'
+        prov = f' data-provider="{rec["provider"]}"' if rec['provider'] != 'vimeo' else ''
+        return (f'<a class="fp-play" href="{watch_url(rec)}" data-vid="{rec["vid"]}"{prov} data-title="{t}">'
                 f'{PLAY_ICON}<span class="fp-play__label">Play film</span><span class="fp-play__dur">{rec["dur"]}</span></a>')
     if rec['statref']:
         return (f'<a class="fp-play" href="{rec["statref"]}" target="_blank" rel="noopener">'
@@ -488,9 +516,9 @@ for i, f in enumerate(films):
     enquiry = html.escape("mailto:ahmed@alnimeri.com?" + urlencode({"subject": "Project enquiry — " + title_txt, "body": "Hi Ahmed,\n\nI saw " + title_txt + " on your website and would like to discuss a project.\n\nWhat we’re making:\nTiming and location:\nBudget range (if known):\n\nName / company:\n"}, quote_via=quote), quote=True)
 
     # the film itself. The page opens on the film's own still; pressing play
-    # turns that still into the player (design-filmpages.js), so the Vimeo
+    # turns that still into the player (design-filmpages.js), so the Vimeo or YouTube
     # player and its scripts load only for a visitor who asked for them.
-    # Without JavaScript the button is a plain link to the film on Vimeo.
+    # Without JavaScript the button is a plain link to the film there.
     _kind, _client = kind_and_client(f['kind'])
     _yr = year_of(f)
     _t = html.escape(title_txt, quote=True)
@@ -626,6 +654,12 @@ for i, f in enumerate(films):
     open(f"work/{f['slug']}.html", 'w').write(page)
 
 # ---- the index -----------------------------------------------------------
+# The Solana videos he edited have a list of their own (/work/solana, from
+# assets/solana-edits.json, bin-build-solana.py); the lede points to it with
+# the count read from the same file.
+_sol = json.load(open('assets/solana-edits.json'))['videos']
+SOLANA_LINE = (f' The {WORDS.get(len(_sol), len(_sol))} Solana videos I edited are'
+               f' <a href="/work/solana">listed with their views</a>.')
 LEDE = (f'The same {COUNT} films as the <a href="/">front page</a>' if not MORE_COUNT else
         f'The {HOME_COUNT} films on the <a href="/">front page</a> and {WORDS.get(MORE_COUNT, MORE_COUNT)} more')
 # One wall of stills, each at its own shape, and the kinds of film as tabs
@@ -673,7 +707,7 @@ idx_schema = {
 
 # the share card prints the count (bin-build-og.py); a new count is a new
 # file name, so no cache can go on showing the old number
-OG_WORK = 'assets/og-work-2.jpg'
+OG_WORK = 'assets/og-work-3.jpg'
 _ogw, _ogh = pixels(OG_WORK)
 idx = (HEAD.format(title='All films', slug='', poster=OG_WORK, ogw=_ogw, ogh=_ogh,
                    og_type='website', skip='Skip to the films', ver=VER, mark=MARK, dver=DVER,
@@ -683,7 +717,7 @@ idx = (HEAD.format(title='All films', slug='', poster=OG_WORK, ogw=_ogw, ogh=_og
   <header class="fp-head">
     <h1 class="fp-title">All films</h1>
     <p class="fp-lede">{LEDE}, by kind.
-      Each page carries the film, its running time and, where published, the post its view count came from.</p>
+      Each page carries the film, its running time and, where published, the post its view count came from.{SOLANA_LINE}</p>
   </header>
   {rows}
 </section>

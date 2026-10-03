@@ -18,16 +18,30 @@ durs = [re.search(r'tile__dur">([\d:]+)<', b).group(1) for b in films]
 secs = sum(int(d.split(':')[0]) * 60 + int(d.split(':')[1]) for d in durs)
 TRT = f'{secs // 60}:{secs % 60:02d}'
 N = len(films)
-WORDS = {14: 'Fourteen', 15: 'Fifteen', 16: 'Sixteen', 17: 'Seventeen', 18: 'Eighteen', 19: 'Nineteen', 20: 'Twenty',
-         21: 'Twenty-one', 22: 'Twenty-two', 23: 'Twenty-three', 24: 'Twenty-four', 25: 'Twenty-five',
-         26: 'Twenty-six', 27: 'Twenty-seven', 28: 'Twenty-eight', 29: 'Twenty-nine', 30: 'Thirty'}
+_ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven',
+         'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen']
+_TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
+WORDS = {n: (_ONES[n] if n < 20 else _TENS[n // 10] + ('-' + _ONES[n % 10] if n % 10 else '')).capitalize()
+         for n in range(1, 100)}
+
+# The Solana list's card: its count and total views, read from the same file
+# the page is built from (bin-build-solana.py), rounded the way the page
+# prints them.
+import json
+_sol = json.load(open('assets/solana-edits.json'))['videos']
+SOL_N = len(_sol)
+_sv = sum(v['views'] for v in _sol)
+SOL_VIEWS = f'{_sv / 1e6:.1f}'.rstrip('0').rstrip('.') + 'M'
 
 CARDS = [
     ('og-home', '/assets/posters/843280565.jpg', 'I tell stories', 'through visuals.',
      'Ahmed El-Nimeri &middot; Film director &amp; editor &middot; Dubai'),
-    # a new count is a new file name (og-work-2.jpg), so no cache keeps the old one
-    ('og-work-2', '/assets/posters/1058181870.jpg', f'{WORDS.get(N, N)} films.', 'Brand, event, documentary, motion.',
+    # a new count is a new file name (og-work-3.jpg), so no cache keeps the old one
+    ('og-work-3', '/assets/posters/1058181870.jpg', f'{WORDS.get(N, N)} films.', 'Brand, event, documentary, music, motion.',
      'Ahmed El-Nimeri &middot; Selected work &middot; Dubai'),
+    # the same rule: a new count or total is a new file name
+    (f'og-solana-{SOL_N}', '/assets/posters/solana-in-2025.jpg', f'{WORDS.get(SOL_N, SOL_N)} Solana videos.',
+     f'{SOL_VIEWS} views, from the team’s tracker.', 'Ahmed El-Nimeri &middot; Every Solana video I edited'),
     ('og-about', '/assets/portrait/beach-1280.jpg', 'Rooms, rigs and monitors.', 'And what people said after.',
      'Ahmed El-Nimeri &middot; About &middot; Dubai'),
     ('og-cv', '/assets/onset/2020-monitor.jpg', 'Eleven years of film.', 'Sudan, the Gulf, and further out.',

@@ -19,6 +19,11 @@
     "source": "https://vimeo.com/api/v2/video/1061801108.json",
     "sourceTitle": "The greatest Sudanese Sit-in"
   },
+  "1074230073": {
+    "uploadDate": "2025-04-10",
+    "source": "https://vimeo.com/api/v2/video/1074230073.json",
+    "sourceTitle": "Owen Venter - Cape Town Story"
+  },
   "1083313331": {
     "uploadDate": "2025-05-11",
     "source": "https://vimeo.com/api/v2/video/1083313331.json",
@@ -123,5 +128,19 @@
     "uploadDate": "2024-08-15",
     "source": "https://vimeo.com/api/v2/video/999041155.json",
     "sourceTitle": "SUGAR Vs JAGGERY (Short informative video)"
+  },
+  "9dL9aojEnTM": {
+    "uploadDate": "2025-11-21",
+    "source": "https://www.youtube.com/watch?v=9dL9aojEnTM",
+    "sourceTitle": "Ma Tsheely Hamm - Mazin Hamid & Kordofani | ما تشيلي هم - مازن حامد وكردفاني",
+    "provider": "youtube",
+    "note": "YouTube's upload date is the date the video was published on the linked page (read 2026-10-02)."
+  },
+  "mseoOqBdc7A": {
+    "uploadDate": "2022-07-09",
+    "source": "https://www.youtube.com/watch?v=mseoOqBdc7A",
+    "sourceTitle": "العيد شوفة ـ اغنية العيد",
+    "provider": "youtube",
+    "note": "YouTube's upload date is the date the video was published on the linked page (read 2026-10-02)."
   }
 }

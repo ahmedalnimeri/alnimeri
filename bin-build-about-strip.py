@@ -21,11 +21,10 @@ SRC = re.sub(r'<template id="more-films">[\s\S]*?</template>', '', SRC)
 # The count in the strip's footer link is derived from the tiles, like every
 # other printed number on the site — hand-typing it is how "sixteen" outlived
 # the sixteenth film.
-WORDS = {14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen',
-         18: 'eighteen', 19: 'nineteen', 20: 'twenty', 21: 'twenty-one',
-         22: 'twenty-two', 23: 'twenty-three', 24: 'twenty-four', 25: 'twenty-five',
-         26: 'twenty-six', 27: 'twenty-seven', 28: 'twenty-eight', 29: 'twenty-nine',
-         30: 'thirty'}
+_ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven',
+         'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen']
+_TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
+WORDS = {n: _ONES[n] if n < 20 else _TENS[n // 10] + ('-' + _ONES[n % 10] if n % 10 else '') for n in range(1, 100)}
 _n = len(re.findall(r'<article class="tile', SRC))
 COUNT = WORDS.get(_n, str(_n))
 # every film with a page of its own on /work/ (a data-part-of film is one more
@@ -38,14 +37,14 @@ ALL = WORDS.get(_all, str(_all))
 # still shown — it joins the end in front-page order — so a new tile can never
 # be left out of the strip.
 ORDER = ['The Greatest Sudanese Sit-In', 'Solana Accelerate', 'Sia x Solana',
-         'Solana Skyline', 'Badr Airlines', '60 Secs of New York', 'Crypto in the UAE',
+         'Solana Skyline', 'Badr Airlines', 'Al Eid Shofa', '60 Secs of New York', 'Crypto in the UAE',
          'El Fasher City', 'Solana x All In', 'Al Doroub', 'Hadeel Eljeally', 'Press “Generate”',
          'Sugar vs Jaggery', 'Token Supercycle', 'SGB — Solana Accelerate HK',
          'Why Is His Pinky Purple?', 'Solana Solstice',
          'Solana Developer Platform', 'Assets API']
 
 def slugify(t):
-    t = html.unescape(t).lower().replace('&', ' and ').replace('“','').replace('”','').replace('"','')
+    t = html.unescape(t).lower().replace('&', ' and ').replace('“','').replace('”','').replace('"','').replace('’', '').replace("'", '')
     return re.sub(r'[^a-z0-9]+', '-', t).strip('-')
 
 def dims(path):

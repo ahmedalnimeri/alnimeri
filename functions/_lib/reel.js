@@ -5,6 +5,7 @@ export const FILMS = [
  {
   "title": "Solana Accelerate",
   "vid": "1058181870",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://x.com/solana/status/1891889506489598298",
   "kind": "Campaign film",
@@ -21,6 +22,7 @@ export const FILMS = [
  {
   "title": "Badr Airlines",
   "vid": "710475541",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://www.facebook.com/BdrAirlines/videos/2008887945961542/",
   "kind": "Brand film",
@@ -37,6 +39,7 @@ export const FILMS = [
  {
   "title": "Solana x All In",
   "vid": "",
+  "provider": "",
   "portrait": false,
   "href": "https://x.com/solana/status/1959014515594732029",
   "kind": "Event promo",
@@ -53,6 +56,7 @@ export const FILMS = [
  {
   "title": "Hadeel Eljeally",
   "vid": "593825326",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://vimeo.com/593825326",
   "kind": "Fashion film",
@@ -69,6 +73,7 @@ export const FILMS = [
  {
   "title": "SGB — Solana Accelerate HK",
   "vid": "1171782862",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://x.com/solana/status/2030914380838097249",
   "kind": "Campaign film",
@@ -85,6 +90,7 @@ export const FILMS = [
  {
   "title": "Al Doroub",
   "vid": "843280565",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://www.facebook.com/compasscreativeprod/videos/904955267455707/",
   "kind": "Feature documentary · Compass Creative",
@@ -101,6 +107,7 @@ export const FILMS = [
  {
   "title": "Sia x Solana",
   "vid": "1093647469",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://x.com/solana/status/1933492598288888111",
   "kind": "Documentary",
@@ -117,6 +124,7 @@ export const FILMS = [
  {
   "title": "The Greatest Sudanese Sit-In",
   "vid": "1061801108",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://www.facebook.com/ph.sudan/videos/2415285358733003/",
   "kind": "Documentary",
@@ -133,6 +141,7 @@ export const FILMS = [
  {
   "title": "60 Secs of New York",
   "vid": "1083313331",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://x.com/solana/status/1920850534631711155",
   "kind": "Campaign film",
@@ -149,6 +158,7 @@ export const FILMS = [
  {
   "title": "Solana Solstice",
   "vid": "1047049388",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://x.com/solana/status/1870528786984493246",
   "kind": "Event film",
@@ -165,6 +175,7 @@ export const FILMS = [
  {
   "title": "Press “Generate”",
   "vid": "1123186249",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://vimeo.com/1123186249",
   "kind": "Brand film",
@@ -181,6 +192,7 @@ export const FILMS = [
  {
   "title": "Token Supercycle",
   "vid": "1224813193",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://x.com/solana/status/2096954113565303001",
   "kind": "Campaign film",
@@ -197,6 +209,7 @@ export const FILMS = [
  {
   "title": "El Fasher City",
   "vid": "1132473059",
+  "provider": "vimeo",
   "portrait": true,
   "href": "https://www.instagram.com/reel/DQU01jdE40p/",
   "kind": "Documentary",
@@ -213,6 +226,7 @@ export const FILMS = [
  {
   "title": "Sugar vs Jaggery",
   "vid": "999041155",
+  "provider": "vimeo",
   "portrait": true,
   "href": "https://www.instagram.com/reel/C89kR4oRGAh/",
   "kind": "Explainer · FITTR",
@@ -229,6 +243,7 @@ export const FILMS = [
  {
   "title": "Why Is His Pinky Purple?",
   "vid": "917813004",
+  "provider": "vimeo",
   "portrait": true,
   "href": "https://www.tiktok.com/@globalhealthchannel/video/7334951282496507154",
   "kind": "Explainer · Global Health Channel",
@@ -243,8 +258,26 @@ export const FILMS = [
   "key": "d"
  },
  {
+  "title": "Al Eid Shofa",
+  "vid": "mseoOqBdc7A",
+  "provider": "youtube",
+  "portrait": false,
+  "href": "https://www.youtube.com/watch?v=mseoOqBdc7A",
+  "kind": "Music video · Mohamed Rashad",
+  "secs": 106,
+  "stat": "2.26M views on YouTube",
+  "statref": "https://www.youtube.com/watch?v=mseoOqBdc7A",
+  "poster": "assets/posters/al-eid-shofa.jpg?h=0ede83d7",
+  "srcset": "assets/posters/al-eid-shofa-480.jpg?h=2c9ab6d0 480w, assets/posters/al-eid-shofa-768.jpg?h=0f780cfc 768w, assets/posters/al-eid-shofa.jpg?h=0ede83d7 1280w",
+  "alt": "Still from Al Eid Shofa",
+  "w": "1280",
+  "h": "720",
+  "key": "m"
+ },
+ {
   "title": "Solana Developer Platform",
   "vid": "1176863412",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://x.com/SolanaFndn/status/2036431272877187166",
   "kind": "Animation · Motion graphics",
@@ -261,6 +294,7 @@ export const FILMS = [
  {
   "title": "Crypto in the UAE",
   "vid": "1127131363",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://vimeo.com/1127131363",
   "kind": "Brand film",
@@ -277,6 +311,7 @@ export const FILMS = [
  {
   "title": "Assets API",
   "vid": "1200000727",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://x.com/SolanaFndn/status/2059668391556710705",
   "kind": "Animation · Motion graphics",
@@ -293,6 +328,7 @@ export const FILMS = [
  {
   "title": "Solana Skyline",
   "vid": "1061799826",
+  "provider": "vimeo",
   "portrait": false,
   "href": "https://x.com/solana/status/1887551426785923267",
   "kind": "Visuals",

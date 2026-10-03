@@ -324,6 +324,7 @@
 .fp-index:has(#brand:target) .fp-tabs__row > a[data-cat="brand"],
 .fp-index:has(#events:target) .fp-tabs__row > a[data-cat="events"],
 .fp-index:has(#documentary:target) .fp-tabs__row > a[data-cat="documentary"],
+.fp-index:has(#music:target) .fp-tabs__row > a[data-cat="music"],
 .fp-index:has(#motion:target) .fp-tabs__row > a[data-cat="motion"] { color: var(--fg); border-color: var(--line); background: rgba(255, 255, 255, .06); }
 .fp-index:has(.fp-cat:target) .fp-tabs__row > a[data-cat="all"] { color: var(--fg-dim); border-color: transparent; background: none; }
 
@@ -345,6 +346,9 @@
    left alone in the last row hangs across it; in a last row one film short,
    the last film takes two cells at the row's height */
 .fp-wall .fp-card.is-wide { grid-column: 1 / -1; }
+/* cut to the row's scope shape, the band sits high in the 16:9 still, where
+   the heads are */
+.fp-wall .fp-card.is-wide .fp-card__still img { object-position: 50% 22%; }
 .fp-wall .fp-card.is-pair { grid-column: span 2; }
 .fp-wall .fp-card--portrait .fp-card__still { aspect-ratio: 16 / 9; }
 .fp-wall .fp-card.is-lead .fp-card__still { aspect-ratio: auto; flex: 1 1 auto; min-height: 240px; }
@@ -360,10 +364,12 @@
 .fp-wall[data-filter="brand"] .fp-card:not([data-cat="brand"]),
 .fp-wall[data-filter="events"] .fp-card:not([data-cat="events"]),
 .fp-wall[data-filter="documentary"] .fp-card:not([data-cat="documentary"]),
+.fp-wall[data-filter="music"] .fp-card:not([data-cat="music"]),
 .fp-wall[data-filter="motion"] .fp-card:not([data-cat="motion"]),
 .fp-wall:not([data-filter]):has(#brand:target) .fp-card:not([data-cat="brand"]),
 .fp-wall:not([data-filter]):has(#events:target) .fp-card:not([data-cat="events"]),
 .fp-wall:not([data-filter]):has(#documentary:target) .fp-card:not([data-cat="documentary"]),
+.fp-wall:not([data-filter]):has(#music:target) .fp-card:not([data-cat="music"]),
 .fp-wall:not([data-filter]):has(#motion:target) .fp-card:not([data-cat="motion"]) { display: none; }
 .fp-wall .fp-card.is-leaving { display: flex !important; position: absolute; margin: 0; pointer-events: none; z-index: 0; }
 @media (max-width: 700px) {
@@ -372,11 +378,69 @@
   .fp-wall .fp-card__meta { font-size: 12px; }
 }
 
+/* ---------- /work/solana: every Solana video, read like a changelog ----------
+   A list, not a wall: the years hang down the left and stay in view while
+   their videos pass; each video is one quiet line (when, what, what kind,
+   and how many watched it, linked to the post). Hairlines between the lines,
+   no boxes. A video with a page of its own here carries an arrow. */
+.sl .fp-head { max-width: var(--fp-w); margin-inline: auto; }
+.sl .fp-lede { max-width: 60ch; }
+.sl-years { max-width: var(--fp-w); margin: clamp(32px, 6vh, 64px) auto 0; }
+.sl-year {
+  display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); gap: 0 clamp(24px, 5vw, 80px);
+  padding: clamp(26px, 4.5vh, 44px) 0 clamp(30px, 5vh, 52px); border-top: 1px solid var(--line);
+}
+.sl-year__head { position: sticky; top: calc(var(--fp-top) + 28px); align-self: start; }
+.sl-year__head h2 {
+  margin: 0; font-size: clamp(30px, 3.2vw, 44px); font-weight: 500; letter-spacing: -0.035em; line-height: 1;
+  color: var(--fg); font-variant-numeric: tabular-nums;
+}
+.sl-year__head p { margin: 12px 0 0; font-size: 13px; line-height: 1.5; letter-spacing: -0.005em; color: var(--fg-faint); }
+.sl-list { list-style: none; margin: 0; padding: 0; }
+.sl-row {
+  display: grid; grid-template-columns: 58px minmax(0, 1fr) minmax(96px, 136px) 72px; gap: 0 20px; align-items: baseline;
+  padding: 12px 0 13px; border-top: 1px solid var(--line-soft);
+  font-size: 15px; line-height: 1.45; letter-spacing: -0.01em;
+}
+.sl-row:first-child { border-top: 0; padding-top: 2px; }
+.sl-date, .sl-type { font-size: 13px; color: var(--fg-faint); }
+.sl-date { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sl-title { min-width: 0; color: var(--fg-dim); transition: color .35s var(--ease); }
+.sl-row:hover .sl-title { color: var(--fg); }
+.sl-title a { color: var(--fg); text-decoration: none; }
+.sl-title a::after { content: "\2192"; display: inline-block; margin-left: .45em; color: var(--fg-faint); transition: transform .35s var(--ease), color .35s var(--ease); }
+.sl-title a:hover::after { color: var(--fg); transform: translateX(3px); }
+.sl-title a:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; border-radius: 3px; }
+.sl-views {
+  justify-self: end; white-space: nowrap; text-decoration: none;
+  font-size: 14px; color: var(--fg-dim); font-variant-numeric: tabular-nums; transition: color .35s var(--ease);
+}
+.sl-views span { color: var(--fg-faint); transition: color .35s var(--ease); }
+.sl-views:hover, .sl-views:hover span { color: var(--fg); }
+.sl-foot { max-width: var(--fp-w); margin: clamp(8px, 2vh, 20px) auto 0; }
+.sl-foot .fp-nav { display: flex; }
+@media (max-width: 760px) {
+  .sl-year { grid-template-columns: minmax(0, 1fr); }
+  .sl-year__head { position: static; display: flex; align-items: baseline; gap: 14px; margin-bottom: 16px; }
+  .sl-year__head p { margin: 0; }
+  /* two lines: the name and the figure; under it, when and what kind */
+  .sl-row {
+    grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "title title views" "date type type";
+    gap: 3px 10px; padding: 13px 0 14px;
+  }
+  .sl-title { grid-area: title; }
+  .sl-views { grid-area: views; align-self: start; }
+  .sl-date { grid-area: date; }
+  .sl-type { grid-area: type; margin-left: -10px; }
+  .sl-type::before { content: "\00b7"; display: inline-block; width: 18px; text-align: center; }
+}
+
 /* ---------- reduced motion: every frame already in place ---------- */
 @media (prefers-reduced-motion: reduce) {
   .fp-film .fp-frame, .fp-film .fp-light { animation: none; }
   .fp-card__still img, .fp-frame img { transition: none; transform: none !important; }
   .fp-tabs__ink, .fp-light, .fp-card, .fp-head, .fp-credit, .fp > :not(.fp-hero) { transition: none; }
+  .sl-title, .sl-title a::after, .sl-views { transition: none; }
 }
 
 @media print {

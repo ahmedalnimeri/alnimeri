@@ -20,7 +20,8 @@ editing can be booked separately. Fees are quoted per project.
 
 Key pages:
 - Selected work with verifiable view counts: https://alnimeri.com/
-- All 24 selected film pages: https://alnimeri.com/work/
+- All 34 selected film pages: https://alnimeri.com/work/
+- Every Solana video he edited, with views (from the team's tracker): https://alnimeri.com/work/solana
 - Services and project questions: https://alnimeri.com/#services
 - CV, full credits and experience: https://alnimeri.com/cv
 - About, behind the scenes and what audiences say: https://alnimeri.com/about

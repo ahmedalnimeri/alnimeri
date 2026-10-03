@@ -304,6 +304,10 @@
   background: none; border: 0; border-top: 1px solid var(--line); border-radius: 0;
 }
 #said .said-wall .said__en { font-size: 16px; line-height: 1.62; letter-spacing: -0.005em; color: var(--fg); }
+/* a quote about one film names it; the name leads to the film's page */
+#said .said__film { color: inherit; text-decoration: underline; text-decoration-thickness: 1px;
+  text-decoration-color: var(--line); text-underline-offset: 4px; transition: text-decoration-color .35s var(--ease); }
+#said .said__film:hover { text-decoration-color: currentColor; }
 #said .said__by {
   font-family: var(--ff); text-transform: none; letter-spacing: -0.005em;
   font-size: 13px; line-height: 1.45; color: var(--fg-faint); padding-top: 0.9rem; margin: 0;

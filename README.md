@@ -24,7 +24,15 @@ python3 -m http.server 4321
 
 ## Adding or changing a video
 
-1. Find the Vimeo ID (the number in `vimeo.com/1234567890`).
+1. Find the Vimeo ID (the number in `vimeo.com/1234567890`), or, for a film that lives on
+   YouTube, its 11-character id (`youtube.com/watch?v=mseoOqBdc7A`) with
+   `data-provider="youtube"` beside `data-video`. Either one plays the same way: the still is
+   a facade that becomes the player on Play (Vimeo's, or YouTube's privacy-enhanced
+   `youtube-nocookie.com` player with `autoplay=1&rel=0&modestbranding=1`), on the film pages,
+   in the front page's lightbox and in the reel. A film that lives only on X has neither
+   attribute: its tile links to the post and its page says "Watch on X" (Solana x All In).
+   Add the film's date to `assets/video-metadata.json` (Vimeo's upload date for the schema; a
+   YouTube video's published date, which its watch page shows, so its year is printed too).
 2. Save its poster as `assets/posters/<id>.jpg`, and make the `-480`/`-768` JPEG and
    `-480`/`-768`/`-1280` WebP sizes next to it (new file names if a poster ever changes).
 3. Copy an existing `<article class="tile">` block in `index.html` and update
@@ -47,7 +55,12 @@ Attributes on the `<article>` the builders read:
   No role is written on any film, in the page or in its data: roles appear only on `/cv`
   (his decision, 3 Oct 2026). `bin-check-claims.py` fails the build if one comes back.
 - `data-cat="motion"` — the `/work/` category, where the kind alone would file it
-  elsewhere (Stim is a TV commercial shown for its post-production).
+  elsewhere (Stim is a TV commercial shown for its post-production). The kinds are
+  brand, events, documentary, music (any kind naming a "Music video") and motion.
+- `data-provider="youtube"` — on the `.tile__link`, beside `data-video`: the film plays from
+  YouTube. Without it, `data-video` is a Vimeo id.
+- `style="--focus: 50% 10%"` — on a full-row `tile--scope` tile whose picture was not shot in
+  scope (Al Eid Shofa): where the row's 2.37:1 band sits in its 16:9 still, so no head is cut.
 - `data-part-of="<slug>"` — not an entry of its own but one more film on that entry's
   page (Badr Airlines). The part with the entry's own Vimeo id gives the page its still;
   the others hang under the main film with their own play and running time.
@@ -62,7 +75,7 @@ After touching the tiles in `index.html`, regenerate everything that derives fro
 
 ```sh
 python3 bin-build-home-art.py && python3 bin-stamp-assets.py && python3 bin-build-work-pages.py \
-  && python3 bin-build-about-strip.py \
+  && python3 bin-build-solana.py && python3 bin-build-about-strip.py \
   && python3 bin-build-onset.py && python3 bin-build-about-said.py \
   && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-reel.py \
   && python3 bin-stamp-assets.py && python3 bin-check-claims.py
@@ -71,6 +84,12 @@ python3 bin-build-home-art.py && python3 bin-stamp-assets.py && python3 bin-buil
 `bin-check-claims.py` runs last and changes nothing: it exits non-zero if "directed by", a
 JSON-LD `"director"`, the old "Directed, shot and edited" line, an `fp-credit` line or a
 `data-role` attribute appears in any served `.html`, `llms.txt` or `functions/_lib/reel.js`.
+
+`bin-build-solana.py` writes `/work/solana`, every Solana video he edited, from
+`assets/solana-edits.json` (the team tracker's rows, exported): grouped by year, one line per
+video with its date, kind and views, each linked to its X post, and a video with a film page
+here linked to that page. Every count and total on it, in the `/work/` lede and on its share
+card (`og-solana-<count>.jpg`, from `bin-build-og.py`) is read from that file.
 
 `bin-build-home-art.py` builds the home page's four compositions ("What are we making?") from the tiles.
 
@@ -109,6 +128,6 @@ there too, so check Email Routing after any DNS change.
   still be worth having as a file; the site no longer waits for it.
 - **`assets/og.jpg`** is a crop of a still. A purpose-made 1200×630 card would
   be better.
-- Five of the highest-performing pieces (Solana x ALLIn, Breakpoint London,
-  Electric Capital Developer's Report, Roam, APEX Mexico) are not on Vimeo and
-  therefore cannot be shown here.
+- Some of the highest-performing pieces live only on X (Solana x All In, Breakpoint London,
+  Electric Capital Developer Report, Roam and more): they have pages and stills here, but
+  play on X, not on the site. APEX Mexico has no page yet; it is on `/work/solana`.
