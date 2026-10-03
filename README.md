@@ -79,13 +79,29 @@ After touching the tiles in `index.html`, regenerate everything that derives fro
 python3 bin-build-home-art.py && python3 bin-stamp-assets.py && python3 bin-build-work-pages.py \
   && python3 bin-build-solana.py && python3 bin-build-about-strip.py \
   && python3 bin-build-onset.py && python3 bin-build-about-said.py \
-  && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-reel.py \
-  && python3 bin-stamp-assets.py && python3 bin-check-claims.py
+  && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-llms.py \
+  && python3 bin-build-reel.py && python3 bin-stamp-assets.py && python3 bin-check.py
 ```
 
-`bin-check-claims.py` runs last and changes nothing: it exits non-zero if "directed by", a
+`bin-check.py` runs last, before every deploy, and changes nothing. It exits non-zero, listing
+every problem, on: JSON-LD that does not parse, an alnimeri.com `@id` no page describes, or a
+film page without its `VideoObject` (`/work/<slug>#film`); a `work/*.html` missing from
+`sitemap.xml` or `llms.txt`; a film count in words or digits ("One of thirty-four films") that
+is not the number of films, of the front page's or of the rest; a broken internal `href`/`src`/
+`srcset` or `#fragment`; an `og:image` that is not a file here; `styles.css` and `main.js` on
+more than one `?v=`. It also runs `bin-check-claims.py`, which fails if "directed by", a
 JSON-LD `"director"`, the old "Directed, shot and edited" line, an `fp-credit` line or a
-`data-role` attribute appears in any served `.html`, `llms.txt` or `functions/_lib/reel.js`.
+`data-role` attribute appears in any served `.html`, `llms.txt` or `functions/`. Every page is
+read as it is served, and one `/reel/<code>` page is rendered through the real Function in Node.
+
+`bin-build-llms.py` writes `llms.txt`: the record, the commissioning notes and the profiles are
+its own prose (edit them there, not in `llms.txt`), and the films, one line each, by kind, in
+/work/'s order, come from the film pages' own `VideoObject`s (title, kind, year where the post
+proves it, figure, running time, the page and the post).
+
+`bin-build-sitemap.py` also gives each film page a video entry (still, title, description,
+player, seconds, date) read from the same `VideoObject`s; a film with no player here (X only)
+has none.
 
 `bin-build-solana.py` writes `/work/solana`, every Solana video he edited, from
 `assets/solana-edits.json` (the team tracker's rows, exported): grouped by year, one line per
@@ -122,6 +138,24 @@ Cloudflare Pages, free tier:
 2. Cloudflare dashboard → Workers & Pages → Create → Pages → connect the repo.
 3. Build command: **none**. Output directory: **`/`**. It is already static.
 4. Add `alnimeri.com` and `www.alnimeri.com` as custom domains.
+
+After a deploy is live, tell the search engines what changed:
+
+```sh
+python3 bin-indexnow.py            # new or changed sitemap URLs since this machine last sent them
+python3 bin-indexnow.py --dry-run  # what it would send
+```
+
+It POSTs them to IndexNow (Bing, Yandex and the others; Google reads `sitemap.xml`), after
+checking that the live sitemap is this checkout's and that the key file
+`f458b69ba17e628ce148d1d692c132a3.txt` (at the root, holding its own name) is live. What it has
+sent is kept in `.indexnow-sent.json`, which is git-ignored.
+
+`www.alnimeri.com` answers with a 301 to the same path on `alnimeri.com`: the first lines of
+`functions/_middleware.js` (a `_redirects` rule cannot match a host). `_headers` sends HSTS
+(a year, subdomains, no preload), `frame-ancestors 'none'` and a Permissions-Policy that
+turns off camera, microphone and location; the middleware adds the same three to what a
+Function renders.
 
 DNS: the domain is registered at Porkbun, but its nameservers are Cloudflare's,
 so every record lives in the Cloudflare dashboard. Mail to ahmed@alnimeri.com

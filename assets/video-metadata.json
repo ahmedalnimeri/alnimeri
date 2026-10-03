@@ -112,7 +112,9 @@
   "843280565": {
     "uploadDate": "2023-07-07",
     "source": "https://vimeo.com/api/v2/video/843280565.json",
-    "sourceTitle": "Aldoroob"
+    "sourceTitle": "Aldoroob",
+    "inLanguage": "ar",
+    "inLanguageNote": "Arabic-language documentary."
   },
   "895568371": {
     "uploadDate": "2023-12-17",
@@ -134,13 +136,17 @@
     "source": "https://www.youtube.com/watch?v=9dL9aojEnTM",
     "sourceTitle": "Ma Tsheely Hamm - Mazin Hamid & Kordofani | ما تشيلي هم - مازن حامد وكردفاني",
     "provider": "youtube",
-    "note": "YouTube's upload date is the date the video was published on the linked page (read 2026-10-02)."
+    "note": "YouTube's upload date is the date the video was published on the linked page (read 2026-10-02).",
+    "inLanguage": "ar",
+    "inLanguageNote": "Sung in Arabic (its YouTube title is also in Arabic)."
   },
   "mseoOqBdc7A": {
     "uploadDate": "2022-07-09",
     "source": "https://www.youtube.com/watch?v=mseoOqBdc7A",
     "sourceTitle": "العيد شوفة ـ اغنية العيد",
     "provider": "youtube",
-    "note": "YouTube's upload date is the date the video was published on the linked page (read 2026-10-02)."
+    "note": "YouTube's upload date is the date the video was published on the linked page (read 2026-10-02).",
+    "inLanguage": "ar",
+    "inLanguageNote": "Sung in Arabic (its YouTube title is in Arabic)."
   }
 }

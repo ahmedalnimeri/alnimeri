@@ -5,8 +5,17 @@
 # rendered at its full 900px, and how an old figure kept showing after it had
 # been corrected. must-revalidate costs one conditional request and removes a
 # whole class of "it still shows the old version" confusion.
+#
+# And on everything: HTTPS only, for a year, on every subdomain too (no
+# preload: that list is hard to leave); nobody may frame the site; no page
+# asks for the camera, the microphone or the location, so none can.
+# functions/_middleware.js adds the same three to what a Function renders,
+# which this file never reaches.
 /*
   Cache-Control: public, max-age=0, must-revalidate
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: frame-ancestors 'none'
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
 
 # Fingerprinted and content-stable assets can be cached hard. Stylesheet and
 # script carry a ?v= query that changes on every edit, so a stale copy can

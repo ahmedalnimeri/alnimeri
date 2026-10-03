@@ -156,7 +156,44 @@ function personalise(res, sc) {
   return out;
 }
 
+// One address. www.alnimeri.com answered 200 with the whole site, a second copy
+// for search engines to weigh against the first. _redirects cannot match a
+// host, so the move to the apex happens here, before anything else: a 301 for
+// a page (308 for anything that is not a GET or HEAD, so a method is never
+// changed on the way). Static files on www never reach this (they are excluded
+// in _routes.json), which is harmless: every page names the apex as canonical.
+const APEX = 'https://alnimeri.com';
+
+// The three security headers _headers sets on every static response. _headers
+// is not applied to what a Function renders (/reel/<code>, /brief, /api/*, the
+// www redirect), so they are added here wherever a response lacks them.
+const SECURITY = [
+  ['Strict-Transport-Security', 'max-age=31536000; includeSubDomains'],
+  ['Content-Security-Policy', "frame-ancestors 'none'"],
+  ['Permissions-Policy', 'camera=(), microphone=(), geolocation=()'],
+];
+
+function secured(res) {
+  if (SECURITY.every(([k]) => res.headers.has(k))) return res;
+  const out = new Response(res.body, res);
+  for (const [k, v] of SECURITY) if (!out.headers.has(k)) out.headers.set(k, v);
+  return out;
+}
+
 export async function onRequest(context) {
+  const u = new URL(context.request.url);
+  if (u.hostname === 'www.alnimeri.com') {
+    const keep = context.request.method === 'GET' || context.request.method === 'HEAD';
+    return secured(new Response(null, { status: keep ? 301 : 308, headers: {
+      Location: APEX + u.pathname + u.search,
+      'Cache-Control': 'public, max-age=86400',
+    } }));
+  }
+
+  return secured(await serve(context));
+}
+
+async function serve(context) {
   const { request, env, next, waitUntil } = context;
 
   try {

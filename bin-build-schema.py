@@ -1,89 +1,51 @@
 #!/usr/bin/env python3
 """Rebuild index.html's JSON-LD graph from whatever tiles are currently present.
 
-The VideoObject list must be derived from the DOM, not maintained by hand —
-swapping two tiles once left the schema advertising films that were no longer
-on the page.
+The film list must be derived from the DOM, not maintained by hand — swapping
+two tiles once left the schema advertising films that were no longer on the
+page. It lists each film by the @id its own page describes it under
+(/work/<slug>#film), so run this after bin-build-work-pages.py.
 """
 import re, json, os
+import html as _html
 
 s = open('index.html').read()
-METADATA = json.load(open('assets/video-metadata.json'))
 
-def iso(d):
-    p = [int(x) for x in d.split(':')]
-    m, sec = (p[0], p[1]) if len(p) == 2 else (p[0]*60 + p[1], p[2])
-    return f"PT{m}M{sec}S"
+def slugify(t):
+    # the film pages' own rule (bin-build-work-pages.py)
+    t = _html.unescape(t).lower()
+    t = t.replace('&', ' and ').replace('“', '').replace('”', '').replace('"', '').replace('’', '').replace("'", '')
+    return re.sub(r'[^a-z0-9]+', '-', t).strip('-')
 
-videos = []
-# The front page's own films: the films in <template id="more-films"> are not
-# on this page (each has its own page and its own schema).
+# The front page's own films, as a list of the films' @ids. Each film is
+# described once, in full, on its own page (bin-build-work-pages.py:
+# /work/<slug>#film, with its player, still, date, running time and figure);
+# repeating all of that here was about 14 KB of head on every visit to the
+# front page, and two descriptions of one film that could drift apart.
+# The films in <template id="more-films"> are not on this page.
 _grid = re.sub(r'<template id="more-films">[\s\S]*?</template>', '', s)
+films = []
 for blk in re.findall(r'<article class="tile[\s\S]+?</article>', _grid):
-    title = re.search(r'data-title="([^"]*)"', blk).group(1)
-    vm = re.search(r'data-video="([\w-]+)"', blk)
-    vid = vm.group(1) if vm else None
-    # a Vimeo id, or a YouTube id with data-provider="youtube"
-    pm = re.search(r'data-provider="(\w+)"', blk)
-    provider = (pm.group(1) if pm else 'vimeo') if vid else None
-    dur  = re.search(r'tile__dur">([\d:]+)<', blk)
-    kind = re.search(r'tile__kind">([^<]*)<', blk)
-    stat = re.search(r'tile__stat" href="([^"]*)"', blk)
-    # The verified engagement figure, machine-readable. "1.4M views on X" ->
-    # 1400000 WatchActions; "4.3K reactions" -> LikeActions. The number is
-    # the same one the visible pill shows and links to.
-    fig  = re.search(r'tile__stat"[^>]*>\s*([\d.]+)([KM]?)\s+(views|reactions)', blk)
-    name = title.replace('&amp;', '&')
-    kindtxt = (kind.group(1) if kind else '').replace('&amp;', '&').replace(' · ', ' — ')
-    poster = re.search(r'<img\s(?:[^>]*\s)?src="assets/(posters/[^"?]+)', blk)
-    # No role is named and nothing claims a director (Ahmed, 2026-10-03:
-    # roles are for /cv only). data-credit on the tile says which relation
-    # the data may claim: none (his own film) -> creator; "contributor" ->
-    # contributor; "none" -> no relation at all (bin-build-work-pages.py).
+    title = _html.unescape(re.search(r'data-title="([^"]*)"', blk).group(1))
+    # No role is named and nothing claims a director (Ahmed, 2026-10-03);
+    # the relation each film may claim lives on its page. Checked here too,
+    # so a tile with an unknown data-credit stops this build as well.
     credit = re.search(r'data-credit="([^"]*)"', blk)
-    credit = credit.group(1) if credit else None
-    if credit not in (None, 'contributor', 'none'):
-        raise SystemExit(f'{name}: data-credit="{credit}" (contributor or none)')
-    if credit is None:
-        v = {
-            "@type": "VideoObject" if vid else "Movie",
-            "name": name,
-            "description": f"{kindtxt} by Ahmed El-Nimeri." if kindtxt else "Film by Ahmed El-Nimeri.",
-            "creator": {"@id": "https://alnimeri.com/#person"},
-        }
-    elif credit == 'contributor':
-        v = {"@type": "VideoObject" if vid else "Movie", "name": name,
-             "description": (f"{kindtxt}, from the portfolio of Ahmed El-Nimeri." if kindtxt
-                             else "From the portfolio of Ahmed El-Nimeri."),
-             "contributor": {"@id": "https://alnimeri.com/#person"}}
-    else:
-        v = {"@type": "VideoObject" if vid else "Movie", "name": name}
-        if kindtxt:
-            v["description"] = f"{kindtxt}."
+    if credit and credit.group(1) not in ('contributor', 'none'):
+        raise SystemExit(f'{title}: data-credit="{credit.group(1)}" (contributor or none)')
+    slug = slugify(title)
+    if not os.path.exists(f'work/{slug}.html'):
+        raise SystemExit(f'{title}: no film page work/{slug}.html (run bin-build-work-pages.py first)')
+    films.append((title, slug))
 
-    if vid:
-        v["uploadDate"] = METADATA[vid]["uploadDate"]
-    # The thumbnail is a still of the film this object describes: the film's
-    # own when it has one (Badr Airlines' tile leads with the Captain still,
-    # but plays, and is described as, the brand film), else the tile's.
-    if vid and os.path.exists(f'assets/posters/{vid}.jpg'):
-        v["thumbnailUrl"] = f"https://alnimeri.com/assets/posters/{vid}.jpg"
-    elif poster:
-        v["thumbnailUrl"] = f"https://alnimeri.com/assets/{poster.group(1)}"
-    # Only films with a Vimeo or YouTube copy can be embedded; the rest live on X only.
-    if vid: v["embedUrl"] = (f"https://www.youtube.com/embed/{vid}" if provider == 'youtube'
-                             else f"https://player.vimeo.com/video/{vid}")
-    if dur:  v["duration"] = iso(dur.group(1))
-    if fig:
-        n = float(fig.group(1)) * {"K": 1e3, "M": 1e6, "": 1}[fig.group(2)]
-        action = "WatchAction" if fig.group(3) == "views" else "LikeAction"
-        v["interactionStatistic"] = {
-            "@type": "InteractionCounter",
-            "interactionType": {"@type": action},
-            "userInteractionCount": int(n),
-        }
-    if stat: v["sameAs"] = stat.group(1)
-    videos.append(v)
+film_list = {
+    "@type": "ItemList", "@id": "https://alnimeri.com/#films",
+    "name": "Selected films", "url": "https://alnimeri.com/#work",
+    "numberOfItems": len(films),
+    "itemListElement": [
+        {"@type": "ListItem", "position": i + 1, "name": title,
+         "item": {"@id": f"https://alnimeri.com/work/{slug}#film"}}
+        for i, (title, slug) in enumerate(films)]}
 
 person = {
   "@type": "Person", "@id": "https://alnimeri.com/#person",
@@ -116,7 +78,6 @@ person = {
 
 # The questions already answered in the page's own Q&A block, as data. Derived
 # from the DOM: an answer edited on the page must not leave stale schema behind.
-import html as _html
 def _clean(x):
     return re.sub(r'\s+', ' ', _html.unescape(re.sub(r'<[^>]+>', '', x))).strip()
 
@@ -144,7 +105,8 @@ graph = {"@context": "https://schema.org", "@graph": [
    "name": "Ahmed El-Nimeri | Film Director & Editor in Dubai",
    "isPartOf": {"@id": "https://alnimeri.com/#website"},
    "about": {"@id": "https://alnimeri.com/#person"},
-   "mainEntity": {"@id": "https://alnimeri.com/#person"}},
+   "mainEntity": {"@id": "https://alnimeri.com/#person"},
+   "hasPart": {"@id": "https://alnimeri.com/#films"}},
 ] + [{"@type": "Service", "@id": "https://alnimeri.com/#service-" + key,
       "name": name, "serviceType": name, "description": description,
       "provider": {"@id": "https://alnimeri.com/#person"},
@@ -154,17 +116,19 @@ graph = {"@context": "https://schema.org", "@graph": [
        ("events", "Event and conference films", "Speaker films, multi-camera event coverage and recaps cut on site, for conferences, launches and summits."),
        ("documentary", "Documentary and institutional films", "Documentary filmmaking in English and Arabic, with experience across Sudan and the Gulf."),
        ("post", "Creative direction and post-production", "Creative direction, editing, motion graphics, colour and sound. Fees quoted per project.")
-     ]] + faq + videos}
+     ]] + faq + [film_list]}
 
 block = '<script type="application/ld+json">' + json.dumps(graph, ensure_ascii=False, indent=2) + '</script>'
 s = re.sub(r'<script type="application/ld\+json">.*?</script>', block, s, count=1, flags=re.S)
 open('index.html', 'w').write(s)
-print(f"schema rebuilt: {len(videos)} VideoObject entries, {len(graph['@graph'])} nodes")
+print(f"schema rebuilt: {len(films)} films listed by @id, {len(graph['@graph'])} nodes")
 
 # /about and /cv carry the same Person (@id #person) in their own graphs, so a
 # page read on its own still resolves AboutPage/ProfilePage.mainEntity. It is
-# the same node, so it comes from the same dict: names, sameAs, employer. Only
-# jobTitle stays as each page has it until one wording is settled.
+# the same node, so it comes from the same dict: names, sameAs, employer, and
+# one jobTitle ("Film Director & Editor", as the front page has always said),
+# so search engines see one descriptor, not three. The visible copy on each
+# page is its own and is not touched.
 for page in ('about.html', 'cv.html'):
     src = open(page).read()
     m = re.search(r'(<script type="application/ld\+json">)(.*?)(</script>)', src, flags=re.S)
@@ -176,7 +140,6 @@ for page in ('about.html', 'cv.html'):
     if len(at) != 1:
         raise SystemExit(f'{page}: expected one Person node, found {len(at)}')
     node = dict(person)
-    node['jobTitle'] = nodes[at[0]].get('jobTitle', person['jobTitle'])
     nodes[at[0]] = node
     out = src[:m.start(2)] + json.dumps(data, ensure_ascii=False, indent=2) + src[m.end(2):]
     if out != src:

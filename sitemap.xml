@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
   <url>
     <loc>https://alnimeri.com/</loc>
     <lastmod>2026-10-03</lastmod>
@@ -23,34 +23,114 @@
   <url>
     <loc>https://alnimeri.com/work/60-secs-of-new-york</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1083313331.jpg</video:thumbnail_loc>
+      <video:title>60 Secs of New York</video:title>
+      <video:description>60 Secs of New York — Campaign film, 2025. 768K views on X. Running time 1:05.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1083313331</video:player_loc>
+      <video:duration>65</video:duration>
+      <video:publication_date>2025-05-11</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/al-anfal</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/811656141.jpg</video:thumbnail_loc>
+      <video:title>Al Anfal</video:title>
+      <video:description>Al Anfal — TV commercial. Running time 1:12.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/811656141</video:player_loc>
+      <video:duration>72</video:duration>
+      <video:publication_date>2023-03-25</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/al-doroub</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/843280565.jpg</video:thumbnail_loc>
+      <video:title>Al Doroub</video:title>
+      <video:description>Al Doroub — Feature documentary · Compass Creative. 4.2K reactions · 2.4K shares. Running time 22:01.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/843280565</video:player_loc>
+      <video:duration>1321</video:duration>
+      <video:publication_date>2023-07-07</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/al-eid-shofa</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/al-eid-shofa.jpg</video:thumbnail_loc>
+      <video:title>Al Eid Shofa</video:title>
+      <video:description>Al Eid Shofa — Music video · Mohamed Rashad, 2022. 2.26M views on YouTube. Running time 1:46.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/mseoOqBdc7A</video:player_loc>
+      <video:duration>106</video:duration>
+      <video:publication_date>2022-07-09</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/assets-api</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1200000727.jpg</video:thumbnail_loc>
+      <video:title>Assets API</video:title>
+      <video:description>Assets API — Animation · Motion graphics, 2026. 147K views on X. Running time 0:26.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1200000727</video:player_loc>
+      <video:duration>26</video:duration>
+      <video:publication_date>2026-06-10</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/badr-airlines</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/710475541.jpg</video:thumbnail_loc>
+      <video:title>Badr Airlines</video:title>
+      <video:description>Badr Airlines — Brand film. 164K views on Facebook. Running time 0:59.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/710475541</video:player_loc>
+      <video:duration>59</video:duration>
+      <video:publication_date>2022-05-16</video:publication_date>
+    </video:video>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/820388538.jpg</video:thumbnail_loc>
+      <video:title>Captain</video:title>
+      <video:description>Captain — Badr Airlines film. Running time 1:28.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/820388538</video:player_loc>
+      <video:duration>88</video:duration>
+      <video:publication_date>2023-04-24</video:publication_date>
+    </video:video>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/616394946.jpg</video:thumbnail_loc>
+      <video:title>World Tourism Day 2021</video:title>
+      <video:description>World Tourism Day 2021 — Badr Airlines film. Running time 1:18.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/616394946</video:player_loc>
+      <video:duration>78</video:duration>
+      <video:publication_date>2021-09-27</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/bank-of-khartoum</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/798676766.jpg</video:thumbnail_loc>
+      <video:title>Bank of Khartoum</video:title>
+      <video:description>Bank of Khartoum — App campaign. 172K views on Facebook. Running time 0:52.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/798676766</video:player_loc>
+      <video:duration>52</video:duration>
+      <video:publication_date>2023-02-14</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/break-the-bias-ctc-group</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/688615598.jpg</video:thumbnail_loc>
+      <video:title>Break the Bias — CTC Group</video:title>
+      <video:description>Break the Bias — CTC Group — Campaign film. 13K views on Facebook. Running time 1:33.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/688615598</video:player_loc>
+      <video:duration>93</video:duration>
+      <video:publication_date>2022-03-15</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/breakpoint-london</loc>
@@ -59,14 +139,38 @@
   <url>
     <loc>https://alnimeri.com/work/crypto-in-the-uae</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1127131363.jpg</video:thumbnail_loc>
+      <video:title>Crypto in the UAE</video:title>
+      <video:description>Crypto in the UAE — Brand film. Running time 1:43.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1127131363</video:player_loc>
+      <video:duration>103</video:duration>
+      <video:publication_date>2025-10-14</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/dp-world-at-sailgp</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/895568371.jpg</video:thumbnail_loc>
+      <video:title>DP World at SailGP</video:title>
+      <video:description>DP World at SailGP — Event vlog. Running time 0:59.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/895568371</video:player_loc>
+      <video:duration>59</video:duration>
+      <video:publication_date>2023-12-17</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/el-fasher-city</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1132473059.jpg</video:thumbnail_loc>
+      <video:title>El Fasher City</video:title>
+      <video:description>El Fasher City — Documentary, 2025. 1.7M views on Instagram. Running time 0:53.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1132473059</video:player_loc>
+      <video:duration>53</video:duration>
+      <video:publication_date>2025-10-31</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/electric-capital-developer-report</loc>
@@ -75,6 +179,14 @@
   <url>
     <loc>https://alnimeri.com/work/hadeel-eljeally</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/593825326.jpg</video:thumbnail_loc>
+      <video:title>Hadeel Eljeally</video:title>
+      <video:description>Hadeel Eljeally — Fashion film. Running time 0:36.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/593825326</video:player_loc>
+      <video:duration>36</video:duration>
+      <video:publication_date>2021-08-28</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/israels-taqueria</loc>
@@ -83,14 +195,38 @@
   <url>
     <loc>https://alnimeri.com/work/ma-tsheely-hamm</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/ma-tsheely-hamm.jpg</video:thumbnail_loc>
+      <video:title>Ma Tsheely Hamm</video:title>
+      <video:description>Ma Tsheely Hamm — Music video · Mazin Hamid &amp; Kordofani, 2025. 386K views on YouTube. Running time 2:03.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/9dL9aojEnTM</video:player_loc>
+      <video:duration>123</video:duration>
+      <video:publication_date>2025-11-21</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/owen-venter-apex-cape-town</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1074230073.jpg</video:thumbnail_loc>
+      <video:title>Owen Venter — APEX Cape Town</video:title>
+      <video:description>Owen Venter — APEX Cape Town — Documentary, 2025. 321K views on X. Running time 2:15.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1074230073</video:player_loc>
+      <video:duration>135</video:duration>
+      <video:publication_date>2025-04-10</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/press-generate</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1123186249.jpg</video:thumbnail_loc>
+      <video:title>Press “Generate”</video:title>
+      <video:description>Press “Generate” — Brand film. Running time 1:42.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1123186249</video:player_loc>
+      <video:duration>102</video:duration>
+      <video:publication_date>2025-09-30</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/roam</loc>
@@ -99,18 +235,50 @@
   <url>
     <loc>https://alnimeri.com/work/sgb-solana-accelerate-hk</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1171782862.jpg</video:thumbnail_loc>
+      <video:title>SGB — Solana Accelerate HK</video:title>
+      <video:description>SGB — Solana Accelerate HK — Campaign film, 2026. 293K views on X. Running time 1:47.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1171782862</video:player_loc>
+      <video:duration>107</video:duration>
+      <video:publication_date>2026-03-09</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/sia-x-solana</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1093647469.jpg</video:thumbnail_loc>
+      <video:title>Sia x Solana</video:title>
+      <video:description>Sia x Solana — Documentary, 2025. 148K views on X. Running time 2:28.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1093647469</video:player_loc>
+      <video:duration>148</video:duration>
+      <video:publication_date>2025-06-16</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/solana-accelerate</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1058181870.jpg</video:thumbnail_loc>
+      <video:title>Solana Accelerate</video:title>
+      <video:description>Solana Accelerate — Campaign film, 2025. 1.4M views on X. Running time 1:18.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1058181870</video:player_loc>
+      <video:duration>78</video:duration>
+      <video:publication_date>2025-02-19</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/solana-developer-platform</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1176863412.jpg</video:thumbnail_loc>
+      <video:title>Solana Developer Platform</video:title>
+      <video:description>Solana Developer Platform — Animation · Motion graphics, 2026. 551K views on X. Running time 0:42.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1176863412</video:player_loc>
+      <video:duration>42</video:duration>
+      <video:publication_date>2026-03-25</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/solana-in-2025</loc>
@@ -119,10 +287,26 @@
   <url>
     <loc>https://alnimeri.com/work/solana-skyline</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1061799826.jpg</video:thumbnail_loc>
+      <video:title>Solana Skyline</video:title>
+      <video:description>Solana Skyline — Visuals, 2025. 487K views on X. Running time 0:41.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1061799826</video:player_loc>
+      <video:duration>41</video:duration>
+      <video:publication_date>2025-03-02</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/solana-solstice</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1047049388.jpg</video:thumbnail_loc>
+      <video:title>Solana Solstice</video:title>
+      <video:description>Solana Solstice — Event film, 2024. 916K views on X. Running time 3:07.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1047049388</video:player_loc>
+      <video:duration>187</video:duration>
+      <video:publication_date>2025-01-15</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/solana-x-all-in</loc>
@@ -143,21 +327,61 @@
   <url>
     <loc>https://alnimeri.com/work/stim</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/539945578.jpg</video:thumbnail_loc>
+      <video:title>Stim</video:title>
+      <video:description>Stim — TV commercial. Running time 0:50.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/539945578</video:player_loc>
+      <video:duration>50</video:duration>
+      <video:publication_date>2021-04-21</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/sugar-vs-jaggery</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/999041155.jpg</video:thumbnail_loc>
+      <video:title>Sugar vs Jaggery</video:title>
+      <video:description>Sugar vs Jaggery — Explainer · FITTR, 2024. 12.8M views on Instagram. Running time 0:19.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/999041155</video:player_loc>
+      <video:duration>19</video:duration>
+      <video:publication_date>2024-08-15</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/the-greatest-sudanese-sit-in</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1061801108.jpg</video:thumbnail_loc>
+      <video:title>The Greatest Sudanese Sit-In</video:title>
+      <video:description>The Greatest Sudanese Sit-In — Documentary. 442K views on Facebook. Running time 2:34.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1061801108</video:player_loc>
+      <video:duration>154</video:duration>
+      <video:publication_date>2025-03-02</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/token-supercycle</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/1224813193.jpg</video:thumbnail_loc>
+      <video:title>Token Supercycle</video:title>
+      <video:description>Token Supercycle — Campaign film, 2026. 126K views on X. Running time 0:54.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/1224813193</video:player_loc>
+      <video:duration>54</video:duration>
+      <video:publication_date>2026-09-08</video:publication_date>
+    </video:video>
   </url>
   <url>
     <loc>https://alnimeri.com/work/why-is-his-pinky-purple</loc>
     <lastmod>2026-10-03</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://alnimeri.com/assets/posters/917813004.jpg</video:thumbnail_loc>
+      <video:title>Why Is His Pinky Purple?</video:title>
+      <video:description>Why Is His Pinky Purple? — Explainer · Global Health Channel, 2024. 1.4M views on TikTok. Running time 0:59.</video:description>
+      <video:player_loc>https://player.vimeo.com/video/917813004</video:player_loc>
+      <video:duration>59</video:duration>
+      <video:publication_date>2024-02-29</video:publication_date>
+    </video:video>
   </url>
 </urlset>

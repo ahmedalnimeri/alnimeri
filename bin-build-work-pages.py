@@ -303,18 +303,13 @@ def rooted_srcset(ss):
         out.append(rooted(parts[0]) + (' ' + ' '.join(parts[1:]) if len(parts) > 1 else ''))
     return ', '.join(out)
 
-def year_of(f):
-    """The year the film was PUBLISHED, and only when the post the view count
-    links to proves it: X snowflakes, Instagram shortcodes and TikTok ids all
-    carry their own timestamp. Vimeo's uploadDate is when the file was put on
-    Vimeo, which is not the same thing — The Greatest Sudanese Sit-In is about
-    2019 and was uploaded in 2025 — so it is never used for a printed year."""
-    import time
-    # A YouTube film's date is the one its own watch page shows as published
-    # (assets/video-metadata.json, read off the page), so it may be printed.
-    if f.get('provider') == 'youtube' and f.get('vid') in METADATA:
-        return METADATA[f['vid']]['uploadDate'][:4]
-    ref = f.get('statref') or ''
+def posted_at(ref):
+    """When the post at ref went up, in seconds since 1970, read off its own id:
+    X snowflakes, Instagram shortcodes and TikTok ids all carry their
+    timestamp. None for any other link, or an id that decodes to nonsense.
+    (Checked against the team's tracker: every one of its 90 X posts decodes
+    to the date it lists, in UTC or in Dubai.)"""
+    ref = ref or ''
     secs = None
     try:
         m = re.search(r'x\.com/[^/]+/status/(\d+)', ref)
@@ -333,10 +328,24 @@ def year_of(f):
             if m:
                 secs = int(m.group(1)) >> 32
     except Exception:
-        return ''
+        return None
     if not secs or not (1.2e9 < secs < 2.2e9):
-        return ''
-    return time.strftime('%Y', time.gmtime(secs))
+        return None
+    return secs
+
+def year_of(f):
+    """The year the film was PUBLISHED, and only when the post the view count
+    links to proves it: X snowflakes, Instagram shortcodes and TikTok ids all
+    carry their own timestamp. Vimeo's uploadDate is when the file was put on
+    Vimeo, which is not the same thing — The Greatest Sudanese Sit-In is about
+    2019 and was uploaded in 2025 — so it is never used for a printed year."""
+    import time
+    # A YouTube film's date is the one its own watch page shows as published
+    # (assets/video-metadata.json, read off the page), so it may be printed.
+    if f.get('provider') == 'youtube' and f.get('vid') in METADATA:
+        return METADATA[f['vid']]['uploadDate'][:4]
+    secs = posted_at(f.get('statref'))
+    return time.strftime('%Y', time.gmtime(secs)) if secs else ''
 
 
 _card_n = [0]
@@ -418,28 +427,48 @@ def kind_and_client(kind):
 
 PERSON = {"@type": "Person", "name": "Ahmed El-Nimeri", "@id": "https://alnimeri.com/#person"}
 
-def video_object(rec, name, kind, credit, url):
-    """One film as schema.org data. No role is named, and nothing claims a
-    director (Ahmed, 2026-10-03): his own films have him as creator, a film
-    he worked on as contributor, and a film that states nothing has no
-    relation to him at all."""
-    v = {"@type": "VideoObject" if rec["vid"] else "Movie", "name": name}
-    if credit != 'none':
-        v["description"] = (f"{kind}, from the portfolio of Ahmed El-Nimeri." if kind
-                            else "From the portfolio of Ahmed El-Nimeri.")
-    elif kind:
-        v["description"] = f"{kind}."
-    v.update({"duration": iso_dur(rec['dur']),
-              "thumbnailUrl": f"https://alnimeri.com/{rec['poster'].split('?')[0]}",
-              "url": url})
+def neutral(title, kind, yr, stat, dur):
+    """What a film is, in its own facts and no one's role: the words a search
+    result or a shared link shows (meta, og and twitter descriptions), the
+    film's schema description and its line in llms.txt.
+    '<Title> — <kind>[, <year>]. <Figure>. Running time m:ss.'"""
+    d = title + (f" — {kind}" if kind else '') + (f", {yr}" if yr else '') + '. '
+    if stat:
+        d += f"{stat[:1].upper() + stat[1:]}. "
+    return d + f"Running time {dur}."
+
+def video_object(rec, name, kind, credit, page_url, frag='film'):
+    """One film as schema.org data, under its own @id on its page
+    (/work/<slug>#film), which the front page's list and /work/ point to.
+    No role is named, and nothing claims a director (Ahmed, 2026-10-03): his
+    own films have him as creator, a film he worked on as contributor, and a
+    film that states nothing has no relation to him at all.
+
+    A film the site plays is at its page, embedded from Vimeo or YouTube. A
+    film that lives only on its post (X) is a VideoObject too: its url is the
+    post, it has no embedUrl, and its uploadDate is read off the post's id."""
+    v = {"@type": "VideoObject", "@id": f"{page_url}#{frag}", "name": name,
+         "description": neutral(name, kind, year_of(rec), html.unescape(rec['stat']), rec['dur']),
+         "thumbnailUrl": f"https://alnimeri.com/{rec['poster'].split('?')[0]}",
+         "duration": iso_dur(rec['dur'])}
+    meta = METADATA.get(rec['vid'], {}) if rec['vid'] else {}
+    if rec['vid']:
+        v.update({"url": page_url, "embedUrl": embed_url(rec), "uploadDate": meta['uploadDate']})
+    elif rec['statref']:
+        v["url"] = rec['statref']
+        secs = posted_at(rec['statref'])
+        if secs:
+            import time
+            v["uploadDate"] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(int(secs)))
+    else:
+        v["url"] = page_url
+    if meta.get('inLanguage'):
+        v["inLanguage"] = meta['inLanguage']
     if credit is None:
         v["creator"] = dict(PERSON)
     elif credit == 'contributor':
         v["contributor"] = dict(PERSON)
-    if rec['vid']:
-        v['uploadDate'] = METADATA[rec['vid']]['uploadDate']
-        v['embedUrl'] = embed_url(rec)
-    if rec['statref']:
+    if rec['statref'] and rec['statref'] != v["url"]:
         v['sameAs'] = rec['statref']
     st = html.unescape(rec['stat'])
     m = re.match(r'([\d.]+)([KM]?)', st)
@@ -493,20 +522,17 @@ for i, f in enumerate(films):
     # What a search result or a shared link says: the film's own facts, as
     # the page shows them, and no role (no "directed by", nothing a credit
     # would say). "<Title> — <kind>[, <year>]. <Figure>. Running time m:ss."
-    _y = year_of(f)
-    desc = title_txt + (f" — {kind}" if kind else '') + (f", {_y}" if _y else '') + '. '
-    if stat_txt:
-        desc += f"{stat_txt[:1].upper() + stat_txt[1:]}. "
-    desc += f"Running time {f['dur']}."
-    desc = html.escape(desc, quote=True)
+    desc = html.escape(neutral(title_txt, kind, year_of(f), stat_txt, f['dur']), quote=True)
 
     _url = f"https://alnimeri.com/work/{f['slug']}"
-    # the page's own film, its still from that film; then any further films
+    # the page's own film, its still from that film; then any further films,
+    # each under its own @id on this page (#film-<its id>)
     schema = video_object(dict(f, poster=f['main']['poster']), title_txt, kind, f['credit'], _url)
     # (a further film whose tile names no kind is that entry's film: Captain
     # is "Badr Airlines film.", claiming nothing its Vimeo title does not)
-    _others = [video_object(p, html.unescape(p['title']), html.unescape(p['kind']) or f"{title_txt} film", p['credit'], _url)
-               for p in f['more']]
+    _others = [video_object(p, html.unescape(p['title']), html.unescape(p['kind']) or f"{title_txt} film", p['credit'], _url,
+                            frag=f"film-{p['vid'] or n + 2}")
+               for n, p in enumerate(f['more'])]
 
     schema = {"@context": "https://schema.org", "@graph": [schema] + _others + [{
         "@type": "BreadcrumbList",
@@ -709,13 +735,16 @@ rows = ('<nav class="fp-tabs" aria-label="Kinds of film"><div class="fp-tabs__ro
         + '<div class="fp-wall fp-lights" id="all" data-lead-sizes="' + LEAD_SIZES + '">' + _wall + '</div>')
 
 total = _secs
+# hasPart names each film by the @id its own page gives it (the front page's
+# list points to the same ones), so every film is one node however it is reached
 idx_schema = {
     "@context": "https://schema.org", "@type": "CollectionPage",
+    "@id": "https://alnimeri.com/work/#page",
     "name": "All films — Ahmed El-Nimeri",
     "url": "https://alnimeri.com/work/",
+    "isPartOf": {"@id": "https://alnimeri.com/#website"},
     "about": {"@id": "https://alnimeri.com/#person"},
-    "hasPart": [{"@type": "WebPage", "name": html.unescape(f['title']),
-                 "url": f"https://alnimeri.com/work/{f['slug']}"} for f in films]}
+    "hasPart": [{"@id": f"https://alnimeri.com/work/{f['slug']}#film"} for f in films]}
 
 # the share card prints the count (bin-build-og.py); a new count is a new
 # file name, so no cache can go on showing the old number
@@ -773,10 +802,7 @@ os.makedirs('functions/_lib', exist_ok=True)
 if not os.path.exists('functions/_lib/films.js') or open('functions/_lib/films.js').read() != _slugs:
     open('functions/_lib/films.js', 'w').write(_slugs)
 
-# llms.txt names the count too
-_llms = open('llms.txt').read()
-_new = re.sub(r'All \d+ selected film pages', f'All {len(films)} selected film pages', _llms)
-if _new != _llms:
-    open('llms.txt', 'w').write(_new)
+# (llms.txt, with its count and one line per film, is bin-build-llms.py's,
+# from these pages)
 
 print(f'work/: {len(films)} film pages ({len(HOME)} on the front page, {sum(len(g["more"]) for g in films)} further films on their pages) + index, TRT {total // 60}:{total % 60:02d}')

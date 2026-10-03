@@ -1,2 +1,4 @@
 assets/src/
 .claude/
+# bin-indexnow.py: what this machine has already sent (never deployed)
+.indexnow-sent.json

@@ -1,8 +1,8 @@
 # Nothing here yet.
 #
-# www -> apex cannot be done from this file: Cloudflare Pages only matches
+# www -> apex is not done from this file: Cloudflare Pages only matches
 # path-relative sources in _redirects, not hostnames, and it serves an
-# existing static file before consulting redirects at all. The fix is a
-# dashboard Redirect Rule (Rules -> Redirect Rules) or removing www as a
-# custom domain on the Pages project. Until then the canonical tag on every
-# page names the apex, which is what search engines consolidate on.
+# existing static file before consulting redirects at all. It is the first
+# thing functions/_middleware.js does: a 301 from www.alnimeri.com to the same
+# path on alnimeri.com. Static files on www (excluded from the middleware in
+# _routes.json) still answer there; every page's canonical tag names the apex.

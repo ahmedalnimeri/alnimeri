@@ -5,7 +5,8 @@ Ahmed took the credits off every film on 3 Oct 2026: no "directed by", no
 schema "director", no role line under a picture. Roles are for /cv only, as
 role names. A builder, a hand edit or a merge can bring one back without
 anyone seeing it (a meta description or a JSON-LD key is never on screen), so
-this runs last in the chain and exits non-zero on the first sign of one.
+this runs at the end of the chain (bin-check.py runs it) and exits non-zero on
+the first sign of one.
 
 Checked: every .html the site serves, llms.txt, functions/_lib/reel.js and
 the rest of functions/ (the /reel/<code> pages are rendered there), and the
