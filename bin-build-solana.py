@@ -208,7 +208,7 @@ page = f'''<!doctype html>
     <a href="/">Work</a>
     <a href="/about">About</a>
     <a href="/cv">CV</a>
-    <a class="btn btn--solid" href="/#contact"><span class="masthead__long">Get in touch</span><span class="masthead__short">Brief</span></a>
+    <a class="btn btn--solid" href="/#contact"><span class="masthead__long">Get in touch</span><span class="masthead__short">Get in touch</span></a>
   </nav>
 </header>
 <main id="top">

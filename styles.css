@@ -2050,9 +2050,10 @@ body { background: var(--bg); color: var(--fg); }
   }
 }
 /* The brief is one tap away on a phone too. The bar's button comes back as a
-   quiet outlined pill, "Brief", the height of the links beside it, and stays
-   put when the bar contracts; wider screens still read "Get in touch". Under
-   360px the CV link gives way (About and every footer link to it). */
+   quiet outlined pill, "Get in touch" as on wider screens (B01: one label for
+   every way into the brief; it fits at 320px), the height of the links beside
+   it, and stays put when the bar contracts. Under 360px the CV link gives way
+   (About and every footer link to it). */
 .masthead__short { display: none; }
 @media (max-width: 620px) {
   .masthead .masthead__nav a.btn--solid {
