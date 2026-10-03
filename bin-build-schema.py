@@ -88,8 +88,9 @@ for blk in re.findall(r'<article class="tile[\s\S]+?</article>', _grid):
 person = {
   "@type": "Person", "@id": "https://alnimeri.com/#person",
   "name": "Ahmed El-Nimeri",
+  # "Ahmed Elnimeri" is the spelling IMDb lists him under (nm16131268).
   "alternateName": ["Ahmed Al-Nimeri", "Ahmed Nimeri", "Ahmed Alnimeri",
-                    "Ahmed Amin El-Nimeri", "أحمد النميري"],
+                    "Ahmed Elnimeri", "Ahmed Amin El-Nimeri", "أحمد النميري"],
   "url": "https://alnimeri.com",
   "image": "https://alnimeri.com/assets/portrait/studio-1280.jpg",
   "email": "mailto:ahmed@alnimeri.com",
@@ -109,6 +110,7 @@ person = {
   "sameAs": ["https://vimeo.com/nimeri", "https://www.instagram.com/by_nimeri",
              "https://sudannextgen.com/members/ahmed-el-nimeri/",
              "https://www.wikidata.org/wiki/Q141417588",
+             "https://www.imdb.com/name/nm16131268/",
              "https://www.linkedin.com/in/ahmedalnimeri"],
 }
 

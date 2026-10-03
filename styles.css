@@ -1019,6 +1019,25 @@ a { color: inherit; }
 .card__org { margin: 0 0 0.8rem; font-size: 0.82rem; color: var(--fg-faint); }
 .card__body { margin: 0; font-size: 0.92rem; color: var(--fg-dim); line-height: 1.6; }
 .card .credit__stat { margin-top: 0.9rem; }
+/* Dated links under a card (the EU card): type on a hairline, no boxes —
+   what, when and the role, then where it was published. */
+.card__posts-head {
+  margin: 1.35rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line-soft);
+  font-size: 0.74rem; letter-spacing: 0.01em; color: var(--fg-faint);
+}
+.card__posts { list-style: none; margin: 0.7rem 0 0; padding: 0; display: grid; gap: 0.85rem; }
+.card__posts li { display: grid; gap: 0.1rem; font-size: 0.82rem; line-height: 1.45; }
+.card__posts-what { color: var(--fg-dim); }
+.card__posts-role { color: var(--fg-faint); }
+.card__posts-via { display: flex; flex-wrap: wrap; gap: 0.2rem 0.9rem; margin-top: 0.15rem; }
+.card__posts-via a {
+  position: relative; color: var(--fg-dim); text-decoration: underline; text-decoration-thickness: 1px;
+  text-decoration-color: var(--line); text-underline-offset: 3px;
+  transition: color 0.3s var(--ease), text-decoration-color 0.3s var(--ease);
+}
+.card__posts-via a:hover { color: var(--fg); text-decoration-color: currentColor; }
+.card__posts-via a span { font-size: 0.8em; }
+@media (pointer: coarse) { .card__posts-via a::after { content: ""; position: absolute; inset: -8px -6px; } }
 
 /* further credits */
 
@@ -1060,6 +1079,20 @@ a { color: inherit; }
 @media (min-width: 781px) { .credit__stat { justify-self: end; } }
 .credit__stat:hover { border-color: var(--line); color: var(--fg); }
 .credit__stat span { font-size: 0.72em; }
+/* One pill, several posts (the ICC's five): each number is its own link.
+   The pill's touch hit-area would sit over them, so the links carry it. */
+.credit__stat--set { gap: 0.1rem; padding-right: 0.6rem; }
+.credit__stat--set a {
+  position: relative; color: inherit; text-decoration: none;
+  padding: 0 0.32rem; border-radius: var(--pill); font-variant-numeric: tabular-nums;
+  transition: color 0.3s var(--ease);
+}
+.credit__stat--set:hover { color: var(--fg-dim); }
+.credit__stat--set a:hover, .credit__stat--set a:focus-visible { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+@media (pointer: coarse) {
+  .credit__stat--set::after { content: none; }
+  .credit__stat--set a::after { content: ""; position: absolute; inset: -10px -2px; }
+}
 
 /* craft */
 .skills {
