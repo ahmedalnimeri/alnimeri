@@ -47,7 +47,7 @@ def field(b, pat, default=''):
 def slugify(t):
     # the film pages' own rule (bin-build-work-pages.py)
     t = html.unescape(t).lower()
-    t = t.replace('&', ' and ').replace('“', '').replace('”', '').replace('"', '')
+    t = t.replace('&', ' and ').replace('“', '').replace('”', '').replace('"', '').replace('’', '').replace("'", '')
     return re.sub(r'[^a-z0-9]+', '-', t).strip('-')
 
 _more = re.search(r'<template id="more-films">[\s\S]*?</template>', SRC)
@@ -76,7 +76,9 @@ for m_ in TILES:
                        if c.strip() and not (c.split()[-1].endswith('w') and int(c.split()[-1][:-1]) > 1280))
     films.append({
         'title':    field(b, r'data-title="([^"]+)"'),
-        'vid':      field(b, r'data-video="(\d+)"'),
+        # a Vimeo id, or a YouTube id with data-provider="youtube"
+        'vid':      field(b, r'data-video="([\w-]+)"'),
+        'provider': (field(b, r'data-provider="(\w+)"') or 'vimeo') if 'data-video="' in b else '',
         'portrait': field(b, r'data-portrait="(\w+)"') == 'true',
         'href':     field(b, r'class="tile__link" href="([^"]+)"'),
         'kind':     field(b, r'tile__kind">([^<]*)<'),

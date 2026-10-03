@@ -17,7 +17,8 @@ const mmss = (s) => `${Math.floor(s / 60)}:${pad(s % 60)}`;
 const tc = (s) => `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}:00`;
 const WORDS = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
   'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
-  'nineteen', 'twenty'];
+  'nineteen', 'twenty', 'twenty-one', 'twenty-two', 'twenty-three', 'twenty-four', 'twenty-five',
+  'twenty-six', 'twenty-seven', 'twenty-eight', 'twenty-nine', 'thirty'];
 
 // A code is valid when every character names a film and none repeats.
 export function decode(code) {
@@ -32,8 +33,10 @@ export function decode(code) {
 }
 
 function tile(f, n) {
+  // a film on YouTube says so (data-provider); main.js plays it from there
+  const prov = f.provider && f.provider !== 'vimeo' ? ` data-provider="${esc(f.provider)}"` : '';
   const play = f.vid
-    ? `data-video="${f.vid}" data-title="${esc(f.title)}" data-portrait="${f.portrait}"`
+    ? `data-video="${esc(f.vid)}"${prov} data-title="${esc(f.title)}" data-portrait="${f.portrait}"`
     : `target="_blank" rel="noopener" data-title="${esc(f.title)}"`;
   const label = f.vid ? `Play ${esc(f.title)}, ${mmss(f.secs)}` : `Watch ${esc(f.title)}, ${mmss(f.secs)}`;
   // Poster URLs are copied already stamped; this page lives one level down,
@@ -42,7 +45,7 @@ function tile(f, n) {
   return `        <article class="tile reveal${f.portrait ? ' tile--tall' : ''}" id="sc-${pad(n)}">
           <a class="tile__link" href="${esc(f.href)}" ${play} aria-label="${label}">
             <img srcset="${esc(srcset)}" sizes="(max-width: 560px) 100vw, (max-width: 900px) 50vw, 33vw" class="tile__img" src="/${esc(f.poster)}" alt="${esc(f.alt)}" loading="${n === 1 ? 'eager' : 'lazy'}" decoding="async" width="${f.w}" height="${f.h}">
-            ${f.vid ? '<span class="tile__preview"></span>' : ''}
+            ${f.vid && !prov ? '<span class="tile__preview"></span>' : ''}
             <span class="tile__veil"></span>
             <span class="tile__play"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 0l14 8-14 8z"/></svg></span>
             <span class="tile__dur">${mmss(f.secs)}</span>

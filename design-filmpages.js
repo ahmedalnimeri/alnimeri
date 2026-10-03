@@ -36,10 +36,18 @@
     if (on === frame) return;
     if (on) stop(on);
     on = frame;
-    var f = d.createElement('iframe');
-    f.src = 'https://player.vimeo.com/video/' + play.getAttribute('data-vid') + '?title=0&byline=0&portrait=0&dnt=1&autoplay=1';
+    var f = d.createElement('iframe'), id = encodeURIComponent(play.getAttribute('data-vid'));
+    // Vimeo, or a film on YouTube (data-provider): its privacy-enhanced
+    // player, no related videos at the end, sent the page's origin (YouTube
+    // refuses an embed that arrives with no referrer at all)
+    if (play.getAttribute('data-provider') === 'youtube') {
+      f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&modestbranding=1&playsinline=1';
+      f.referrerPolicy = 'strict-origin-when-cross-origin';
+    } else {
+      f.src = 'https://player.vimeo.com/video/' + id + '?title=0&byline=0&portrait=0&dnt=1&autoplay=1';
+    }
     f.title = play.getAttribute('data-title') || 'Film';
-    f.allow = 'autoplay; fullscreen; picture-in-picture';
+    f.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
     f.setAttribute('allowfullscreen', '');
     // focus stays on the page, so Escape still brings the lights up; Tab
     // is the next step into the player's own controls
@@ -195,7 +203,9 @@
         : c === wide && cols > 2 ? '768 / 324' : '';
     });
     var im = (wide || pair) && (wide || pair).querySelector('img');
-    if (im && lead_sizes && im.getAttribute('sizes') !== lead_sizes) im.setAttribute('sizes', lead_sizes);
+    // a film across the whole row asks for a picture that wide, not the lead's
+    var want = wide ? '(max-width: 1480px) 92vw, 1320px' : lead_sizes;
+    if (im && want && im.getAttribute('sizes') !== want) im.setAttribute('sizes', want);
   };
 
   var apply = function (cat, animate, to) {

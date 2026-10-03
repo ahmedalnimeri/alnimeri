@@ -48,7 +48,20 @@
   var posterFrom = null;    // a reel's current tile, for its still and source
   var runFrom = null;       // where the visitor was when a reel started
 
-  function open(id, title, portrait) {
+  // A film plays from Vimeo, or (data-provider="youtube") from YouTube's
+  // privacy-enhanced player: no related videos at the end, and its JS API
+  // switched on so the reel hears when the clip ends (the same postMessage
+  // conversation as Vimeo's, in YouTube's words; no SDK is loaded).
+  var YT = 'https://www.youtube-nocookie.com';
+  function playerSrc(id, provider) {
+    id = encodeURIComponent(id);
+    return provider === 'youtube'
+      ? YT + '/embed/' + id + '?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&origin=' +
+        encodeURIComponent(location.origin)
+      : 'https://player.vimeo.com/video/' + id + '?autoplay=1&title=0&byline=0&portrait=0&dnt=1';
+  }
+
+  function open(id, title, portrait, provider) {
     if (!lb) return;
     if (run && !projecting) endRun();
     lb.classList.toggle('is-portrait', !!portrait);
@@ -59,10 +72,16 @@
     var poster = from && from.querySelector('.tile__img');
     frame.style.backgroundImage = poster ? 'url("' + (poster.currentSrc || poster.src) + '")' : '';
     frame.innerHTML =
-      '<iframe src="https://player.vimeo.com/video/' + id +
-      '?autoplay=1&title=0&byline=0&portrait=0&dnt=1" ' +
-      'allow="autoplay; fullscreen; picture-in-picture" allowfullscreen ' +
+      '<iframe src="' + playerSrc(id, provider) + '" ' +
+      'allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen ' +
+      // YouTube refuses an embed that arrives without the page's origin
+      (provider === 'youtube' ? 'referrerpolicy="strict-origin-when-cross-origin" ' : '') +
       'title="' + title.replace(/"/g, '&quot;') + '"></iframe>';
+    if (provider === 'youtube') {
+      // YouTube speaks only once it is told someone is listening
+      var yf = frame.querySelector('iframe');
+      yf.addEventListener('load', function () { ytListen(yf); });
+    }
     caption.textContent = title;
     // The running time, read off the tile's own chip — never invented.
     var dur = from && from.querySelector('.tile__dur');
@@ -102,11 +121,11 @@
 
   document.querySelectorAll('[data-video]').forEach(function (el) {
     el.addEventListener('click', function (e) {
-      // Let modified clicks through to Vimeo in a new tab.
+      // Let modified clicks through to the film's own page in a new tab.
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
       e.preventDefault();
       opener = el;
-      open(el.dataset.video, el.dataset.title || '', el.dataset.portrait === 'true');
+      open(el.dataset.video, el.dataset.title || '', el.dataset.portrait === 'true', el.dataset.provider || 'vimeo');
     });
   });
 
@@ -161,9 +180,9 @@
     return Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + (s % 60);
   }
 
-  // Every clip that can actually play here. Three films live on X and
-  // Facebook with no Vimeo copy; a reel that stalled on them would be a
-  // broken promise, so they stay in the deck and out of the run.
+  // Every clip that can actually play here: on Vimeo or on YouTube. A film
+  // that lives only on its post (X) has no player here; a reel that stalled
+  // on it would be a broken promise, so it stays in the deck and out of the run.
   function reelClips(order) {
     var all = [].slice.call(document.querySelectorAll('article.tile')).map(function (t) {
       var a = t.querySelector('.tile__link[data-video]');
@@ -171,6 +190,7 @@
       var d = t.querySelector('.tile__dur'), n = t.querySelector('.tile__name');
       var p = (d ? d.textContent.trim() : '0:00').split(':');
       return { link: a, id: a.getAttribute('data-video'),
+               provider: a.getAttribute('data-provider') || 'vimeo',
                title: a.getAttribute('data-title') || (n ? n.textContent.trim() : ''),
                portrait: a.getAttribute('data-portrait') === 'true',
                secs: (+p[0]) * 60 + (+p[1]) };
@@ -231,20 +251,33 @@
     var f = frame && frame.querySelector('iframe');
     if (f && f.contentWindow) { try { f.contentWindow.postMessage(JSON.stringify(msg), VIMEO); } catch (e) {} }
   }
+  // YouTube's half of the same conversation: 'listening' opens it (the
+  // player then reports its time and state), 'command' drives it.
+  function ytListen(f) {
+    if (f && f.contentWindow) { try { f.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), YT); } catch (e) {} }
+  }
+  function ytCommand(func) {
+    var f = frame && frame.querySelector('iframe');
+    if (f && f.contentWindow) { try { f.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: [] }), YT); } catch (e) {} }
+  }
 
   function step(i) {
     if (!run) return;
     if (i >= run.list.length) return finish();
     if (i < 0) i = 0;
     run.i = i; run.seen = 0; run.last = 0; run.lastAt = Date.now(); run.done = false;
+    // until the next clip is mounted, the last one's player is still on the
+    // page and may repeat that it ended; that must not cut a second time
+    run.mounting = true;
     var c = run.list[i];
     lb.classList.add('is-running');
     lb.classList.remove('is-manual');
     var mount = function () {
       projecting = true;
       posterFrom = c.link;          // so the tile's own still paints behind the player
-      open(c.id, c.title, c.portrait);
+      open(c.id, c.title, c.portrait, c.provider);
       projecting = false;
+      if (run) run.mounting = false;
       hud.hidden = false;
       lb.appendChild(hud);          // keep it above the freshly mounted frame
       paintHud(0);
@@ -325,10 +358,25 @@
   }
 
   window.addEventListener('message', function (e) {
-    if (!run || e.origin !== VIMEO) return;
+    if (!run || (e.origin !== VIMEO && e.origin !== YT)) return;
     var d = e.data;
     if (typeof d === 'string') { try { d = JSON.parse(d); } catch (x) { return; } }
     if (!d || !d.event) return;
+    if (e.origin === YT) {
+      // the clip on screen only: a late word from the previous player is not this one's
+      var yf = frame && frame.querySelector('iframe');
+      if (!yf || e.source !== yf.contentWindow || run.mounting) return;
+      if (d.event === 'onReady') { ytCommand('playVideo'); return; }
+      if (run.done) return;
+      var info = d.info;
+      // playerState 0 (and onStateChange 0) is YouTube's 'ended'
+      if ((d.event === 'onStateChange' && info === 0) ||
+          (d.event === 'infoDelivery' && info && info.playerState === 0)) { step(run.i + 1); return; }
+      if (d.event !== 'infoDelivery' || !info || typeof info.currentTime !== 'number') return;
+      run.seen++; run.last = info.currentTime; run.lastAt = Date.now();
+      paintHud(info.currentTime);
+      return;
+    }
     if (d.event === 'ready') {
       ['ended', 'finish', 'timeupdate', 'playProgress'].forEach(function (ev) {
         post({ method: 'addEventListener', value: ev });
@@ -483,7 +531,8 @@
     document.querySelectorAll('.tile__link').forEach(function (link) {
       var host = link.querySelector('.tile__preview');
       var id = link.dataset.video;
-      if (!host || !id) return;
+      // the silent loop is Vimeo's background mode; a YouTube film has none
+      if (!host || !id || (link.dataset.provider && link.dataset.provider !== 'vimeo')) return;
 
       link.addEventListener('mouseenter', function () {
         clearTimeout(timer);

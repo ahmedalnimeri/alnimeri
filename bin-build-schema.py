@@ -21,8 +21,11 @@ videos = []
 _grid = re.sub(r'<template id="more-films">[\s\S]*?</template>', '', s)
 for blk in re.findall(r'<article class="tile[\s\S]+?</article>', _grid):
     title = re.search(r'data-title="([^"]*)"', blk).group(1)
-    vm = re.search(r'data-video="(\d+)"', blk)
+    vm = re.search(r'data-video="([\w-]+)"', blk)
     vid = vm.group(1) if vm else None
+    # a Vimeo id, or a YouTube id with data-provider="youtube"
+    pm = re.search(r'data-provider="(\w+)"', blk)
+    provider = (pm.group(1) if pm else 'vimeo') if vid else None
     dur  = re.search(r'tile__dur">([\d:]+)<', blk)
     kind = re.search(r'tile__kind">([^<]*)<', blk)
     stat = re.search(r'tile__stat" href="([^"]*)"', blk)
@@ -67,8 +70,9 @@ for blk in re.findall(r'<article class="tile[\s\S]+?</article>', _grid):
         v["thumbnailUrl"] = f"https://alnimeri.com/assets/posters/{vid}.jpg"
     elif poster:
         v["thumbnailUrl"] = f"https://alnimeri.com/assets/{poster.group(1)}"
-    # Only films with a Vimeo master can be embedded; the rest live on X only.
-    if vid: v["embedUrl"] = f"https://player.vimeo.com/video/{vid}"
+    # Only films with a Vimeo or YouTube copy can be embedded; the rest live on X only.
+    if vid: v["embedUrl"] = (f"https://www.youtube.com/embed/{vid}" if provider == 'youtube'
+                             else f"https://player.vimeo.com/video/{vid}")
     if dur:  v["duration"] = iso(dur.group(1))
     if fig:
         n = float(fig.group(1)) * {"K": 1e3, "M": 1e6, "": 1}[fig.group(2)]
