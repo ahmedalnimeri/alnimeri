@@ -22,6 +22,8 @@ python3 -m http.server 4321
 | `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes (vertical films: `-768w` in place of `-768`). A vertical film may also have `<id>-card.jpg` (+ `-480`/`-768`, 16:9, cut from the same frame), which the `/work/` wall shows in place of a 9:16 poster cut down to its 16:9 cards (DP World at SailGP). `1083313331-2560.*` is offered only by the front page's full-row scope tile; the builders never pass anything wider than 1280w to the film pages, the About board or the reel |
 | `assets/published/` | His photographs as others published them, hand-placed (About's one print: the ICC's Khartoum meeting, Aug 2022). Master plus `-480`/`-768` JPEG and `-480`/`-768`/full-width WebP; a changed picture gets a new name. Only officials or places: never survivors, witnesses or children |
 | `functions/brief/[[kind]].js` | `/brief` and `/brief/<kind>`: a link that opens the brief. 302s to `/?brief=<kind>&film=<slug>&via=<where>`, each value checked against a fixed list (kind: brand, events, documentary, post; film: `functions/_lib/films.js`; via: ig, li, wa, x, sig, ai, qr) and dropped if it is not on it. main.js opens the dialog on arrival (also for `#brief`) and puts the address back without them; `via` travels in the brief's "came from" value (`film_seen`), so the database and the Briefs sheet are unchanged |
+| `functions/api/e.js` | What visitors do, not who they are: `main.js` sends one `navigator.sendBeacon` per Play pressed, brief opened/sent/failed, view count followed to its post, shortlist copied or shared, and CV downloaded (`{t, film, path, via}`). Stored in D1 `events` (`schema.sql`) with the country and nothing else (no IP, no user agent); the site's own pages only (Origin), 1 KB cap, kept 90 days. `/api/e?key=<VISITS_TOKEN>` reads it (`&format=json` for the sheet's Events tab, `docs/apps-script/Sync.gs`) |
+| Cloudflare Web Analytics | One beacon, one token, on every page: hand-placed on `/`, `/about`, `/cv`, `/privacy` and the 404; copied from `index.html` by the builders onto the film pages, `/work/`, `/work/solana` and the `/reel/<code>` template. `bin-check.py` fails on a page with none or two |
 | `assets/reel-keys.json` | Every `/reel/<code>` character ever given, and the film it names (written by `bin-build-reel.py`) |
 
 ## Adding or changing a video
@@ -89,7 +91,7 @@ film page without its `VideoObject` (`/work/<slug>#film`); a `work/*.html` missi
 `sitemap.xml` or `llms.txt`; a film count in words or digits ("One of thirty-four films") that
 is not the number of films, of the front page's or of the rest; a broken internal `href`/`src`/
 `srcset` or `#fragment`; an `og:image` that is not a file here; `styles.css` and `main.js` on
-more than one `?v=`. It also runs `bin-check-claims.py`, which fails if "directed by", a
+more than one `?v=`; a page without exactly one Cloudflare Web Analytics beacon. It also runs `bin-check-claims.py`, which fails if "directed by", a
 JSON-LD `"director"`, the old "Directed, shot and edited" line, an `fp-credit` line or a
 `data-role` attribute appears in any served `.html`, `llms.txt` or `functions/`. Every page is
 read as it is served, and one `/reel/<code>` page is rendered through the real Function in Node.

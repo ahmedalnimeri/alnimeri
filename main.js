@@ -1,4 +1,71 @@
 /* alnimeri.com — lightbox + scroll reveal. No dependencies. */
+
+// ---- What visitors do (/api/e) ---------------------------------------------
+// One small beacon per thing done, never per page view (the visit log has
+// those): Play pressed on a film, the brief opened, sent or not, a view count
+// followed to the post it came from, a shortlist's link copied or shared, the
+// CV downloaded. What is sent is the event, the film (a film page's slug) and
+// the page; no id and no cookie, and functions/api/e.js keeps no IP. A beacon
+// outlives the page, which a click on an outbound link leaves at once.
+// First in this file, so it hears what the modules below announce as they
+// load ('site:event', e.g. a brief opened from a /brief link on arrival).
+(function () {
+  if (!navigator.sendBeacon) return;
+  // the film pages' own slug rule (bin-build-work-pages.py); a slug stays itself
+  var slug = function (t) {
+    return String(t || '').toLowerCase().replace(/&/g, ' and ').replace(/[“”"’']/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  };
+  var send = function (t, films, via) {
+    try {
+      var path = location.pathname;
+      var list = [].concat(films || []).map(slug).filter(Boolean);
+      // on a film's own page, the film is the page's
+      var own = /^\/work\/([a-z0-9-]+)$/.exec(path);
+      if (!list.length && own && own[1] !== 'solana') list = [own[1]];
+      navigator.sendBeacon('/api/e', JSON.stringify({ t: t, film: list.join(','), path: path, via: via || '' }));
+    } catch (e) {}
+  };
+  document.addEventListener('site:event', function (e) {
+    var d = e.detail || {}; if (d.t) send(d.t, d.films, d.via);
+  });
+  var nameIn = function (el) {
+    var tile = el && el.closest('.tile');
+    var link = tile && tile.querySelector('.tile__link');
+    var n = tile && tile.querySelector('.tile__name');
+    return (link && link.getAttribute('data-title')) || (n ? n.textContent.trim() : '');
+  };
+  // window, capturing: before any module's own handler can stop the click
+  window.addEventListener('click', function (e) {
+    var tgt = e.target;
+    if (!tgt || !tgt.closest || e.button !== 0) return;
+    var mod = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
+    // a film's tile (front page, a pulled reel): the player here, or its post
+    var tl = tgt.closest('.tile__link');
+    if (tl) {
+      send('play', [nameIn(tl)], tl.hasAttribute('data-video') && !mod && document.querySelector('.lb') ? 'lightbox' : 'post');
+      return;
+    }
+    // a film page's picture: the still becomes the player, or opens the post
+    var fr = tgt.closest('.fp-frame');
+    if (fr) {
+      var pl = fr.querySelector('.fp-play');
+      if (pl && !fr.classList.contains('is-playing')) send('play', null, pl.hasAttribute('data-vid') && !mod ? 'page' : 'post');
+      return;
+    }
+    var a = tgt.closest('a[href]');
+    if (!a) return;
+    // a figure followed to its post: tiles, film pages, /work/solana, the CV
+    if (a.matches('.tile__stat, .fp-meta a, .sl-views, .credit__stat')) {
+      var row = a.closest('.sl-list > li');
+      var page = row && row.querySelector('a[href^="/work/"]');
+      send('proof_click', a.classList.contains('tile__stat') ? [nameIn(a)] :
+        page ? [page.getAttribute('href').slice(6)] : null);
+      return;
+    }
+    if (/Ahmed_ElNimeri_CV[^/]*\.pdf/i.test(a.getAttribute('href'))) send('cv_pdf');
+  }, true);
+})();
 (function () {
   'use strict';
 
@@ -1138,9 +1205,13 @@
     var was = btn.textContent; btn.textContent = text;
     setTimeout(function () { btn.textContent = was; }, 1500);
   }
+  var shared = function (how) {
+    document.dispatchEvent(new CustomEvent('site:event', { detail: { t: 'shortlist_share', via: how,
+      films: sel.map(function (k) { return nameOf(tileOf(k)); }) } }));
+  };
   sheet.querySelector('[data-act="copy"]').addEventListener('click', function () {
     var url = location.origin + '/reel/' + code(), b = this;
-    var done = function () { flash(b, 'Copied'); };
+    var done = function () { flash(b, 'Copied'); shared('copy'); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { fallback(); });
     else fallback();
     function fallback() {
@@ -1154,7 +1225,8 @@
     var n = sel.length, url = location.origin + '/reel/' + code();
     var names = sel.map(function (k) { return nameOf(tileOf(k)); });
     navigator.share({ title: n + ' film' + (n > 1 ? 's' : '') + ' from Ahmed El-Nimeri’s work',
-      text: mmss(trt()) + ' of Ahmed El-Nimeri’s work: ' + names.join(', ') + '.', url: url }).catch(function () {});
+      text: mmss(trt()) + ' of Ahmed El-Nimeri’s work: ' + names.join(', ') + '.', url: url })
+      .then(function () { shared('share'); }, function () {});
   });
   // The brief, with these films in it: their titles as the film it is about,
   // and their kind of film where they all share one. The brief is its own
@@ -1167,7 +1239,7 @@
     });
     var kind = kinds.every(function (k) { return k && k === kinds[0]; }) ? kinds[0] : '';
     closeSheet();
-    document.dispatchEvent(new CustomEvent('brief:open', { detail: { kind: kind,
+    document.dispatchEvent(new CustomEvent('brief:open', { detail: { kind: kind, films: names,
       film: names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0] || '' } }));
   });
 
@@ -1180,10 +1252,14 @@
 // one, and copies the link everywhere else.
 (function () {
   var b = document.querySelector('.reel__share'); if (!b) return;
+  var shared = function (how) {
+    document.dispatchEvent(new CustomEvent('site:event', { detail: { t: 'shortlist_share', via: how,
+      films: [].map.call(document.querySelectorAll('.tile__link[data-title]'), function (l) { return l.getAttribute('data-title'); }) } }));
+  };
   b.addEventListener('click', function () {
     var url = b.getAttribute('data-url'), title = document.title;
-    if (navigator.share) { navigator.share({ title: title, url: url }).catch(function () {}); return; }
-    var done = function () { var was = b.textContent; b.textContent = 'Link copied'; setTimeout(function () { b.textContent = was; }, 1500); };
+    if (navigator.share) { navigator.share({ title: title, url: url }).then(function () { shared('share'); }, function () {}); return; }
+    var done = function () { var was = b.textContent; b.textContent = 'Link copied'; setTimeout(function () { b.textContent = was; }, 1500); shared('copy'); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { prompt('Copy this link', url); });
     else prompt('Copy this link', url);
   });
@@ -1269,6 +1345,11 @@
   // own film, or the visitor's shortlist
   var films = d.querySelector('.brief__films');
   var via = '';     // where a /brief link was shared (?via=), for the "came from" column
+  var viaCode = ''; // and its short code (ig, li…), for the event log
+  var aboutFilms = [];  // the films it is about, as titles or slugs, for the event log
+  var told = function (t) {
+    document.dispatchEvent(new CustomEvent('site:event', { detail: { t: t, films: aboutFilms, via: viaCode } }));
+  };
 
   // blanks grow with what is typed, so the sentence stays a sentence
   // measured in the sentence's own typeface: Poppins is proportional, so a
@@ -1322,8 +1403,9 @@
   };
 
   var opener = null;
-  var open = function (kind, film) {
+  var open = function (kind, film, list) {
     if (d.open) return;
+    aboutFilms = list || [];
     opener = document.activeElement;
     // a brief whose outcome is known (sent, or not sent): a fresh sentence,
     // the same words in it. One still travelling keeps its "Sent" until it lands.
@@ -1334,6 +1416,7 @@
     films.hidden = !about;
     err.hidden = true;
     d.showModal();
+    told('brief_open');
     fitAll();
     document.documentElement.classList.add('has-brief');
     setTimeout(function () { var n = field('name'); if (n && !line.hidden) n.focus(); }, 60);
@@ -1419,9 +1502,10 @@
         timing: payload.timing, email: payload.email, whatsapp: payload.whatsapp, film_seen: payload.film_seen, message: payload.message },
         function (r, j) { return !!j.success; }) : Promise.resolve(false);
     Promise.all([store(true), notify]).then(function (res) {
-      if (res[0] || res[1]) { f.dataset.delivered = 'yes'; clearTimeout(beat); thank(); return; }
+      if (res[0] || res[1]) { f.dataset.delivered = 'yes'; clearTimeout(beat); thank(); told('brief_sent'); return; }
       clearTimeout(beat); thank();
       f.dataset.delivered = 'no';
+      told('brief_failed');
       btn.classList.remove('is-done'); btn.textContent = 'Try again'; btn.disabled = false;
       copyBtn.hidden = false;
       result.textContent = 'Sorry, ' + sent.first + ' — that didn’t reach me.';
@@ -1457,7 +1541,10 @@
     // (a shared shortlist's "Brief with these films" names its films and their kind)
     if (href === '#contact' || href === '/#contact') {
       e.preventDefault(); e.stopPropagation();
-      open(a.getAttribute('data-kind') || '', a.getAttribute('data-films') || ''); return;
+      // (a pulled reel's "Brief with these films" is about the films on that page)
+      var listed = a.hasAttribute('data-films') ? [].map.call(document.querySelectorAll('.tile__link[data-title]'),
+        function (l) { return l.getAttribute('data-title'); }) : [];
+      open(a.getAttribute('data-kind') || '', a.getAttribute('data-films') || '', listed); return;
     }
     // only the project links (they carry a subject); a bare address stays an email link
     if (/^mailto:ahmed@alnimeri\.com\?.*subject=/i.test(href)) {
@@ -1473,7 +1560,7 @@
   // the shortlist's "Brief with these films" (the tray is its own module)
   document.addEventListener('brief:open', function (e) {
     var o = e.detail || {};
-    open(o.kind || '', o.film || '');
+    open(o.kind || '', o.film || '', o.films || []);
   });
 
   // A link that opens the brief: /brief (functions/brief) sends the visitor
@@ -1500,11 +1587,11 @@
         });
       });
     }
-    if (Object.prototype.hasOwnProperty.call(VIA, v)) via = VIA[v];
+    if (Object.prototype.hasOwnProperty.call(VIA, v)) { via = VIA[v]; viaCode = v; }
     ['brief', 'film', 'via'].forEach(function (n) { q.delete(n); });
     var rest = q.toString();
     try { history.replaceState(history.state, '', location.pathname + (rest ? '?' + rest : '') + (hashed ? '' : location.hash)); } catch (x) {}
-    open(kind, title);
+    open(kind, title, title ? [slug] : []);
   };
   fromAddress();
   // and #brief typed or followed on a page that is already open

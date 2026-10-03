@@ -24,6 +24,11 @@ AS_OF = datetime.date.fromisoformat(DATA['as_of'] + '-01')
 
 VER = re.search(r'styles\.css\?v=(\d+)', SRC).group(1)
 MARK = re.search(r'src="(assets/logo-96\.png\?h=[a-f0-9]+)"', SRC).group(1)
+# the front page's Cloudflare Web Analytics beacon (one token, kept in index.html)
+BEACON = re.search(r'<!-- Cloudflare Web Analytics -->[\s\S]*?<!-- End Cloudflare Web Analytics -->', SRC)
+if not BEACON or BEACON.group(0).count('beacon.min.js') != 1:
+    sys.exit('index.html: no single Cloudflare Web Analytics beacon to copy')
+BEACON = BEACON.group(0)
 def _md5(path):
     return hashlib.md5(open(path, 'rb').read()).hexdigest()[:8]
 DVER, DJVER = _md5('design-filmpages.css'), _md5('design-filmpages.js')
@@ -222,6 +227,7 @@ page = f'''<!doctype html>
 </main>
 <script src="/main.js?v={VER}" defer></script>
 <script src="/design-filmpages.js?v={DJVER}" defer></script>
+{BEACON}
 </body>
 </html>
 '''

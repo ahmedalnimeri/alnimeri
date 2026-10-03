@@ -1,20 +1,27 @@
 /**
  * alnimeri.com — visitor log sync
  *
- * Pulls the Cloudflare D1 visit log and keeps four sheets current:
+ * Pulls the Cloudflare D1 visit log and keeps five sheets current:
  *   Visitors    — people only, one row per visit, enriched
  *   All traffic — every hit including bots and scanners
  *   Summary     — recomputed totals and breakdowns
  *   Briefs      — every brief sent through the site's "Get in touch" form,
  *                 newest first; each new one is also emailed to the owner
+ *   Events      — what visitors did (/api/e): played a film, opened or sent
+ *                 the brief, followed a view count, shared a shortlist,
+ *                 downloaded the CV; newest first, under a funnel line
+ *                 (visits → plays → brief opens → briefs sent, last 30 days)
  *
  * The site key is NOT in this file: add it once as a Script property named
  * VISITS_TOKEN (Project Settings → Script properties). The same key opens
- * /api/visits and /api/brief.
+ * /api/visits, /api/brief and /api/e.
  *
  * Rows already in the sheet are never re-written or duplicated: each run
- * appends only what it has not seen, so the history outlives whatever the
- * API is still holding.
+ * appends only what it has not seen. Visit rows (Visitors, All traffic) and
+ * events are kept ninety days, as alnimeri.com/privacy promises: each run
+ * deletes older rows and never adds one. IP addresses are kept whole while a
+ * row is kept, so new and returning visitors are still told apart. Briefs are
+ * kept (a year, on the site).
  *
  * Run setUp() once. It installs the triggers (visits hourly, briefs every
  * ten minutes) and does a first sync. Existing briefs are written to the
@@ -25,6 +32,13 @@ var API   = 'https://alnimeri.com/api/visits';
 var TZ    = 'Asia/Dubai';
 var LIMIT = 20000;
 var BRIEFS_API = 'https://alnimeri.com/api/brief';
+var EVENTS_API = 'https://alnimeri.com/api/e';
+var KEEP_DAYS = 90;            // the privacy page's promise for visits and events
+
+/** The oldest UTC stamp still kept, as the API writes them ('2026-07-05T…Z'). */
+function keepFrom() {
+  return new Date(Date.now() - KEEP_DAYS * 864e5).toISOString();
+}
 
 /** The site key, kept in Script properties rather than in the code. */
 function siteKey() {
@@ -265,17 +279,123 @@ function sync() {
     });
 
     rows.reverse();                            // newest first for reading
+    // never add a row the privacy page says is gone (the site's own purge runs
+    // on a sample of requests, so the API can still hold a day or two more)
+    var from = keepFrom(), tsAt = HEAD.indexOf('Timestamp (UTC)');
+    rows = rows.filter(function (x) { return String(x[tsAt]) >= from; });
     var people = rows.filter(function (x) { return x[4] === 'Person'; });
 
     write('Visitors', people);
     write('All traffic', rows);
+    prune('Visitors', HEAD.indexOf('Timestamp (UTC)') + 1, 2);
+    prune('All traffic', HEAD.indexOf('Timestamp (UTC)') + 1, 2);
     summary(rows, people);
+    var events = syncEvents(people);
 
     SpreadsheetApp.getActive().toast(
-      people.length + ' visits, ' + rows.length + ' hits', 'Visitor log synced', 5);
+      people.length + ' visits, ' + rows.length + ' hits, ' + events + ' events', 'Visitor log synced', 5);
   } finally {
     lock.releaseLock();
   }
+}
+
+/* ----------------------------------------------------------------- events */
+
+var EVENT_HEAD = ['Date', 'Time', 'Event', 'Film', 'Page', 'Via', 'Country',
+                  'Timestamp (UTC)', 'Event #'];
+var EVENT_NAME = {
+  play: 'Played a film', brief_open: 'Opened the brief', brief_sent: 'Sent a brief',
+  brief_failed: 'Brief did not send', proof_click: 'Followed a view count to its post',
+  shortlist_share: 'Shared a shortlist', cv_pdf: 'Downloaded the CV'
+};
+var VIA_NAME = {
+  lightbox: 'Front page player', page: 'Film page', post: 'On its post',
+  copy: 'Copied the link', share: 'Shared the link',
+  ig: 'Instagram', li: 'LinkedIn', wa: 'WhatsApp', x: 'X', sig: 'Email signature',
+  ai: 'AI assistant', qr: 'QR code'
+};
+
+/**
+ * Copies new events from the site (/api/e) into the Events sheet, newest
+ * first under its funnel line, and deletes those older than ninety days.
+ * people: this run's Visitors rows, for the funnel's first number.
+ * Returns how many events the sheet now holds.
+ */
+function syncEvents(people) {
+  var res = UrlFetchApp.fetch(EVENTS_API + '?key=' + encodeURIComponent(siteKey()) + '&format=json&limit=20000',
+                              { muteHttpExceptions: true });
+  if (res.getResponseCode() !== 200)
+    throw new Error('Event log returned ' + res.getResponseCode() + ' — is the key still valid?');
+  var from = keepFrom();
+  var events = (JSON.parse(res.getContentText()).events || [])
+    .filter(function (e) { return String(e.ts) >= from; });
+
+  var ss = SpreadsheetApp.getActive();
+  var sh = ss.getSheetByName('Events') || ss.insertSheet('Events', 1);
+  var n = EVENT_HEAD.length, idCol = n, tsCol = EVENT_HEAD.indexOf('Timestamp (UTC)') + 1;
+  grow(sh, 3, n);
+  if (sh.getLastRow() < 2 || sh.getRange(2, 1).getValue() !== EVENT_HEAD[0]) {
+    sh.clear();
+    sh.getRange(1, tsCol, sh.getMaxRows(), 1).setNumberFormat('@');   // the stamp stays the API's string
+    sh.getRange(1, 1).setValue('Last 30 days: …');                       // the funnel line, filled below
+    sh.getRange(2, 1, 1, n).setValues([EVENT_HEAD]);
+  }
+  var have = {};
+  if (sh.getLastRow() > 2)
+    sh.getRange(3, idCol, sh.getLastRow() - 2, 1).getValues()
+      .forEach(function (r) { have[String(r[0])] = 1; });
+
+  var fresh = events.filter(function (e) { return !have[String(e.id)]; });
+  if (fresh.length) {
+    var rows = fresh.map(function (e) {
+      var t = new Date(e.ts);
+      var cc = String(e.country || '').toUpperCase();
+      return [Utilities.formatDate(t, TZ, 'yyyy-MM-dd'), Utilities.formatDate(t, TZ, 'HH:mm'),
+              EVENT_NAME[e.t] || e.t, e.title || e.film || '', e.path || '',
+              VIA_NAME[e.via] || e.via || '', (COUNTRY[cc] || [cc])[0], e.ts, e.id];
+    });
+    grow(sh, sh.getLastRow() + rows.length, n);
+    sh.getRange(sh.getLastRow() + 1, 1, rows.length, n).setValues(rows);
+    sh.getRange(3, 1, sh.getLastRow() - 2, n).sort({ column: idCol, ascending: false });
+  }
+  prune('Events', tsCol, 3);
+
+  // The funnel, last 30 days: page visits by people, then what they did.
+  var since = new Date(Date.now() - 30 * 864e5).toISOString();
+  var tsAt = HEAD.indexOf('Timestamp (UTC)');
+  var visits = people.filter(function (r) { return String(r[tsAt]) >= since; }).length;
+  var count = function (t) {
+    return events.filter(function (e) { return e.t === t && String(e.ts) >= since; }).length;
+  };
+  sh.getRange(1, 1).setValue('Last 30 days: ' + visits + ' visits → ' + count('play') + ' plays → ' +
+    count('brief_open') + ' brief opens → ' + count('brief_sent') + ' briefs sent' +
+    '   (updated ' + Utilities.formatDate(new Date(), TZ, 'd MMM HH:mm') + ', Dubai)');
+  sh.getRange(1, 1).setFontWeight('bold');
+  sh.setFrozenRows(2);
+  sh.getRange(2, 1, 1, n).setFontWeight('bold');
+  return Math.max(0, sh.getLastRow() - 2);
+}
+
+/**
+ * Deletes the rows of a sheet whose UTC stamp (column tsCol, the API's ISO
+ * string) is older than KEEP_DAYS. Rows start at firstRow; the order of the
+ * rows does not matter. Runs of rows are deleted from the bottom up, so the
+ * row numbers still to come do not move.
+ */
+function prune(name, tsCol, firstRow) {
+  var sh = SpreadsheetApp.getActive().getSheetByName(name);
+  if (!sh || sh.getLastRow() < firstRow) return 0;
+  var from = keepFrom();
+  var stamps = sh.getRange(firstRow, tsCol, sh.getLastRow() - firstRow + 1, 1).getValues();
+  var gone = 0;
+  for (var i = stamps.length - 1; i >= 0; i--) {
+    if (!(String(stamps[i][0]) < from) || String(stamps[i][0]) === '') continue;
+    var end = i;
+    while (i - 1 >= 0 && String(stamps[i - 1][0]) < from && String(stamps[i - 1][0]) !== '') i--;
+    sh.deleteRows(firstRow + i, end - i + 1);
+    gone += end - i + 1;
+  }
+  return gone;
 }
 
 /* ----------------------------------------------------------------- briefs */

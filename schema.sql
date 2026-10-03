@@ -37,3 +37,19 @@ CREATE TABLE IF NOT EXISTS briefs (
   country   TEXT,
   ua        TEXT
 );
+
+-- What visitors do, not who they are (functions/api/e.js, which also creates
+-- this table on first use): Play pressed, the brief opened, sent or failed, a
+-- view count followed to its post, a shortlist shared, the CV downloaded.
+-- No IP, no user agent, no cookie or id. Kept ninety days.
+CREATE TABLE IF NOT EXISTS events (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts      TEXT NOT NULL,          -- ISO 8601, UTC
+  t       TEXT NOT NULL,          -- play, brief_open, brief_sent, brief_failed, proof_click, shortlist_share, cv_pdf
+  film    TEXT,                   -- a film page's slug, or several joined by commas
+  path    TEXT,                   -- the page it happened on
+  via     TEXT,                   -- how: lightbox, page, post; copy, share; or where a /brief link was shared
+  country TEXT                    -- Cloudflare's two letters
+);
+
+CREATE INDEX IF NOT EXISTS idx_events_ts ON events(ts DESC);

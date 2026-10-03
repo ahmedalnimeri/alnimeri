@@ -24,6 +24,7 @@ generated functions/_lib files. Checked:
      a pretty URL or a Function route, and every #fragment an id on its page.
   6. Share images: every og:image and twitter:image is a file here.
   7. styles.css and main.js carry one and the same ?v= on every page.
+  8. One Cloudflare Web Analytics beacon on every page, with one token.
 
 Run from anywhere; it reads the repo it sits in. Needs node for the reel page.
 """
@@ -301,6 +302,18 @@ if len(vers) > 1:
 elif not vers:
     bad('?v=', 'no styles.css?v= or main.js?v= found')
 
+# ---- 8. one analytics beacon per page -------------------------------------
+tokens = {}
+for url, (label, text) in PAGES.items():
+    beacons = re.findall(r'<script[^>]+static\.cloudflareinsights\.com/beacon\.min\.js[^>]*>', text)
+    if len(beacons) != 1:
+        bad(label, f'{len(beacons)} Cloudflare Web Analytics beacons (want exactly one)')
+    for b in beacons:
+        m = re.search(r'"token":\s*"([0-9a-f]+)"', b)
+        tokens.setdefault(m.group(1) if m else '(none)', []).append(label)
+if len(tokens) > 1:
+    bad('beacon', 'more than one token: ' + ', '.join(f'{t} on {len(l)} pages' for t, l in tokens.items()))
+
 # ---------------------------------------------------------------------------
 if problems:
     print(f'bin-check: {len(problems)} problem(s) — do not deploy:', file=sys.stderr)
@@ -309,4 +322,4 @@ if problems:
         print(f'  … and {len(problems) - 120} more', file=sys.stderr)
     sys.exit(1)
 print(f'check: clean ({len(PAGES)} pages incl. one rendered reel; {N} films, {H} on the front page; '
-      f'{len(defined)} JSON-LD @ids; one ?v= ({next(iter(vers))}))')
+      f'{len(defined)} JSON-LD @ids; one ?v= ({next(iter(vers))}); one beacon per page)')
