@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{TITLE}}</title>
 <meta name="description" content="{{DESC}}">
-<!-- A pulled reel is a viewer's cut, not a page of the record. Crawlers may
+<!-- A shared shortlist is a viewer's choice, not a page of the record. Crawlers may
      follow it back to the films; they should not index every permutation. -->
 <meta name="robots" content="noindex, follow">
 <link rel="canonical" href="https://alnimeri.com/reel/{{CODE}}">
@@ -32,34 +32,34 @@
 <link rel="stylesheet" href="/design-hover.css?v={{HOVER_CSS}}">
 </head>
 <body class="is-reel">
-<a class="skip" href="#selects">Skip to the reel</a>
+<a class="skip" href="#selects">Skip to the films</a>
 
 <header class="masthead">
   <a class="masthead__mark" href="/" aria-label="Ahmed El-Nimeri — home"><img class="mark" src="/{{MARK}}" alt="" width="32" height="30" aria-hidden="true"><span>Ahmed El-Nimeri</span></a>
   <nav class="masthead__nav" aria-label="Primary">
-    <a href="/#work">Full sequence</a>
+    <a href="/#work">Work</a>
     <a href="/about">About</a>
     <a href="/cv">CV</a>
-    <a class="btn btn--solid" href="/#contact">Get in touch</a>
+    <a class="btn btn--solid" href="/#contact"><span class="masthead__long">Get in touch</span><span class="masthead__short">Brief</span></a>
   </nav>
 </header>
 
 <main id="top">
 
   <section class="pagehead pagehead--reel">
-    <p class="hero__eyebrow"><strong>Ahmed El-Nimeri</strong> — a reel someone pulled from the selects</p>
+    <p class="hero__eyebrow"><strong>Ahmed El-Nimeri</strong> — a shortlist someone made from the films</p>
     <h1 class="pagehead__title">{{HEADLINE}}</h1>
     <p class="reel__names">{{NAMES}}</p>
-    <p class="pagehead__lede">{{TOTAL_WORD}} films sit in the full sequence. Whoever sent you this chose {{COUNT_WORD}} and put them in this order.</p>
+    <p class="pagehead__lede">{{TOTAL_WORD}} films are on the front page. Whoever sent you this chose {{COUNT_WORD}} and put them in this order.</p>
     <div class="hero__cta">
-      <button class="btn btn--solid reel__share" type="button" data-url="https://alnimeri.com/reel/{{CODE}}">Share this reel</button>
-      <a class="btn btn--ghost" href="/#work">Pull your own &rarr;</a>
+      <button class="btn btn--solid reel__share" type="button" data-url="https://alnimeri.com/reel/{{CODE}}">Share these films</button>
+      <a class="btn btn--ghost" href="/#work">Make your own shortlist &rarr;</a>
     </div>
   </section>
 
   <section class="section" id="selects">
     <div class="slate">
-      <h2 class="slate__title">The cut</h2>
+      <h2 class="slate__title">The shortlist</h2>
       <span class="slate__meta">{{COUNT}} films</span>
     </div>
     <div class="grid">
@@ -73,14 +73,15 @@
         <h2 class="slate__title">Out</h2>
         
       </div>
-      <p class="contact__head reveal">That was their cut. The rest is mine.</p>
+      <p class="contact__head reveal">That was their shortlist. The rest is mine.</p>
       <!--email_off--><a class="contact__mail" href="mailto:ahmed@alnimeri.com">ahmed@alnimeri.com</a><!--/email_off-->
-      <p class="contact__sub reveal" data-delay="80">{{TOTAL_WORD}} films in the full sequence, sixty-six published. Send the brief &mdash; English or Arabic.</p>
+      <p class="contact__sub reveal" data-delay="80">{{TOTAL_WORD}} films on the front page, and sixty-six published for Solana. Send the brief &mdash; English or Arabic.</p>
       <nav class="contact__links" aria-label="Elsewhere">
-        <a class="btn btn--ghost" href="/#work">The full sequence</a>
+        <a class="btn btn--solid" href="/#contact" data-kind="{{BRIEF_KIND}}" data-films="{{BRIEF_FILMS}}">Brief with these films</a>
+        <a class="btn btn--ghost" href="/#work">All the films</a>
         <a class="btn btn--ghost" href="/about">About Ahmed</a>
       </nav>
-      <span class="colophon__seq colophon__seq--tell">Anyone with this link sees the same cut. Nothing about who pulled it is stored.</span>
+      <span class="colophon__seq colophon__seq--tell">Anyone with this link sees the same films. Nothing about who made it is stored.</span>
       <div class="colophon">
         <span>© 2026 Ahmed El-Nimeri</span>
         <span>Dubai, UAE · <a href="/work/">All films</a> · <a href="/privacy">Privacy</a></span>

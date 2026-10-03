@@ -1,18 +1,21 @@
 /* design-ending.css — the end of the home page, as the end of a film.
 
-   The films run out and the credits roll: the stills from #work rise past on
-   either side as the visitor scrolls the last screen, faster than the page,
+   The films run out and the credits roll: the stills from #work (on /work/,
+   the wall's landscape stills) rise past on either side as the visitor
+   scrolls the last screen, faster than the page,
    out of black at the foot and back into black at the top. When the page
    stops they hold, every resting frame in full light with its whole title,
    and one card stays still in the middle: the production mark, the ask, the
    address. No loop, no autoplay; nothing moves unless the visitor does.
-   Home page only. */
+   The home page and /work/ (bin-build-work-pages.py lifts the section from
+   index.html), so nothing here may lean on the home page's refinement.css. */
 
 /* the last screen is exactly the screen under the bar: at the end of the page
    the section's top edge tucks under the bar, so nothing of the section above
    shows and nothing of this one hides */
 .contact.ending {
   display: flex; flex-direction: column;
+  border-top: 1px solid var(--line);
   min-height: calc(100vh - 64px);
   min-height: calc(100lvh - 64px);
   padding: 0 var(--gut) clamp(14px, 2.4vh, 24px);
@@ -124,6 +127,9 @@
 }
 
 /* ---- the card ---------------------------------------------------------- */
+/* "Send the brief." is the chapter's real title; the Contact slate stays for
+   the document outline and screen readers, out of sight */
+.contact.ending .slate { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .contact.ending .ending__card {
   position: relative; z-index: 3;
   display: flex; flex-direction: column; align-items: center;

@@ -1,8 +1,8 @@
-/* design-ending.js — the end credits at the foot of the home page.
+/* design-ending.js — the end credits at the foot of the home page and /work/.
 
-   The roll is built from the films already on the page (#work), so it can
-   never drift from the grid, and each frame reuses the exact file its tile
-   has already fetched. Built only as the ending comes near. While the ending
+   The roll is built from the films already on the page (the home page's
+   #work tiles, or /work/'s wall of cards), so it can never drift from them,
+   and each frame reuses the exact file its still has already fetched. Built only as the ending comes near. While the ending
    is on screen one passive scroll listener writes --p on the section (0 as the
    section enters, 1 at the end of the page) and the columns rise with it;
    off screen the listener is gone. Under reduced motion --p is never written and the
@@ -18,9 +18,12 @@
   var build = function () {
     built = true;
     // landscape films only: the vertical ones are phone frames, and one of
-    // them shows a child
+    // them shows a child. On /work/ (no #work grid) the wall's cards, read
+    // the same way: still, title, link and kind of film.
     var tiles = [].slice.call(document.querySelectorAll('#work .tile'))
       .filter(function (t) { return !t.classList.contains('tile--tall'); });
+    var wall = !tiles.length;
+    if (wall) tiles = [].slice.call(document.querySelectorAll('.fp-card:not(.fp-card--portrait)'));
     var cols = ['a', 'b'].map(function (k) {
       var c = document.createElement('div');
       c.className = 'ending__col ending__col--' + k;
@@ -28,11 +31,13 @@
       return c;
     });
     tiles.forEach(function (t, i) {
-      var src = t.querySelector('.tile__img'), name = t.querySelector('.tile__name a');
-      if (!src || !name) return;
-      var kind = t.querySelector('.tile__kind');
+      var src = t.querySelector(wall ? '.fp-card__still img' : '.tile__img');
+      var name = t.querySelector(wall ? '.fp-card__name' : '.tile__name a');
+      var link = wall ? t.querySelector('a[href]') : name;
+      if (!src || !name || !link) return;
+      var kind = t.querySelector(wall ? '.fp-card__meta' : '.tile__kind');
       var a = document.createElement('a');
-      a.className = 'ending__frame'; a.href = name.getAttribute('href'); a.tabIndex = -1;
+      a.className = 'ending__frame'; a.href = link.getAttribute('href'); a.tabIndex = -1;
       var pic = document.createElement('span'); pic.className = 'ending__pic';
       var img = document.createElement('img');
       img.alt = ''; img.width = 1280; img.height = 720;
@@ -44,7 +49,7 @@
       if (src.currentSrc) img.src = src.currentSrc;
       else {
         var sizes = '(max-width: 999px) 46vw, 21vw';
-        var webp = t.querySelector('.tile__pic source[type="image/webp"]');
+        var webp = t.querySelector('picture source[type="image/webp"]');
         if (webp && webp.getAttribute('srcset')) {
           holder = document.createElement('picture');
           var so = document.createElement('source');

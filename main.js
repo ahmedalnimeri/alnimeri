@@ -426,7 +426,7 @@
     var trt = 0;
     list.forEach(function (c) { trt += c.secs; });
     var isCut = document.body.classList.contains('is-reel');
-    var label = isCut ? 'Run this cut' : 'Run the reel';
+    var label = isCut ? 'Play them' : 'Run the reel';
 
     var grid = document.querySelector('.grid');
     var slate = grid && grid.closest('section') && grid.closest('section').querySelector('.slate');
@@ -441,7 +441,7 @@
     if (cta) {
       var h = document.createElement('button');
       h.type = 'button'; h.className = 'btn btn--solid';
-      h.textContent = 'Run this cut ▸';
+      h.textContent = 'Play them ▸';
       h.addEventListener('click', function () { startRun(null); });
       cta.insertBefore(h, cta.firstChild);
       var share = cta.querySelector('.reel__share');
@@ -657,6 +657,9 @@
      cut to that section. */
 
   (function () {
+    // not on /work/ and the film pages: a wall and its ending (or one film)
+    // are not a sequence of chapters
+    if (document.querySelector('main > .fp')) return;
     var secs = [].slice.call(document.querySelectorAll('main > section[id]'))
                  .filter(function (s) { return s.id !== 'top'; });
     if (secs.length < 2) return;
@@ -842,69 +845,10 @@
     window.addEventListener('load', layout);
   })();
 
-  /* ---- counters -----------------------------------------------------
-     Counts up once, when the figure first enters view. */
-
-  (function () {
-    var nums = [].slice.call(document.querySelectorAll('[data-to]'));
-    if (!nums.length) return;
-
-    var fmt = function (v, dec) {
-      return dec ? v.toFixed(dec) : Math.round(v).toLocaleString('en-US');
-    };
-
-    var run = function (el) {
-      var to  = parseFloat(el.dataset.to);
-      var dec = parseInt(el.dataset.decimals || '0', 10);
-      var suf = el.dataset.suffix || '';
-      var pre = el.dataset.prefix || '';
-
-      if (!motionOK) { el.textContent = pre + fmt(to, dec) + suf; return; }
-
-      var dur = 1600, t0 = null, done = false, lastQ = -1;
-      var settle = function () {
-        if (done) return;
-        done = true;
-        el.textContent = pre + fmt(to, dec) + suf;
-      };
-      var step = function (ts) {
-        if (done) return;
-        if (t0 === null) t0 = ts;
-        var p = Math.min(1, (ts - t0) / dur);
-        // Same easeOutExpo reach, but the display only updates on 24fps
-        // boundaries — the figure ratchets like a burnt-in counter instead
-        // of easing like a dashboard.
-        var q = Math.floor((ts - t0) / FRAME);
-        if (q === lastQ && p < 1) { requestAnimationFrame(step); return; }
-        lastQ = q;
-        var e = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
-        el.textContent = pre + fmt(to * e, dec) + suf;
-        if (p < 1) requestAnimationFrame(step); else settle();
-      };
-      requestAnimationFrame(step);
-      // rAF is suspended in background tabs. Without this, a figure that
-      // started counting but never got a frame would sit at "0M+" — a wrong
-      // number on screen is worse than no animation.
-      setTimeout(settle, dur + 600);
-    };
-
-    // The markup already contains the real figure. Never blank it up front:
-    // if the observer never fires — hidden tab, no IO support, anything — the
-    // visitor must still read the true number, not a zero we left behind.
-    if (!('IntersectionObserver' in window) || !motionOK) return;
-
-    var cio = new IntersectionObserver(function (es) {
-      es.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        cio.unobserve(e.target);
-        // Reserve the settled width so the row doesn't reflow while counting.
-        e.target.style.minWidth = e.target.getBoundingClientRect().width + 'px';
-        run(e.target);
-      });
-    }, { threshold: 0.4 });
-
-    nums.forEach(function (el) { cio.observe(el); });
-  })();
+  /* ---- the figures ------------------------------------------------
+     No count-up. The markup holds the real figures and they are shown as
+     they are, arriving with the section's own reveal: a number that ran up
+     from zero was a costume (and showed 99M+ on the way). */
 
   /* ---- copy the email ----------------------------------------------
      mailto: often has no handler inside Instagram's in-app browser, which is
@@ -1013,13 +957,13 @@
 })();
 
 
-// ---- Pull a reel ------------------------------------------------------------
-// The viewer marks tiles as selects. The bin at the foot of the screen keeps
-// count and TRT, and mints a link that IS the cut: one character per film, in
-// the order they chose. Each tile carries its own character (data-key, written
+// ---- The shortlist ---------------------------------------------------------
+// The viewer shortlists tiles. The tray at the foot of the screen keeps count,
+// plays them, opens the brief with them, and mints a link that names them:
+// one character per film, in the order they chose. Each tile carries its own character (data-key, written
 // by bin-build-reel.py and never given to another film), so a link someone
 // sent keeps naming the same films however the grid is re-hung.
-// /reel/<code> renders that cut, with its running time. Nothing about the
+// /reel/<code> renders that shortlist, with its running time. Nothing about the
 // viewer travels with the link; the selection lives in localStorage until
 // they clear it.
 (function () {
@@ -1038,6 +982,14 @@
     var p = d.textContent.trim().split(':'); return (+p[0]) * 60 + (+p[1]);
   };
   var nameOf = function (t) { var n = t.querySelector('.tile__name'); return n ? n.textContent.trim() : ''; };
+  // the brief's kinds of film, read off a tile's kind (the brief's own rule)
+  var kindOf = function (s) {
+    s = (s || '').toLowerCase();
+    if (/brand|campaign/.test(s)) return 'brand';
+    if (/event|conference/.test(s)) return 'events';
+    if (/documentary|institutional/.test(s)) return 'documentary';
+    return '';
+  };
 
   // Selection: an ordered list of keys.
   var sel = [];
@@ -1049,7 +1001,7 @@
     var meta = t.querySelector('.tile__meta'); if (!meta) return;
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'tile__mark';
-    b.setAttribute('aria-label', 'Add ' + nameOf(t) + ' to your reel');
+    b.setAttribute('aria-label', 'Add ' + nameOf(t) + ' to your shortlist');
     b.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
       var k = keys[i], at = sel.indexOf(k);
@@ -1059,33 +1011,34 @@
     meta.appendChild(b);
   });
 
-  // The bin.
+  // The tray.
   var bin = document.createElement('div');
   bin.className = 'bin'; bin.setAttribute('role', 'status'); bin.setAttribute('aria-live', 'polite');
-  bin.innerHTML = '<span class="bin__word">Bin</span><span class="bin__sep bin__word">·</span>' +
+  bin.innerHTML = '<span class="bin__word">Shortlist</span><span class="bin__sep bin__word">·</span>' +
     '<span><b data-n>0</b> selected</span>' +
-    '<button type="button" class="bin__clear" aria-label="Clear the bin">Clear</button>' +
+    '<button type="button" class="bin__clear" aria-label="Clear the shortlist">Clear</button>' +
     '<span class="bin__break" aria-hidden="true"></span>' +
-    '<button type="button" class="btn btn--ghost bin__screen">Screen it</button>' +
-    '<button type="button" class="btn btn--solid bin__pull">Pull reel →</button>';
+    '<button type="button" class="btn btn--ghost bin__screen">Play them</button>' +
+    '<button type="button" class="btn btn--solid bin__pull">Share the shortlist →</button>';
   document.body.appendChild(bin);
 
   // The sheet.
   var sheet = document.createElement('div');
   sheet.className = 'sheet'; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true');
-  sheet.setAttribute('aria-label', 'Your reel'); sheet.setAttribute('aria-hidden', 'true');
+  sheet.setAttribute('aria-label', 'Your shortlist'); sheet.setAttribute('aria-hidden', 'true');
   sheet.innerHTML = '<div class="sheet__card">' +
     '<button type="button" class="sheet__close" aria-label="Close">✕</button>' +
-    '<p class="sheet__slate">Reel <b data-code></b> · <b data-n></b> films</p>' +
-    '<p class="sheet__title">Your cut, as a link.</p>' +
+    '<p class="sheet__slate">Shortlist <b data-code></b> · <b data-n></b> films</p>' +
+    '<p class="sheet__title">Your shortlist, as a link.</p>' +
     '<ol class="sheet__list" data-list></ol>' +
     '<code class="sheet__url" data-url></code>' +
     '<div class="sheet__acts">' +
       '<button type="button" class="btn btn--solid" data-act="share">Send it</button>' +
       '<button type="button" class="btn btn--ghost" data-act="copy">Copy link</button>' +
-      '<a class="btn btn--ghost" data-act="open" href="#">Open the reel</a>' +
+      '<a class="btn btn--ghost" data-act="open" href="#">Open the link</a>' +
+      '<button type="button" class="btn btn--ghost" data-act="brief">Brief with these films</button>' +
     '</div>' +
-    '<p class="sheet__note">Anyone with the link sees these films, in this order. The link carries the cut and nothing about you.</p>' +
+    '<p class="sheet__note">Anyone with the link sees these films, in this order. The link carries the films and nothing about you.</p>' +
     '</div>';
   document.body.appendChild(sheet);
 
@@ -1097,7 +1050,7 @@
       var at = sel.indexOf(keys[i]), b = t.querySelector('.tile__mark');
       t.classList.toggle('is-selected', at > -1);
       if (b) {
-        b.innerHTML = at > -1 ? 'Selected <b>' + (at + 1) + '</b>' : '+ Select';
+        b.innerHTML = at > -1 ? 'Selected <b>' + (at + 1) + '</b>' : '+ Shortlist';
         b.setAttribute('aria-pressed', at > -1 ? 'true' : 'false');
       }
     });
@@ -1105,13 +1058,13 @@
     bin.classList.toggle('is-up', sel.length > 0);
     lift();
     if (!sel.length) closeSheet();
-    // An empty bin is invisible (opacity 0), so it leaves the Tab order and
-    // the accessibility tree too: Enter on its hidden "Screen it" ran the reel.
+    // An empty tray is invisible (opacity 0), so it leaves the Tab order and
+    // the accessibility tree too: Enter on its hidden "Play them" ran the reel.
     bin.inert = !sel.length;
   }
 
   // The sheet is aria-modal: while it is up the page behind is inert, and
-  // closing it puts focus back where it was ("Pull reel →").
+  // closing it puts focus back where it was ("Share the shortlist →").
   var sheetFrom = null;
   function sealSheet() {
     var keep = [sheet, document.querySelector('.cut')];
@@ -1171,7 +1124,7 @@
   }
 
   bin.querySelector('.bin__pull').addEventListener('click', openSheet);
-  // Screen the cut before sending it: the projector takes DOM indices.
+  // Play the shortlist before sending it: the projector takes DOM indices.
   bin.querySelector('.bin__screen').addEventListener('click', function () {
     document.dispatchEvent(new CustomEvent('reel:run', {
       detail: { order: sel.map(function (k) { return keys.indexOf(k); }) } }));
@@ -1200,8 +1153,22 @@
     if (!navigator.share) return;
     var n = sel.length, url = location.origin + '/reel/' + code();
     var names = sel.map(function (k) { return nameOf(tileOf(k)); });
-    navigator.share({ title: n + ' film' + (n > 1 ? 's' : '') + ' by Ahmed El-Nimeri',
-      text: 'A ' + mmss(trt()) + ' cut of Ahmed El-Nimeri’s work: ' + names.join(', ') + '.', url: url }).catch(function () {});
+    navigator.share({ title: n + ' film' + (n > 1 ? 's' : '') + ' from Ahmed El-Nimeri’s work',
+      text: mmss(trt()) + ' of Ahmed El-Nimeri’s work: ' + names.join(', ') + '.', url: url }).catch(function () {});
+  });
+  // The brief, with these films in it: their titles as the film it is about,
+  // and their kind of film where they all share one. The brief is its own
+  // module (below); it is asked by event, as the projector is.
+  sheet.querySelector('[data-act="brief"]').addEventListener('click', function () {
+    var picked = sel.map(tileOf).filter(Boolean);
+    var names = picked.map(nameOf);
+    var kinds = picked.map(function (t) {
+      var k = t.querySelector('.tile__kind'); return kindOf(k ? k.textContent : '');
+    });
+    var kind = kinds.every(function (k) { return k && k === kinds[0]; }) ? kinds[0] : '';
+    closeSheet();
+    document.dispatchEvent(new CustomEvent('brief:open', { detail: { kind: kind,
+      film: names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0] || '' } }));
   });
 
   render();
@@ -1247,7 +1214,7 @@
   d.innerHTML =
     '<form class="brief__form" novalidate>' +
       '<button class="brief__close" type="button" aria-label="Close">×</button>' +
-      '<p class="brief__eyebrow" id="brief-title">Send the brief</p>' +
+      '<p class="brief__eyebrow" id="brief-title">Send the brief<span class="brief__films" hidden></span></p>' +
       '<p class="brief__sentence">' +
         'Hi Ahmed, I’m <input name="name" maxlength="120" placeholder="your name" aria-label="Your name" autocomplete="name" required> ' +
         'from <span class="brief__tie"><input name="org" maxlength="160" placeholder="your company" aria-label="Company or organisation" autocomplete="organization">.</span> ' +
@@ -1298,6 +1265,10 @@
     delete f.dataset.payload; delete f.dataset.mailto; delete f.dataset.delivered;
   };
   var about = '';   // a film named by the page the visitor came from
+  // the films it is about, said quietly beside "Send the brief": a film page's
+  // own film, or the visitor's shortlist
+  var films = d.querySelector('.brief__films');
+  var via = '';     // where a /brief link was shared (?via=), for the "came from" column
 
   // blanks grow with what is typed, so the sentence stays a sentence
   // measured in the sentence's own typeface: Poppins is proportional, so a
@@ -1359,6 +1330,8 @@
     if (f.classList.contains('is-sent') && f.dataset.delivered === 'yes') reset();   // a failed one keeps its Try again
     if (kind && field('kind')) field('kind').value = kind;
     about = film || '';
+    films.textContent = about ? ' · ' + about : '';
+    films.hidden = !about;
     err.hidden = true;
     d.showModal();
     fitAll();
@@ -1394,7 +1367,8 @@
       name: field('name').value.trim(), company: field('org').value.trim(), about: kindLabel(),
       'for': field('for').value.trim(), timing: field('when').value.trim(), email: field('email').value.trim(),
       whatsapp: field('whatsapp').value.trim(),
-      film_seen: about, message: message(),
+      // "Came from" on the Briefs sheet: the film, and where a /brief link was shared
+      film_seen: [about, via && 'via ' + via].filter(Boolean).join(' · '), message: message(),
       _subject: subject(), _honey: field('_honey').value
     };
     f.dataset.payload = JSON.stringify(payload);
@@ -1480,7 +1454,11 @@
     var a = e.target.closest && e.target.closest('a');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var href = a.getAttribute('href') || '';
-    if (href === '#contact' || href === '/#contact') { e.preventDefault(); e.stopPropagation(); open(); return; }
+    // (a shared shortlist's "Brief with these films" names its films and their kind)
+    if (href === '#contact' || href === '/#contact') {
+      e.preventDefault(); e.stopPropagation();
+      open(a.getAttribute('data-kind') || '', a.getAttribute('data-films') || ''); return;
+    }
     // only the project links (they carry a subject); a bare address stays an email link
     if (/^mailto:ahmed@alnimeri\.com\?.*subject=/i.test(href)) {
       if (a.classList.contains('contact__mail')) return;       // the plain address stays a plain address
@@ -1491,4 +1469,44 @@
       open(a.getAttribute('data-kind') || kindFrom(subj), film && film !== 'alnimeri.com' ? film : '');
     }
   }, true);
+
+  // the shortlist's "Brief with these films" (the tray is its own module)
+  document.addEventListener('brief:open', function (e) {
+    var o = e.detail || {};
+    open(o.kind || '', o.film || '');
+  });
+
+  // A link that opens the brief: /brief (functions/brief) sends the visitor
+  // here as /?brief=<kind>&film=<slug>&via=<where it was shared>, and #brief
+  // does the same on any page. Every value is checked again here, the film
+  // is named by its own tile, and the address is put back as it was before
+  // anything opens, so a refresh or a Back does not open it a second time.
+  var fromAddress = function () {
+    var q;
+    try { q = new URLSearchParams(location.search); } catch (x) { return; }
+    var hashed = location.hash === '#brief';
+    if (!q.has('brief') && !hashed) return;
+    var VIA = { ig: 'Instagram', li: 'LinkedIn', wa: 'WhatsApp', x: 'X', sig: 'an email signature', ai: 'an AI assistant', qr: 'a QR code' };
+    var k = q.get('brief') || '', slug = q.get('film') || '', v = q.get('via') || '';
+    var kind = /^(brand|events|documentary|post)$/.test(k) ? k : '';
+    var title = '';
+    if (/^[a-z0-9-]{1,80}$/.test(slug)) {
+      var more = document.getElementById('more-films');
+      var pools = [document].concat(more && more.content ? [more.content] : []);
+      pools.some(function (root) {
+        return [].some.call(root.querySelectorAll('article.tile:not([data-part-of]) .tile__name a'), function (a) {
+          if (a.getAttribute('href') !== '/work/' + slug) return false;
+          title = a.textContent.trim(); return true;
+        });
+      });
+    }
+    if (Object.prototype.hasOwnProperty.call(VIA, v)) via = VIA[v];
+    ['brief', 'film', 'via'].forEach(function (n) { q.delete(n); });
+    var rest = q.toString();
+    try { history.replaceState(history.state, '', location.pathname + (rest ? '?' + rest : '') + (hashed ? '' : location.hash)); } catch (x) {}
+    open(kind, title);
+  };
+  fromAddress();
+  // and #brief typed or followed on a page that is already open
+  window.addEventListener('hashchange', function () { if (location.hash === '#brief') fromAddress(); });
 })();

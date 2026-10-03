@@ -184,6 +184,25 @@
    the wall of words never outweighs the film */
 .fp .said:nth-child(n+4) { padding-top: 22px; gap: 10px; }
 .fp .said:nth-child(n+4) .said__en { font-size: 15px; line-height: 1.6; letter-spacing: -0.008em; color: var(--fg-dim); }
+/* past six, the thread waits behind one quiet line (a native <details>, so
+   it opens without a script and never animates); what it opens is the same
+   room at reading size, on the same columns, with no second rule above it */
+.fp .reception__more { margin-top: 30px; }
+.fp .reception__more > summary {
+  display: inline-block; list-style: none; cursor: pointer;
+  font-size: 14px; letter-spacing: -0.005em; color: var(--fg-dim);
+  text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 5px;
+  transition: color .35s var(--ease), text-decoration-color .35s var(--ease);
+}
+.fp .reception__more > summary::-webkit-details-marker { display: none; }
+.fp .reception__more > summary:hover { color: var(--fg); text-decoration-color: var(--fg-faint); }
+.fp .reception__more > summary:focus-visible { outline: 2px solid var(--fg); outline-offset: 4px; border-radius: 3px; }
+.fp .reception__fewer, .fp .reception__more[open] .reception__open { display: none; }
+.fp .reception__more[open] .reception__fewer { display: inline; }
+.fp .reception__more .reception__grid { border-top: 0; margin-top: 4px; }
+.fp .reception__more .said { padding-top: 22px; gap: 10px; }
+.fp .reception__more .said__en { font-size: 15px; line-height: 1.6; letter-spacing: -0.008em; color: var(--fg-dim); }
+@media (prefers-reduced-motion: reduce) { .fp .reception__more > summary { transition: none; } }
 
 /* ---------- a card: one still, its name, its facts ---------- */
 .fp-card { list-style: none; transition: opacity .7s var(--ease); }

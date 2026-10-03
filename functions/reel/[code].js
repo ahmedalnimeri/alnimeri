@@ -1,7 +1,7 @@
 /**
- * /reel/<code>   — a viewer's own cut of the selects, rendered at the edge
+ * /reel/<code>   — a viewer's own shortlist of the films, rendered at the edge
  *
- * The code is the cut: one character per film, in the order the viewer put
+ * The code is the shortlist: one character per film, in the order the viewer put
  * them (keys in _lib/reel.js, generated from the tiles). Nothing is stored —
  * the link carries the whole selection, so it works forever, needs no
  * database, and says nothing about who made it. The TRT is derived from
@@ -19,6 +19,15 @@ const WORDS = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight
   'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
   'nineteen', 'twenty', 'twenty-one', 'twenty-two', 'twenty-three', 'twenty-four', 'twenty-five',
   'twenty-six', 'twenty-seven', 'twenty-eight', 'twenty-nine', 'thirty'];
+
+// The brief's kinds of film, read off a tile's kind (main.js reads them the same way).
+function kindOf(s) {
+  s = String(s || '').toLowerCase();
+  if (/brand|campaign/.test(s)) return 'brand';
+  if (/event|conference/.test(s)) return 'events';
+  if (/documentary|institutional/.test(s)) return 'documentary';
+  return '';
+}
 
 // A code is valid when every character names a film and none repeats.
 export function decode(code) {
@@ -66,8 +75,13 @@ export function page(code, films) {
   const n = films.length, names = films.map((f) => f.title);
   const trt = mmss(at);
   const list = names.length > 3 ? `${names.slice(0, 3).join(', ')} and ${names.length - 3} more` : names.join(', ');
-  const title = `${n} film${n > 1 ? 's' : ''} from Ahmed El-Nimeri's reel — ${list}`;
-  const desc = `A ${trt} cut of Ahmed El-Nimeri's work, pulled by a viewer: ${names.join(' · ')}. Director and video producer, Dubai.`;
+  const title = `${n} film${n > 1 ? 's' : ''} from Ahmed El-Nimeri's work — ${list}`;
+  const desc = `${trt} of Ahmed El-Nimeri's work, shortlisted by a viewer: ${names.join(' · ')}. Director and video producer, Dubai.`;
+  // "Brief with these films": the brief opens with their titles as the film
+  // it is about, and their kind of film where they all share one (main.js)
+  const kinds = films.map((f) => kindOf(f.kind));
+  const briefKind = kinds.every((k) => k && k === kinds[0]) ? kinds[0] : '';
+  const briefFilms = n > 1 ? `${names.slice(0, -1).join(', ')} and ${names[n - 1]}` : names[0];
   const headline = n === 1 ? `One film. ${trt}.` : `${WORDS[n] ? WORDS[n][0].toUpperCase() + WORDS[n].slice(1) : n} films. ${trt}.`;
   const first = films[0].poster.split('?')[0];
   const fill = {
@@ -75,6 +89,7 @@ export function page(code, films) {
     CODE: code, CODE_UP: code.toUpperCase(), COUNT: String(n), COUNT_PAD: pad(n),
     COUNT_WORD: WORDS[n] || String(n), TRT: trt, TRT_TC: tc(at).slice(0, 8),
     TITLE: esc(title), DESC: esc(desc), HEADLINE: esc(headline),
+    BRIEF_KIND: briefKind, BRIEF_FILMS: esc(briefFilms),
     NAMES: names.map((t, i) => `<span>${pad(i + 1)} ${esc(t)}</span>`).join('<span class="screening__sep">·</span>'),
     OG_IMAGE: `https://alnimeri.com/${first}`,
     // the first film's poster at its real size: a vertical film is 1280x2276
