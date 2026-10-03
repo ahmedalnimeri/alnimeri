@@ -78,7 +78,7 @@ carry their timestamp); a Facebook link does not, so those films show no year.
 After touching the tiles in `index.html`, regenerate everything that derives from them, in this order:
 
 ```sh
-python3 bin-build-home-art.py && python3 bin-stamp-assets.py && python3 bin-build-work-pages.py \
+python3 bin-build-cv-pdf.py && python3 bin-build-home-art.py && python3 bin-stamp-assets.py && python3 bin-build-work-pages.py \
   && python3 bin-build-solana.py && python3 bin-build-about-strip.py \
   && python3 bin-build-onset.py && python3 bin-build-about-said.py \
   && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-llms.py \
@@ -101,6 +101,16 @@ Creative Director", the descriptor "creative director and editor"; he is not a f
 `robots.txt`, `assets/*.json`, the stylesheets' visible strings, the scripts, `functions/`, the
 share-card text in `bin-build-og.py` and the text and metadata of every PDF in `assets/`. Every page is
 read as it is served, and one `/reel/<code>` page is rendered through the real Function in Node.
+
+`bin-build-cv-pdf.py` prints the downloadable CV, `assets/Ahmed_ElNimeri_CV-2026-09.pdf` (every
+"Download CV (PDF)" link), from `/cv` as it stands: its sections in the page's own words and
+headings, the title from its JSON-LD, the opening line from the home page's "Behind the work",
+the contact lines from its Contact section. A4, two to three pages, Poppins embedded, every link
+live. Headless Chrome prints it over the DevTools pipe (`$CHROME_BIN`, else Playwright's
+`chrome-headless-shell`, else Google Chrome); it refuses to print if a line runs past the margin
+or a font fails. The file is rewritten only when what Chrome prints changes, so a second run
+leaves it and its `?h=` stamp alone. Run it first: `bin-stamp-assets.py` stamps the new bytes
+into the links. Change the CV on `/cv`, never in the PDF.
 
 `bin-build-llms.py` writes `llms.txt`: the record, the commissioning notes and the profiles are
 its own prose (edit them there, not in `llms.txt`), and the films, one line each, by kind, in
