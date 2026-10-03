@@ -76,7 +76,7 @@ export function page(code, films) {
   const trt = mmss(at);
   const list = names.length > 3 ? `${names.slice(0, 3).join(', ')} and ${names.length - 3} more` : names.join(', ');
   const title = `${n} film${n > 1 ? 's' : ''} from Ahmed El-Nimeri's work — ${list}`;
-  const desc = `${trt} of Ahmed El-Nimeri's work, shortlisted by a viewer: ${names.join(' · ')}. Director and video producer, Dubai.`;
+  const desc = `${trt} of Ahmed El-Nimeri's work, shortlisted by a viewer: ${names.join(' · ')}. Creative director and editor, Dubai.`;
   // "Brief with these films": the brief opens with their titles as the film
   // it is about, and their kind of film where they all share one (main.js)
   const kinds = films.map((f) => kindOf(f.kind));

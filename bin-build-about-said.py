@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render 'What people say' on /about from assets/reception.json.
+"""Render 'Comments' on /about from assets/reception.json.
 
 Two registers, because the material has two kinds. The short comments are a
 crowd — their force is in the number of them and in how fast they land, so
@@ -93,6 +93,10 @@ for q in quotes:
     if w and w not in wheres:
         wheres.append(w)
 
+# "Facebook, X, Instagram and TikTok": the places the comments were posted,
+# in the order they first appear in the file
+WHERE = ', '.join(wheres[:-1]) + ' and ' + wheres[-1] if len(wheres) > 1 else ''.join(wheres)
+
 # The named voices with a title at a real company lead, in a row of their own.
 leads = (f'<div class="said-leads">{"".join(card(q, n) for n, q in enumerate(feature))}</div>'
          if feature else '')
@@ -100,11 +104,11 @@ leads = (f'<div class="said-leads">{"".join(card(q, n) for n, q in enumerate(fea
 block = f'''{START}
   <section class="section" id="said">
     <div class="slate">
-      <h2 class="slate__title">What people say</h2>
+      <h2 class="slate__title">Comments</h2>
     </div>
-    <p class="reception__sub">Public comments, unedited, from {', '.join(wheres)}. Nothing here was asked for.
+    <p class="reception__sub">Public comments, unedited, from {WHERE}.
       Comments written in Arabic are shown in translation.</p>
-    <div class="says" aria-label="What people say">
+    <div class="says" aria-label="Comments">
       {strip(a, '')}
       {strip(b, ' says__row--back')}
     </div>

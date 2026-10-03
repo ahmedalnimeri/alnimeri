@@ -493,7 +493,7 @@
     var trt = 0;
     list.forEach(function (c) { trt += c.secs; });
     var isCut = document.body.classList.contains('is-reel');
-    var label = isCut ? 'Play them' : 'Play the reel';
+    var label = isCut ? 'Play this reel' : 'Play the reel';
 
     var grid = document.querySelector('.grid');
     var slate = grid && grid.closest('section') && grid.closest('section').querySelector('.slate');
@@ -508,7 +508,7 @@
     if (cta) {
       var h = document.createElement('button');
       h.type = 'button'; h.className = 'btn btn--solid';
-      h.textContent = 'Play them ▸';
+      h.textContent = 'Play this reel ▸';
       h.addEventListener('click', function () { startRun(null); });
       cta.insertBefore(h, cta.firstChild);
       var share = cta.querySelector('.reel__share');

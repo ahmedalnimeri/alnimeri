@@ -622,8 +622,8 @@ for i, f in enumerate(films):
                      f'<div class="reception__grid">{"".join(items[SHOWN:])}</div></details>\n')
         reception = (f'<section class="reception reveal" aria-labelledby="said-{f["slug"]}">\n'
                      f'    <h2 class="reception__head" id="said-{f["slug"]}">What people said</h2>\n'
-                     f'    <p class="reception__sub">Unedited comments on the <a href="{rec["url"]}" target="_blank" rel="noopener">original post</a>\n'
-                     f'      &mdash; {rec["stat"]}. Comments written in Arabic are shown in translation.</p>\n'
+                     f'    <p class="reception__sub">Unedited comments from the <a href="{rec["url"]}" target="_blank" rel="noopener">original post</a>.\n'
+                     f'      Comments written in Arabic are shown in translation.</p>\n'
                      + grid +
                      f'  </section>')
 
@@ -679,14 +679,13 @@ for i, f in enumerate(films):
   <section class="fp-close reveal" aria-labelledby="brief-head">
     <div class="fp-light fp-light--end" aria-hidden="true">{_light.replace('loading="eager"', 'loading="lazy"')}</div>
     <h2 id="brief-head">Have a project in mind?</h2>
-    <p>Tell me what you’re making and when you need it. A few lines are enough.</p>
-    <!--email_off--><a class="btn btn--solid" href="{enquiry}" data-kind="{BRIEF_KIND[_cid]}">Send the brief <span aria-hidden="true">↗</span></a><!--/email_off-->
+    <p>English or Arabic. I answer my own email.</p>
+    <!--email_off--><a class="btn btn--solid" href="{enquiry}" data-kind="{BRIEF_KIND[_cid]}">Get in touch <span aria-hidden="true">↗</span></a><!--/email_off-->
   </section>
   <footer class="fp-foot">
     <nav class="fp-nav" aria-label="Films">{''.join(nav)}</nav>
     <p class="fp-note">One of {COUNT} films in the <a href="/work/">selected work</a> of Ahmed El-Nimeri,
-      a film director and Associate Creative Director based in Dubai. Every figure on this site links
-      to the published post it came from.</p>
+      a creative director and editor in Dubai.</p>
   </footer>
 </section>
 '''

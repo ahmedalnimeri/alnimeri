@@ -24,27 +24,27 @@ _TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eigh
 WORDS = {n: (_ONES[n] if n < 20 else _TENS[n // 10] + ('-' + _ONES[n % 10] if n % 10 else '')).capitalize()
          for n in range(1, 100)}
 
-# The Solana list's card: its count and total views, read from the same file
-# the page is built from (bin-build-solana.py), rounded the way the page
-# prints them.
+# The Solana list's card: its count, read from the same file the page is
+# built from (bin-build-solana.py). The total views stay on the page.
 import json
 _sol = json.load(open('assets/solana-edits.json'))['videos']
 SOL_N = len(_sol)
-_sv = sum(v['views'] for v in _sol)
-SOL_VIEWS = f'{_sv / 1e6:.1f}'.rstrip('0').rstrip('.') + 'M'
 
 CARDS = [
-    ('og-home', '/assets/posters/843280565.jpg', 'I tell stories', 'through visuals.',
-     'Ahmed El-Nimeri &middot; Film director &amp; editor &middot; Dubai'),
+    # He is a creative director, never a film director (Ahmed, 3 Oct 2026). The
+    # card that said so was og-home-2.jpg; a new line is a new file name, so no
+    # cache goes on showing the old one.
+    ('og-home-3', '/assets/posters/843280565.jpg', 'I tell stories', 'through visuals.',
+     'Ahmed El-Nimeri &middot; Creative director &amp; editor &middot; Dubai'),
     # a new count is a new file name (og-work-3.jpg), so no cache keeps the old one
     ('og-work-3', '/assets/posters/1058181870.jpg', f'{WORDS.get(N, N)} films.', 'Brand, event, documentary, music, motion.',
      'Ahmed El-Nimeri &middot; Selected work &middot; Dubai'),
-    # the same rule: a new count or total is a new file name
+    # the same rule: a new count is a new file name
     (f'og-solana-{SOL_N}', '/assets/posters/solana-in-2025.jpg', f'{WORDS.get(SOL_N, SOL_N)} Solana videos.',
-     f'{SOL_VIEWS} views, from the team’s tracker.', 'Ahmed El-Nimeri &middot; Every Solana video I edited'),
-    ('og-about', '/assets/portrait/beach-1280.jpg', 'Rooms, rigs and monitors.', 'And what people said after.',
+     'Each linked to its post on X.', 'Ahmed El-Nimeri &middot; Every Solana video I edited'),
+    ('og-about', '/assets/portrait/beach-1280.jpg', 'Rooms, rigs and monitors.', 'And public comments on the films.',
      'Ahmed El-Nimeri &middot; About &middot; Dubai'),
-    ('og-cv', '/assets/onset/2020-monitor.jpg', 'Eleven years of film.', 'Sudan, the Gulf, and further out.',
+    ('og-cv', '/assets/onset/2020-monitor.jpg', 'Eleven years of film.', 'Sudan and the Gulf.',
      'Ahmed El-Nimeri &middot; Experience &amp; CV &middot; Dubai'),
 ]
 

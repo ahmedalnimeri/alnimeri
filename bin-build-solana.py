@@ -221,7 +221,6 @@ page = f'''<!doctype html>
   <div class="sl-years">{"".join(blocks)}</div>
   <footer class="fp-foot sl-foot">
     <nav class="fp-nav" aria-label="Films"><a class="fp-nav__all" href="/work/">All films</a></nav>
-    <p class="fp-note">Every figure on this site links to the published post it came from.</p>
   </footer>
 </section>
 </main>

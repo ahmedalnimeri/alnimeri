@@ -92,8 +92,9 @@ film page without its `VideoObject` (`/work/<slug>#film`); a `work/*.html` missi
 is not the number of films, of the front page's or of the rest; a broken internal `href`/`src`/
 `srcset` or `#fragment`; an `og:image` that is not a file here; `styles.css` and `main.js` on
 more than one `?v=`; a page without exactly one Cloudflare Web Analytics beacon. It also runs `bin-check-claims.py`, which fails if "directed by", a
-JSON-LD `"director"`, the old "Directed, shot and edited" line, an `fp-credit` line or a
-`data-role` attribute appears in any served `.html`, `llms.txt` or `functions/`. Every page is
+JSON-LD `"director"`, a film-director title for him ("film director", "Storyteller & Director",
+"Director and …"; he is a creative director, 3 Oct 2026), the old "Directed, shot and edited"
+line, an `fp-credit` line or a `data-role` attribute appears in any served `.html`, `llms.txt` or `functions/`. Every page is
 read as it is served, and one `/reel/<code>` page is rendered through the real Function in Node.
 
 `bin-build-llms.py` writes `llms.txt`: the record, the commissioning notes and the profiles are
