@@ -49,7 +49,7 @@ CARDS = [
     # the same rule: a new count is a new file name
     (f'og-solana-{SOL_N}', '/assets/posters/solana-in-2025.jpg', f'{WORDS.get(SOL_N, SOL_N)} Solana videos.',
      'Each linked to its post on X.', 'Ahmed El-Nimeri &middot; Every Solana video I edited'),
-    ('og-about', '/assets/portrait/beach-1280.jpg', 'Rooms, rigs and monitors.', 'And public comments on the films.',
+    ('og-about', '/assets/portrait/beach-1280.jpg', 'Rooms, rigs and monitors.', 'And comments on the films.',
      'Ahmed El-Nimeri &middot; About &middot; Dubai'),
     ('og-cv', '/assets/onset/2020-monitor.jpg', 'Eleven years of film.', 'Sudan and the Gulf.',
      'Ahmed El-Nimeri &middot; Experience &amp; CV &middot; Dubai'),
