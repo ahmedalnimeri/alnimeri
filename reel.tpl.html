@@ -50,7 +50,7 @@
     <p class="hero__eyebrow"><strong>Ahmed El-Nimeri</strong></p>
     <h1 class="pagehead__title">{{HEADLINE}}</h1>
     <p class="reel__names">{{NAMES}}</p>
-    <p class="pagehead__lede">{{TOTAL_WORD}} films are on the front page. Whoever sent you this chose {{COUNT_WORD}} and put them in this order.</p>
+    <p class="pagehead__lede">{{TOTAL_WORD}} films are on the front page. Whoever sent you this chose {{COUNT_WORD}}{{IN_ORDER}}.</p>
     <div class="hero__cta">
       <button class="btn btn--solid reel__share" type="button" data-url="https://alnimeri.com/reel/{{CODE}}">Share this reel</button>
       <a class="btn btn--ghost" href="/#work">Make your own &rarr;</a>
@@ -60,7 +60,7 @@
   <section class="section" id="selects">
     <div class="slate">
       <h2 class="slate__title">Films</h2>
-      <span class="slate__meta">{{COUNT}} films</span>
+      <span class="slate__meta">{{COUNT}} {{FILMS}}</span>
     </div>
     <div class="grid">
 {{TILES}}

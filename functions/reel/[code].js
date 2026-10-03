@@ -88,6 +88,8 @@ export function page(code, films) {
     TOTAL_WORD: (WORDS[FILMS.length] || String(FILMS.length)).replace(/^./, (c) => c.toUpperCase()),
     CODE: code, CODE_UP: code.toUpperCase(), COUNT: String(n), COUNT_PAD: pad(n),
     COUNT_WORD: WORDS[n] || String(n), TRT: trt, TRT_TC: tc(at).slice(0, 8),
+    // one film is "1 film", and has no order to be put in
+    FILMS: n === 1 ? 'film' : 'films', IN_ORDER: n === 1 ? '' : ' and put them in this order',
     TITLE: esc(title), DESC: esc(desc), HEADLINE: esc(headline),
     BRIEF_KIND: briefKind, BRIEF_FILMS: esc(briefFilms),
     NAMES: names.map((t, i) => `<span>${pad(i + 1)} ${esc(t)}</span>`).join('<span class="screening__sep">·</span>'),
