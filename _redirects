@@ -10,8 +10,10 @@
 # rules answer instead (Pages consults _redirects only when no file matches):
 # an old link to the CV, or a share that still names an old card, lands on the
 # current one. The first CV PDF ("Storyteller · Film Director · Associate
-# Creative Director") has been unlinked since 30 Sep 2026; the two home cards
-# read "Film director & editor".
+# Creative Director") has been unlinked since 30 Sep 2026; the three old home
+# cards read "Film director & editor" (og.jpg, the first one, the home page's
+# share image until 29 Sep 2026; then og-home.jpg and og-home-2.jpg).
 /assets/Ahmed_ElNimeri_CV.pdf /assets/Ahmed_ElNimeri_CV-2026-09.pdf 301
+/assets/og.jpg /assets/og-home-3.jpg 301
 /assets/og-home.jpg /assets/og-home-3.jpg 301
 /assets/og-home-2.jpg /assets/og-home-3.jpg 301

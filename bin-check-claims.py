@@ -25,7 +25,9 @@ comments out), functions/ (the /reel/<code> pages and the edge's lines are
 rendered there), the scripts that write text into the page (main.js,
 motion.js, design-*.js), the share-card text in bin-build-og.py (it exists
 only inside the rendered JPGs), and every PDF in assets/ (its text, through
-pdftotext or pypdf, and its title, subject and keywords). A "director" inside
+pdftotext or pypdf, and its title, subject and keywords). The retired files
+in RETIRED (old share cards whose pixels say "Film director", the first CV
+PDF) must stay deleted, each with its 301 in _redirects. A "director" inside
 a JS string is written \\"director\\", so the quotes may be escaped. Run from
 anywhere; it reads the repo it sits in.
 """
@@ -52,6 +54,12 @@ ROLE_ATTR = re.compile(r'\sdata-role="')
 # Someone else's title, exactly as it is printed on the site (a quote's
 # author, a credit's client). Empty: no page names one today.
 THIRD_PARTY = []
+# Retired files that called him a film director where no text check can read
+# it (burned into a share card's pixels) or that old links still name. Each
+# must stay out of assets/, with a _redirects rule sending its URL to the
+# current file.
+RETIRED = ['assets/og.jpg', 'assets/og-home.jpg', 'assets/og-home-2.jpg',
+           'assets/Ahmed_ElNimeri_CV.pdf']
 
 def allowed(text, m):
     """True if this "director" is "creative director" / "assistant director",
@@ -159,6 +167,13 @@ for p, text in files():
         snip = re.sub(r'\s+', ' ', text[max(0, s - 50):e + 30])
         bad.append(f'  {rel}:{line}: {what}: …{snip}…')
 
+redirects = (ROOT / '_redirects').read_text(encoding='utf-8') if (ROOT / '_redirects').exists() else ''
+for rel in RETIRED:
+    if (ROOT / rel).exists():
+        bad.append(f'  {rel}: a retired file that calls him a film director is back')
+    if not re.search(r'^/' + re.escape(rel) + r'\s+/\S+\s+301\s*$', redirects, re.M):
+        bad.append(f'  _redirects: no 301 rule for /{rel}, a retired file old links still name')
+
 if bad:
     print(f'bin-check-claims: {len(bad)} claim(s) found — he is a creative director; roles belong on /cv only:',
           file=sys.stderr)
@@ -167,4 +182,4 @@ if bad:
         print(f'  … and {len(bad) - 60} more', file=sys.stderr)
     sys.exit(1)
 print(f'claims: clean ({n} files incl. PDFs and share-card text; no "directed by", no "director" but '
-      f'"creative director", no film director or storyteller, no credit line)')
+      f'"creative director", no film director or storyteller, no credit line, no retired card back)')

@@ -99,7 +99,9 @@ Creative Director", the descriptor "creative director and editor"; he is not a f
 `THIRD_PARTY` list), the old "Directed, shot and edited" line, an `fp-credit` line or a
 `data-role` attribute appears in anything served: every `.html`, `llms.txt`, `sitemap.xml`,
 `robots.txt`, `assets/*.json`, the stylesheets' visible strings, the scripts, `functions/`, the
-share-card text in `bin-build-og.py` and the text and metadata of every PDF in `assets/`. Every page is
+share-card text in `bin-build-og.py` and the text and metadata of every PDF in `assets/`; and a
+retired file in its `RETIRED` list (the old share cards whose pixels say "Film director", the first
+CV PDF) that comes back to `assets/` or loses its 301 in `_redirects`. Every page is
 read as it is served, and one `/reel/<code>` page is rendered through the real Function in Node.
 
 `bin-build-cv-pdf.py` prints the downloadable CV, `assets/Ahmed_ElNimeri_CV-2026-09.pdf` (every
@@ -187,8 +189,6 @@ there too, so check Email Routing after any DNS change.
   countdown leader, advancing on the player's own `ended` event, with a single
   timeline across the whole sequence. A cut reel on the Vimeo profile would
   still be worth having as a file; the site no longer waits for it.
-- **`assets/og.jpg`** is a crop of a still. A purpose-made 1200×630 card would
-  be better.
 - Some of the highest-performing pieces live only on X (Solana x All In, Breakpoint London,
   Electric Capital Developer Report, Roam and more): they have pages and stills here, but
   play on X, not on the site. APEX Mexico has no page yet; it is on `/work/solana`.
