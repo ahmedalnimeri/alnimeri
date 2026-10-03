@@ -1536,6 +1536,9 @@
   window.addEventListener('click', function (e) {        // window capture runs before the deck's document-level jump
     var a = e.target.closest && e.target.closest('a');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    // the brief's own "Send it from your email app instead" is a mailto with a
+    // subject: it must open the email app, not the brief it is already in
+    if (d.contains(a)) return;
     var href = a.getAttribute('href') || '';
     // (a shared reel page's contact link names its films and their kind)
     if (href === '#contact' || href === '/#contact') {
