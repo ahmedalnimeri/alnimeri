@@ -10,10 +10,25 @@
 # rules answer instead (Pages consults _redirects only when no file matches):
 # an old link to the CV, or a share that still names an old card, lands on the
 # current one. The first CV PDF ("Storyteller · Film Director · Associate
-# Creative Director") has been unlinked since 30 Sep 2026; the three old home
+# Creative Director") has been unlinked since 30 Sep 2026, and the second
+# (-2026-09) went live with the same title line; the CV printed from /cv is
+# -2026-10 (bin-build-cv-pdf.py). The three old home
 # cards read "Film director & editor" (og.jpg, the first one, the home page's
 # share image until 29 Sep 2026; then og-home.jpg and og-home-2.jpg).
-/assets/Ahmed_ElNimeri_CV.pdf /assets/Ahmed_ElNimeri_CV-2026-09.pdf 301
+/assets/Ahmed_ElNimeri_CV.pdf /assets/Ahmed_ElNimeri_CV-2026-10.pdf 301
+/assets/Ahmed_ElNimeri_CV-2026-09.pdf /assets/Ahmed_ElNimeri_CV-2026-10.pdf 301
 /assets/og.jpg /assets/og-home-3.jpg 301
 /assets/og-home.jpg /assets/og-home-3.jpg 301
 /assets/og-home-2.jpg /assets/og-home-3.jpg 301
+
+# Share cards replaced by a new file name (assets/* is cached immutable for a
+# year, so a card whose words or count change gets a new name; bin-build-og.py).
+# og-work.jpg and og-work-2.jpg printed old film counts ("Seventeen films",
+# "Twenty-four films"); og-about.jpg, og-cv.jpg and og-solana-90.jpg are the
+# same cards before their 3 Oct 2026 wording. A share or a crawler that still
+# names an old card lands on the current one.
+/assets/og-work.jpg /assets/og-work-3.jpg 301
+/assets/og-work-2.jpg /assets/og-work-3.jpg 301
+/assets/og-about.jpg /assets/og-about-2.jpg 301
+/assets/og-cv.jpg /assets/og-cv-2.jpg 301
+/assets/og-solana-90.jpg /assets/og-solana-90-2.jpg 301

@@ -68,7 +68,9 @@ person = {
   "alumniOf": {"@type": "CollegeOrUniversity", "name": "University of Khartoum"},
   "knowsLanguage": [{"@type": "Language", "name": "English"},
                     {"@type": "Language", "name": "Arabic"}],
-  "knowsAbout": ["Storytelling", "Film direction", "Documentary filmmaking",
+  # "Creative direction", not "Film direction": he is not a film director
+  # (Ahmed, 3 Oct 2026)
+  "knowsAbout": ["Storytelling", "Creative direction", "Documentary filmmaking",
                  "Event filmmaking",
                  "Cinematography", "Video editing", "Colour grading",
                  "Motion graphics", "Animation", "Brand storytelling"],

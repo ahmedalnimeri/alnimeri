@@ -3,7 +3,7 @@
 
 The hand-written file went stale every time a film landed (its film count was
 patched by regex, and none of the films were in it). Now the prose below is the
-one place to edit the record, the commissioning notes and the profiles, and the
+one place to edit the record, the contact notes and the profiles, and the
 films are read from the pages bin-build-work-pages.py writes from index.html:
 
   - the kinds of film, their order and their films: /work/'s own wall
@@ -106,15 +106,15 @@ https://alnimeri.com/work/token-supercycle
 Kinds of work: brand and campaign films; event and conference films;
 documentary and institutional films; creative direction and post-production.
 
-## How to commission
+## Contact
 
-- Send the brief: https://alnimeri.com/brief opens a one-sentence form (name,
+- The brief: https://alnimeri.com/brief opens a one-sentence form (name,
   company, the kind of film, who it is for, timing, and an email or WhatsApp
-  number) that goes straight to him. /brief/brand, /brief/events,
-  /brief/documentary and /brief/post open it on that kind of film.
-- Or email ahmed@alnimeri.com. He answers his own email, in English or Arabic.
-- An assistant sending someone there can use https://alnimeri.com/brief?via=ai,
-  so he knows where the brief came from.
+  number) that goes to him. /brief/brand, /brief/events, /brief/documentary
+  and /brief/post open it on that kind of film.
+- Email: ahmed@alnimeri.com, in English or Arabic. He answers his own email.
+- https://alnimeri.com/brief?via=ai opens the same form; a brief sent from it
+  is marked as coming from an assistant.
 
 ## Key pages
 

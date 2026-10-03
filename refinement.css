@@ -145,6 +145,13 @@
 }
 .chapter__more { display: inline-block; margin-top: 22px; font-size: 15px; color: var(--fg-dim); text-decoration: none; }
 .chapter__more:hover { color: var(--fg); }
+/* "Selected films" has no intro beside it, only its "All films" link: the
+   link goes to the end of the row, on the title's baseline, instead of
+   standing alone at the middle of the row */
+@media (min-width: 761px) {
+  #work .chapter__head { grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; }
+  #work .chapter__aside .chapter__more { margin-top: 0; }
+}
 #about .slate { max-width: 1320px; margin: 0 auto clamp(44px, 7vh, 72px); }
 
 /* the offers: a title, then four columns split by hairlines, a frame on top of each */

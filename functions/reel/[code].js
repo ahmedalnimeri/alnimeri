@@ -1,7 +1,7 @@
 /**
- * /reel/<code>   — a viewer's own shortlist of the films, rendered at the edge
+ * /reel/<code>   — a viewer's own reel of the films, rendered at the edge
  *
- * The code is the shortlist: one character per film, in the order the viewer put
+ * The code is the reel: one character per film, in the order the viewer put
  * them (keys in _lib/reel.js, generated from the tiles). Nothing is stored —
  * the link carries the whole selection, so it works forever, needs no
  * database, and says nothing about who made it. The TRT is derived from
@@ -76,7 +76,7 @@ export function page(code, films) {
   const trt = mmss(at);
   const list = names.length > 3 ? `${names.slice(0, 3).join(', ')} and ${names.length - 3} more` : names.join(', ');
   const title = `${n} film${n > 1 ? 's' : ''} from Ahmed El-Nimeri's work — ${list}`;
-  const desc = `${trt} of Ahmed El-Nimeri's work, shortlisted by a viewer: ${names.join(' · ')}. Creative director and editor, Dubai.`;
+  const desc = `${trt} of Ahmed El-Nimeri's work, chosen by a viewer: ${names.join(' · ')}. Creative director and editor, Dubai.`;
   // "Brief with these films": the brief opens with their titles as the film
   // it is about, and their kind of film where they all share one (main.js)
   const kinds = films.map((f) => kindOf(f.kind));

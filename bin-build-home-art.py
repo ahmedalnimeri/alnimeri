@@ -23,7 +23,7 @@ the 768x432 poster, measured from the bars.
 Writes between <!-- ART:CHAPTERS --> markers in index.html. Run
 bin-stamp-assets.py afterwards to hash the poster URLs.
 """
-import os, re, html
+import ast, os, re, html
 
 SRC = open('index.html').read()
 # the front page's own films: <template id="more-films"> is never rendered
@@ -65,23 +65,44 @@ PHONE_CHIP = {
 # Contact section ask for the brief; a card says what the work is and leads
 # to it. The film pages still pre-select the brief's kind (data-kind).
 
+# A card's "All …" link names what it opens: the /work/ category of the same
+# key, by the name /work/ gives it (bin-build-work-pages.py CATEGORIES, read
+# from that file so the two never drift), as the film pages' own "All …" link
+# does. The card's title may differ ("Creative direction & post" opens
+# "Motion, animation & post").
+def _work_categories():
+    tree = ast.parse(open('bin-build-work-pages.py').read())
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(getattr(t, 'id', '') == 'CATEGORIES' for t in node.targets):
+            return {key: label for key, label, _kinds in ast.literal_eval(node.value)}
+    raise SystemExit('bin-build-work-pages.py: no CATEGORIES list to name the cards\' links from')
+WORK_CATEGORIES = _work_categories()
+
+
+def all_link(key):
+    if key not in WORK_CATEGORIES:
+        raise SystemExit(f'no /work/ category "{key}" for its card to link to')
+    label = WORK_CATEGORIES[key]
+    return (f'/work/#{key}', 'All ' + label[0].lower() + label[1:])
+
+
 # (key, title, words, all-films link, [lead, second, third])
 CHAPTERS = [
     ('brand', 'Brand &amp; campaign films',
      'Launches, brand stories and campaigns. Direction, cinematography and editing.',
-     ('/work/#brand', 'All brand &amp; campaign films'),
+     all_link('brand'),
      ['Solana Accelerate', 'Badr Airlines', '60 Secs of New York']),
     ('events', 'Event &amp; conference films',
      'Conferences, launches and summits. Speaker films, multi-camera coverage and recaps cut on site.',
-     ('/work/#events', 'All event &amp; conference films'),
+     all_link('events'),
      ['Solana x All In', 'Solana Solstice']),
     ('documentary', 'Documentary &amp; institutional films',
      'People and places, from eleven years of work across Sudan and the Gulf.',
-     ('/work/#documentary', 'All documentary work'),
+     all_link('documentary'),
      ['Al Doroub', 'Sia x Solana', 'The Greatest Sudanese Sit-In']),
     ('motion', 'Creative direction &amp; post',
      'Creative direction, editorial, motion, colour and sound.',
-     ('/work/#motion', 'All motion &amp; post work'),
+     all_link('motion'),
      ['Solana Developer Platform', 'Solana Skyline']),
 ]
 

@@ -27,7 +27,8 @@ motion.js, design-*.js), the share-card text in bin-build-og.py (it exists
 only inside the rendered JPGs), and every PDF in assets/ (its text, through
 pdftotext or pypdf, and its title, subject and keywords). The retired files
 in RETIRED (old share cards whose pixels say "Film director", the first CV
-PDF) must stay deleted, each with its 301 in _redirects. A "director" inside
+PDF) and the stale ones in REPLACED (old counts and wording) must stay
+deleted, each with its 301 in _redirects to a file that is here. A "director" inside
 a JS string is written \\"director\\", so the quotes may be escaped. Run from
 anywhere; it reads the repo it sits in.
 """
@@ -38,8 +39,9 @@ SKIP = {'.git', 'node_modules', 'docs', '.claude', '_og'}   # _og: git-ignored; 
 
 # the claim itself, in any text a person or a machine reads
 CLAIM = re.compile(r'directed by|\\?"director\\?"', re.I)
-# the titles he has been given and does not hold
-TITLE = re.compile(r'film[\s-]+director|storyteller', re.I)
+# the titles he has been given and does not hold (and "Film direction" as a
+# skill, the same claim in the JSON-LD's knowsAbout)
+TITLE = re.compile(r'film[\s-]+direct(?:ors?|ion)|storyteller', re.I)
 # a credit line: "Director: …", "Directed: …" (also "Creative Director: …";
 # roles are for /cv, as role names, never a "Role: name" line)
 CREDIT_COLON = re.compile(r'\b(?:directed|directors?)\s*(?:</?[a-z][^>]*>\s*)*:(?!//)', re.I)
@@ -59,7 +61,13 @@ THIRD_PARTY = []
 # must stay out of assets/, with a _redirects rule sending its URL to the
 # current file.
 RETIRED = ['assets/og.jpg', 'assets/og-home.jpg', 'assets/og-home-2.jpg',
-           'assets/Ahmed_ElNimeri_CV.pdf']
+           'assets/Ahmed_ElNimeri_CV.pdf', 'assets/Ahmed_ElNimeri_CV-2026-09.pdf']
+# Files replaced by a new name because their words or count went stale
+# (assets/* is cached immutable for a year, so a changed file is a new name).
+# They held no director claim, but the same rule holds: each stays out of
+# assets/, with a 301 to the file that replaced it.
+REPLACED = ['assets/og-work.jpg', 'assets/og-work-2.jpg', 'assets/og-about.jpg',
+            'assets/og-cv.jpg', 'assets/og-solana-90.jpg']
 
 def allowed(text, m):
     """True if this "director" is "creative director" / "assistant director",
@@ -168,11 +176,16 @@ for p, text in files():
         bad.append(f'  {rel}:{line}: {what}: …{snip}…')
 
 redirects = (ROOT / '_redirects').read_text(encoding='utf-8') if (ROOT / '_redirects').exists() else ''
-for rel in RETIRED:
+for rel in RETIRED + REPLACED:
     if (ROOT / rel).exists():
-        bad.append(f'  {rel}: a retired file that calls him a film director is back')
-    if not re.search(r'^/' + re.escape(rel) + r'\s+/\S+\s+301\s*$', redirects, re.M):
+        bad.append(f'  {rel}: ' + ('a retired file that calls him a film director is back' if rel in RETIRED
+                                   else 'a replaced file is back under its old name'))
+    rule = re.search(r'^/' + re.escape(rel) + r'\s+(/\S+)\s+301\s*$', redirects, re.M)
+    if not rule:
         bad.append(f'  _redirects: no 301 rule for /{rel}, a retired file old links still name')
+    elif not (ROOT / rule.group(1).lstrip('/')).is_file():
+        # the 301 must land on a file that is served, not on another retired name
+        bad.append(f'  _redirects: /{rel} goes to {rule.group(1)}, which is not a file here')
 
 if bad:
     print(f'bin-check-claims: {len(bad)} claim(s) found — he is a creative director; roles belong on /cv only:',

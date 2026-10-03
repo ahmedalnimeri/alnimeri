@@ -161,9 +161,9 @@ schema = {"@context": "https://schema.org", "@graph": [
         {"@type": "ListItem", "position": 2, "name": "All films", "item": "https://alnimeri.com/work/"},
         {"@type": "ListItem", "position": 3, "name": "Every Solana video I edited"}]}]}
 
-# the share card prints the count and the total (bin-build-og.py); a new
-# count is a new file name
-OG = f'assets/og-solana-{N}.jpg'
+# the share card prints the count (bin-build-og.py); a new count, or new
+# words on the card, is a new file name (the "-2": its second wording)
+OG = f'assets/og-solana-{N}-2.jpg'
 if not os.path.exists(OG):
     sys.exit(f'{OG} is missing: render bin-build-og.py\'s card for {N} videos first')
 _o = subprocess.run(['sips', '-g', 'pixelWidth', '-g', 'pixelHeight', OG], capture_output=True, text=True).stdout

@@ -46,12 +46,18 @@ CARDS = [
     # a new count is a new file name (og-work-3.jpg), so no cache keeps the old one
     ('og-work-3', '/assets/posters/1058181870.jpg', f'{WORDS.get(N, N)} films.', 'Brand, event, documentary, music, motion.',
      'Ahmed El-Nimeri &middot; Selected work &middot; Dubai'),
-    # the same rule: a new count is a new file name
-    (f'og-solana-{SOL_N}', '/assets/posters/solana-in-2025.jpg', f'{WORDS.get(SOL_N, SOL_N)} Solana videos.',
+    # The same rule for the words: assets/* is cached immutable for a year, so a
+    # card whose words change is rendered to a new name and the old name gets a
+    # 301 to it in _redirects. These three were re-worded on 3 Oct 2026 (Solana:
+    # "Each linked to its post on X."; About: "And comments on the films."; CV:
+    # "Sudan and the Gulf."), so og-solana-90.jpg, og-about.jpg and og-cv.jpg are
+    # gone and these are their second versions. The Solana card's name also
+    # carries its count: a new count is a new file name too.
+    (f'og-solana-{SOL_N}-2', '/assets/posters/solana-in-2025.jpg', f'{WORDS.get(SOL_N, SOL_N)} Solana videos.',
      'Each linked to its post on X.', 'Ahmed El-Nimeri &middot; Every Solana video I edited'),
-    ('og-about', '/assets/portrait/beach-1280.jpg', 'Rooms, rigs and monitors.', 'And comments on the films.',
+    ('og-about-2', '/assets/portrait/beach-1280.jpg', 'Rooms, rigs and monitors.', 'And comments on the films.',
      'Ahmed El-Nimeri &middot; About &middot; Dubai'),
-    ('og-cv', '/assets/onset/2020-monitor.jpg', 'Eleven years of film.', 'Sudan and the Gulf.',
+    ('og-cv-2', '/assets/onset/2020-monitor.jpg', 'Eleven years of film.', 'Sudan and the Gulf.',
      'Ahmed El-Nimeri &middot; Experience &amp; CV &middot; Dubai'),
 ]
 

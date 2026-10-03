@@ -109,10 +109,11 @@ Creative Director", the descriptor "creative director and editor"; he is not a f
 `robots.txt`, `assets/*.json`, the stylesheets' visible strings, the scripts, `functions/`, the
 share-card text in `bin-build-og.py` and the text and metadata of every PDF in `assets/`; and a
 retired file in its `RETIRED` list (the old share cards whose pixels say "Film director", the first
-CV PDF) that comes back to `assets/` or loses its 301 in `_redirects`. Every page is
+two CV PDFs) or its `REPLACED` list (share cards with an old count or wording) that comes back to
+`assets/`, loses its 301 in `_redirects`, or 301s to a file that is not here. Every page is
 read as it is served, and one `/reel/<code>` page is rendered through the real Function in Node.
 
-`bin-build-cv-pdf.py` prints the downloadable CV, `assets/Ahmed_ElNimeri_CV-2026-09.pdf` (every
+`bin-build-cv-pdf.py` prints the downloadable CV, `assets/Ahmed_ElNimeri_CV-2026-10.pdf` (every
 "Download CV (PDF)" link), from `/cv` as it stands: its sections in the page's own words and
 headings, the title from its JSON-LD, the opening line from the home page's "Behind the work",
 the contact lines from its Contact section. A4, two to three pages, Poppins embedded, every link
@@ -120,9 +121,14 @@ live. Headless Chrome prints it over the DevTools pipe (`$CHROME_BIN`, else Play
 `chrome-headless-shell`, else Google Chrome); it refuses to print if a line runs past the margin
 or a font fails. The file is rewritten only when what Chrome prints changes, so a second run
 leaves it and its `?h=` stamp alone. Run it first: `bin-stamp-assets.py` stamps the new bytes
-into the links. Change the CV on `/cv`, never in the PDF.
+into the links. A bare link to the file carries no `?h=` and `/assets/*` is cached for a year, so
+when the words change the file takes a new name (the month it was printed: `-2026-09` went live
+as the hand-made PDF, `-2026-10` is the one printed from `/cv`), the links follow, and
+`_redirects` sends the old name to it. A list item on `/cv` that is only a link to a page here
+("Every Solana video I edited") is printed with its address, which paper cannot otherwise show.
+Change the CV on `/cv`, never in the PDF.
 
-`bin-build-llms.py` writes `llms.txt`: the record, the commissioning notes and the profiles are
+`bin-build-llms.py` writes `llms.txt`: the record, the contact notes and the profiles are
 its own prose (edit them there, not in `llms.txt`), and the films, one line each, by kind, in
 /work/'s order, come from the film pages' own `VideoObject`s (title, kind, year where the post
 proves it, figure, running time, the page and the post).
@@ -157,7 +163,9 @@ retires its own, and the grid can be re-ordered without changing what a sent lin
 
 `bin-build-og.py` writes the share cards' HTML to `_og/` for rendering at 1200x630 (`_og/` is
 git-ignored and `bin-check.py` skips it; remove it once the JPGs are rendered); the `/work/` card
-prints the film count, so a new count is rendered to a new file name (`og-work-2.jpg`).
+prints the film count, so a new count is rendered to a new file name (`og-work-3.jpg`), and a
+card whose words change takes a new name too (`og-about-2.jpg`); the old name gets a 301 in
+`_redirects` and goes on `bin-check-claims.py`'s `REPLACED` list.
 
 ## Deploying
 

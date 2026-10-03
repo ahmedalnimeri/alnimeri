@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the downloadable CV (assets/Ahmed_ElNimeri_CV-2026-09.pdf) from /cv.
+"""Print the downloadable CV (assets/Ahmed_ElNimeri_CV-2026-10.pdf) from /cv.
 
 Every "Download CV (PDF)" link opens this file, and it used to be made by hand,
 so it drifted: it went on saying "Eight Days of Sudan" and "Commissioned by"
@@ -32,8 +32,12 @@ the right margin, or if a font fails to load.
 
 Run it before bin-stamp-assets.py, which stamps the new bytes into every link
 (index.html, about.html, cv.html; bin-build-work-pages.py copies the home
-page's into /work/). The file keeps its name, so _redirects and every old link
-still land on it; a new ?h= is what moves the immutable cache.
+page's into /work/). The ?h= moves the cache for every link on the site; a
+bare link to the file has none, so when the words change, give OUT a new name
+(the month), point the links at it, and 301 the old name to it in _redirects.
+
+A list item on /cv that is only a link to a page here is printed with its
+address after it (on_paper), since a link cannot be seen on paper.
 
   python3 bin-build-cv-pdf.py            # rewrite the PDF if it changed
   python3 bin-build-cv-pdf.py --html F   # also write the print template to F, to look at
@@ -45,7 +49,13 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / 'assets' / 'Ahmed_ElNimeri_CV-2026-09.pdf'
+# assets/* is served immutable for a year, and a bare link to the PDF (an old
+# link, a _redirects target, a link sent by hand) carries no ?h=, so a CV
+# whose words change is a new file name: the month it was printed in. The old
+# names are 301s in _redirects. -2026-09 went live as the hand-made PDF
+# ("Storyteller · Film Director · …"), so that URL may sit in a cache for a
+# year with those words; the CV printed from /cv is -2026-10.
+OUT = ROOT / 'assets' / 'Ahmed_ElNimeri_CV-2026-10.pdf'
 SITE = 'https://alnimeri.com/'
 FONTS = {400: 'poppins-400', 500: 'poppins-500', 600: 'poppins-600', 700: 'poppins-700'}
 
@@ -157,6 +167,25 @@ def inline(n):
     return squash(walk(n)) if n is not None else ''
 
 
+def on_paper(n):
+    """A list item that is nothing but a link to a page here ("Every Solana
+    video I edited", on /cv) says nothing on paper, where a link cannot be
+    seen: print it with its address, "Every Solana video I edited:
+    alnimeri.com/work/solana", the address being the link. Anything else is
+    inline(n)."""
+    kids = [k for k in n.kids if not (isinstance(k, Node) and hidden(k))]
+    links = [k for k in kids if isinstance(k, Node)]
+    loose = squash(''.join(k for k in kids if isinstance(k, str)))
+    if len(links) == 1 and links[0].tag == 'a' and not loose and links[0].attrs.get('href'):
+        href = absolute(links[0].attrs['href'])
+        u = urlsplit(href)
+        if u.netloc == urlsplit(SITE).netloc and not u.query and not u.fragment:
+            shown = u.netloc + u.path.rstrip('/')
+            return (f'{html.escape(text(links[0]), quote=False)}: '
+                    f'<a href="{html.escape(href)}"><span class="nw">{html.escape(shown, quote=False)}</span></a>')
+    return inline(n)
+
+
 def need(x, what):
     if x is None or x == '' or x == []:
         sys.exit(f'bin-build-cv-pdf: cv.html has no {what} (the page changed shape; '
@@ -226,7 +255,7 @@ def read_cv():
             'role': squash(text(role)[: len(text(role)) - len(text(tag))] if tag else text(role)),
             'tag': text(tag),
             'brief': inline(li.find(cls='track__brief')),
-            'points': [inline(p) for p in (li.find(cls='track__points') or Node('ul', {})).children('li')],
+            'points': [on_paper(p) for p in (li.find(cls='track__points') or Node('ul', {})).children('li')],
         })
     need([e for e in d['experience'] if 'role' in e], 'experience entries')
 
@@ -293,7 +322,7 @@ def read_cv():
             'title': text(card.find(cls='card__title')),
             'org': text(card.find(cls='card__org')),
             'body': inline(card.find(cls='card__body')),
-            'points': [inline(p) for p in (card.find('ul') or Node('ul', {})).children('li')],
+            'points': [on_paper(p) for p in (card.find('ul') or Node('ul', {})).children('li')],
         })
     return d
 
