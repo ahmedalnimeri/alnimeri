@@ -24,8 +24,133 @@
 <meta name="twitter:description" content="Electric Capital Developer Report — Explainer, 2024. 713K views on X. Running time 2:10.">
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/poppins-600.woff2" crossorigin>
 <link rel="stylesheet" href="/styles.css?v=104">
-<link rel="stylesheet" href="/design-filmpages.css?v=e67cc5e0">
+<link rel="stylesheet" href="/design-filmpages.css?v=3e831249">
 <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "VideoObject", "@id": "https://alnimeri.com/work/electric-capital-developer-report#film", "name": "Electric Capital Developer Report", "description": "Electric Capital Developer Report — Explainer, 2024. 713K views on X. Running time 2:10.", "thumbnailUrl": "https://alnimeri.com/assets/posters/electric-capital-developer-report.jpg", "duration": "PT2M10S", "url": "https://x.com/solana/status/1871639302503076086", "uploadDate": "2024-12-24T19:29:17Z", "creator": {"@type": "Person", "name": "Ahmed El-Nimeri", "@id": "https://alnimeri.com/#person"}, "interactionStatistic": {"@type": "InteractionCounter", "interactionType": {"@type": "WatchAction"}, "userInteractionCount": 713000}}, {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Ahmed El-Nimeri", "item": "https://alnimeri.com/"}, {"@type": "ListItem", "position": 2, "name": "All films", "item": "https://alnimeri.com/work/"}, {"@type": "ListItem", "position": 3, "name": "Electric Capital Developer Report"}]}]}</script>
+<!-- design-transition.js, inlined by bin-stamp-assets.py: edit that file, not this -->
+<script>
+(function () {
+if (!('onpagereveal' in window) || !window.CSS || !CSS.supports('view-transition-name: a')) return;
+var d = document, root = d.documentElement, on = null, picked = null;
+var keep = function (k, v) {
+try { if (v == null) sessionStorage.removeItem('vt:' + k); else sessionStorage.setItem('vt:' + k, JSON.stringify(v)); } catch (e) {}
+};
+var kept = function (k) { try { return JSON.parse(sessionStorage.getItem('vt:' + k)); } catch (e) { return null; } };
+var path = function (u) { try { return new URL(u, location.href).pathname.replace(/(.)\/$/, '$1'); } catch (e) { return ''; } };
+var name = function (el) {
+if (on) on.style.viewTransitionName = '';
+on = el || null;
+if (on) on.style.viewTransitionName = 'film';
+};
+var still = function (a) {
+var t = a.closest('.tile');
+if (t) return t.querySelector('.tile__link');
+if (a.matches('.twoshot__label')) a = d.querySelector('.twoshot__shot.is-on') || a;
+if (a.matches('.twoshot__shot')) return a.classList.contains('is-on') ? a : null;
+if (a.matches('.cmp__still')) return a;
+return a.querySelector('.fp-card__still, .pin__media, .ending__pic');
+};
+var stills = function (href) {
+var out = [];
+[].forEach.call(d.querySelectorAll('a[href="' + href + '"]'), function (a) {
+var s = still(a);
+if (s && out.indexOf(s) < 0 && s.getClientRects().length) out.push(s);
+});
+return out;
+};
+var seen = function (el) {
+var r = el.getBoundingClientRect();
+return r.width > 0 && Math.min(r.bottom, innerHeight) - Math.max(r.top, 0) >= r.height * 0.4;
+};
+var geo = function (el) {
+var r = el.getBoundingClientRect(), w0 = el.offsetWidth || r.width, h0 = el.offsetHeight || r.height;
+var g = { b: [0, 0, w0, h0] }, im = el.querySelector('img'), s = r.width / w0 || 1;
+if (!im || !im.naturalWidth) return g;
+var q = im.getBoundingClientRect(), k = im.naturalWidth / im.naturalHeight, w = q.width, h = q.height;
+if (w / h > k) h = w / k; else w = h * k;
+var at = getComputedStyle(im).objectPosition.split(' ');
+var off = function (v, free) { return /%$/.test(v) ? free * parseFloat(v) / 100 : parseFloat(v) || 0; };
+g.p = [(q.left + off(at[0], q.width - w) - r.left) / s, (q.top + off(at[1] || '50%', q.height - h) - r.top) / s, w / s, h / s];
+return g;
+};
+var carry = function (b, p, q) {
+return [q[0] + (b[0] - p[0]) / p[2] * q[2], q[1] + (b[1] - p[1]) / p[3] * q[3], b[2] / p[2] * q[2], b[3] / p[3] * q[3]];
+};
+var px = function (v) { return v.toFixed(1) + 'px'; };
+var box = function (a) { return 'left:' + px(a[0]) + ';top:' + px(a[1]) + ';width:' + px(a[2]) + ';height:' + px(a[3]); };
+var cut = function (a, w, h) { return ';clip-path:inset(' + [-a[1], a[0] + a[2] - w, a[1] + a[3] - h, -a[0]].map(px).join(' ') + ' round 12px)'; };
+var frame = function () { return d.querySelector('.fp-hero .fp-frame'); };
+var show = function (el) {
+var p, all = [], c = el.closest('.cmp__still'), cm = c && c.closest('.cmp');
+if (cm) {
+[].forEach.call(cm.querySelectorAll('.cmp__still'), function (x) { x.classList.toggle('is-focus', x === c); });
+cm.classList.toggle('is-racked', !c.classList.contains('is-lead'));
+}
+for (p = el; p && p !== d.body; p = p.parentElement) {
+if (p.classList.contains('reveal') || p.classList.contains('cmp')) { p.style.setProperty('--d', '0ms'); p.classList.add('is-in'); }
+}
+void el.offsetWidth;
+for (p = el.parentElement; p && p !== d.body; p = p.parentElement) all = all.concat(p.getAnimations());
+all.concat(el.getAnimations({ subtree: true })).forEach(function (a) {
+try { if (window.CSSTransition && a instanceof CSSTransition) a.finish(); } catch (e) {}
+});
+};
+d.addEventListener('click', function (e) {
+picked = null;
+var a = e.target.closest && e.target.closest('a[href^="/work/"]');
+if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+var s = still(a), href = a.getAttribute('href');
+if (!s) return;
+picked = { el: s, href: href, t: Date.now() };
+keep('pick:' + location.pathname, { href: href, i: stills(href).indexOf(s) });
+}, true);
+addEventListener('pageswap', function (e) {
+var vt = e.viewTransition, to = e.activation && e.activation.entry && e.activation.entry.url;
+name(null);
+if (!vt) return;
+var el = picked && (to ? path(to) === path(picked.href) : Date.now() - picked.t < 5000) ? picked.el : null;
+if (!el && frame() && seen(frame())) el = frame();
+if (!el && to) el = stills(path(to)).filter(seen)[0];
+if (!el || !seen(el)) return;
+name(el);
+keep('from', { from: path(location.href), to: to ? path(to) : '', g: geo(el), t: Date.now() });
+vt.finished.then(function () { name(null); }, function () { name(null); });
+});
+addEventListener('pagereveal', function (e) {
+var vt = e.viewTransition, came = kept('from');
+keep('from', null);
+name(null);
+if (!vt || !came || Date.now() - came.t > 10000 || (came.to && came.to !== path(location.href))) return;
+var el = null, f = frame();
+if (came.from !== path(location.href)) {
+var list = stills(came.from), pick = kept('pick:' + location.pathname);
+var mine = pick && pick.href === came.from ? list[pick.i] : null;
+el = mine && seen(mine) ? mine : list.filter(seen)[0] || null;
+}
+if (!el && f && seen(f)) el = f;
+if (!el) return;
+if (el === f) root.classList.add('vt-film'); else show(el);
+name(el);
+var o = came.g, n = geo(el), fit = null;
+if (o && o.p && n.p && Math.abs(o.p[2] / o.p[3] / (n.p[2] / n.p[3]) - 1) < 0.02) {
+var oHere = [0, 0, o.b[2], o.b[3]], nHere = [0, 0, n.b[2], n.b[3]];
+var oThere = carry(oHere, o.p, n.p), nThere = carry(nHere, n.p, o.p);
+var still2 = el !== f;   // back to a still: the player is the page left behind
+fit = d.createElement('style');
+fit.textContent =
+'@keyframes vt-fit-old{from{' + box(oHere) + (still2 ? cut(oHere, o.b[2], o.b[3]) : '') +
+'}to{' + box(oThere) + (still2 ? cut(oThere, n.b[2], n.b[3]) : '') + '}}' +
+'@keyframes vt-fit-new{from{' + box(nThere) + (still2 ? '' : cut(nThere, o.b[2], o.b[3])) +
+'}to{' + box(nHere) + (still2 ? '' : cut(nHere, n.b[2], n.b[3])) + '}}';
+d.head.appendChild(fit);
+root.classList.add('vt-fit');
+if (still2) root.classList.add('vt-to-still');
+}
+var done = function () { name(null); root.classList.remove('vt-fit', 'vt-to-still'); if (fit) fit.remove(); };
+vt.finished.then(done, done);
+});
+})();
+</script>
+<!-- /design-transition.js -->
 </head>
 <body>
 <a class="skip" href="#film">Skip to the film</a>

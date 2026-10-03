@@ -115,6 +115,11 @@
 @keyframes fp-light-in { from { opacity: 0; } }
 .fp-film .fp-frame { animation: fp-window 1.3s var(--ease) both; }
 .fp-film .fp-light { animation: fp-light-in 2.4s var(--ease) .3s both; }
+/* arriving by the still (design-transition.js, styles.css "page-to-page"):
+   the picture is already where it lands, so it is not set down a second
+   time; the room light comes up a moment after it has landed */
+.vt-film .fp-hero .fp-frame { animation: none; }
+.vt-film .fp-hero .fp-light { animation: fp-light-in 1.4s var(--ease) .65s both; }
 
 /* ---------- the credit: one line under the picture, the way a film ends ---------- */
 .fp-credit { margin: 18px 0 0; font-size: 14px; letter-spacing: -0.005em; line-height: 1.5; color: var(--fg-faint); }

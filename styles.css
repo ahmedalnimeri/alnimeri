@@ -1280,17 +1280,43 @@ h1, h2, h3, .about__lead, .hero__eyebrow, .lost__title { text-wrap: balance; }
 .no-js .tile.reveal .tile__link,
 .no-js .tile.reveal .tile__meta { opacity: 1; transform: none; }
 
-/* ---------- page-to-page: the cut crosses documents ----------
-   Same-origin navigation runs through the View Transitions API: the old
-   page snaps to black for one frame, the new one cuts in two frames later.
-   Changing pages is a splice, not a load. Browsers without support just
-   navigate; reduced motion turns it off entirely. */
+/* ---------- page-to-page: the still becomes the player ----------
+   Same-origin navigation runs through the View Transitions API. The page
+   itself only cross-fades, briefly; the still that was clicked is carried
+   out of it, as one picture, to where the film page's player stands, and
+   back into its place on the way out. design-transition.js (inlined in the
+   head of the pages that take part) gives that one element the name 'film'
+   and takes it off again when the transition is over. A picture with no
+   partner on the other side goes with the page. Browsers without support
+   just navigate; reduced motion turns it off entirely. */
 
 @view-transition { navigation: auto; }
-::view-transition-old(root) { animation: vt-out calc(var(--f) * 2) steps(1, end) both; }
-::view-transition-new(root) { animation: vt-in  calc(var(--f) * 3) steps(2, end) both; }
-@keyframes vt-out { to { opacity: 0; } }
-@keyframes vt-in  { from { opacity: 0; } to { opacity: 1; } }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; animation-timing-function: ease; }
+::view-transition-group(film) { animation-duration: .45s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+/* The still is a crop of the player's picture, and rarely the same shape.
+   Where design-transition.js can measure where the film's picture lies on
+   each side (.vt-fit, with its vt-fit-old/new keyframes), the player's
+   picture is drawn there, whole, cut to the moving frame, which opens it out
+   of the still's crop (or closes it back into it), while the still itself
+   lifts off it (or settles back onto it): one picture all the way, never
+   two. Where it cannot, both fill the moving frame and cross-fade. */
+::view-transition-image-pair(film) {
+  overflow: clip; border-radius: var(--radius, 12px);
+  animation-duration: inherit; animation-timing-function: inherit;
+}
+::view-transition-old(film), ::view-transition-new(film) {
+  height: 100%; object-fit: cover;
+  animation-duration: inherit; animation-timing-function: inherit; animation-fill-mode: both;
+}
+.vt-fit::view-transition-image-pair(film) { overflow: visible; }
+.vt-fit::view-transition-old(film), .vt-fit::view-transition-new(film) { object-fit: fill; animation-duration: .45s, .3s; }
+.vt-fit::view-transition-old(film) { animation-name: vt-fit-old, vt-fade-out; z-index: 1; }
+.vt-fit::view-transition-new(film) { animation-name: vt-fit-new; }
+.vt-fit.vt-to-still::view-transition-old(film) { animation-name: vt-fit-old; z-index: auto; }
+.vt-fit.vt-to-still::view-transition-new(film) { animation-name: vt-fit-new, vt-fade-in; }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-fade-in  { from { opacity: 0; } }
+::view-transition-old(film):only-child, ::view-transition-new(film):only-child { animation-duration: .25s; animation-timing-function: ease; }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
 }

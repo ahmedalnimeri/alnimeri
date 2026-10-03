@@ -25,6 +25,10 @@ generated functions/_lib files. Checked:
   6. Share images: every og:image and twitter:image is a file here.
   7. styles.css and main.js carry one and the same ?v= on every page.
   8. One Cloudflare Web Analytics beacon on every page, with one token.
+  9. The still becomes the player: the front page, About, /work/ and every
+     film page carry design-transition.js inlined once, as it stands now
+     (bin-stamp-assets.py, bin-build-work-pages.py), and reduced motion still
+     turns page transitions off in styles.css.
 
 Run from anywhere; it reads the repo it sits in. Needs node for the reel page.
 """
@@ -314,6 +318,23 @@ for url, (label, text) in PAGES.items():
 if len(tokens) > 1:
     bad('beacon', 'more than one token: ' + ', '.join(f'{t} on {len(l)} pages' for t, l in tokens.items()))
 
+# ---- 9. the still becomes the player --------------------------------------
+# the same reduction bin-stamp-assets.py inlines: no comments, lines trimmed
+_vt = re.sub(r'/\*[\s\S]*?\*/', '', (ROOT / 'design-transition.js').read_text())
+_vt = '\n'.join(l for l in (x.strip() for x in _vt.split('\n')) if l and not l.startswith('//'))
+for url, (label, text) in PAGES.items():
+    blocks = re.findall(r'<!-- design-transition\.js, inlined[^>]*-->\s*<script>\n([\s\S]*?)\n</script>\s*<!-- /design-transition\.js -->', text)
+    takes_part = url in ('/', '/about', '/work/') or (label.startswith('work/') and label != 'work/solana.html')
+    if takes_part and len(blocks) != 1:
+        bad(label, f'{len(blocks)} inlined design-transition.js blocks (want exactly one)')
+    if not takes_part and blocks:
+        bad(label, 'carries design-transition.js but is not one of the pages that take part')
+    for b in blocks:
+        if b != _vt:
+            bad(label, 'its inlined design-transition.js is not the current file (run bin-stamp-assets.py, then bin-build-work-pages.py)')
+if not re.search(r'@media \(prefers-reduced-motion: reduce\)\s*\{\s*@view-transition\s*\{\s*navigation:\s*none;\s*\}', (ROOT / 'styles.css').read_text()):
+    bad('styles.css', 'reduced motion no longer turns page transitions off (@view-transition { navigation: none; })')
+
 # ---------------------------------------------------------------------------
 if problems:
     print(f'bin-check: {len(problems)} problem(s) — do not deploy:', file=sys.stderr)
@@ -322,4 +343,4 @@ if problems:
         print(f'  … and {len(problems) - 120} more', file=sys.stderr)
     sys.exit(1)
 print(f'check: clean ({len(PAGES)} pages incl. one rendered reel; {N} films, {H} on the front page; '
-      f'{len(defined)} JSON-LD @ids; one ?v= ({next(iter(vers))}); one beacon per page)')
+      f'{len(defined)} JSON-LD @ids; one ?v= ({next(iter(vers))}); one beacon per page; the transition inlined where it belongs)')

@@ -21,6 +21,12 @@ can go stale behind an immutable header:
                              stamps the reel pages, bin-build-work-pages.py
                              the film pages)
 
+It also inlines design-transition.js (the still becomes the player) into the
+<head> of every page here that carries its markers: its pagereveal listener
+has to exist before the first frame, before any deferred script has run.
+bin-build-work-pages.py copies the same block from index.html onto /work/ and
+the film pages. Edit design-transition.js, never the inlined copy.
+
 Fonts and favicons are excluded by design — see the note at EXCLUDE.
 Run this after touching anything under assets/, refinement.css or motion.js.
 """
@@ -34,6 +40,19 @@ SHEETS = ("styles.css",)
 # and the @font-face src has to stay byte-identical to the preload href or the
 # file downloads twice.
 EXCLUDE = re.compile(r'^/?assets/(favicon|fonts|apple-touch-icon)')
+
+VT_OPEN = '<!-- design-transition.js, inlined by bin-stamp-assets.py: edit that file, not this -->'
+VT_CLOSE = '<!-- /design-transition.js -->'
+
+def transition_block():
+    """design-transition.js as an inline <script>, without its comments."""
+    src = open('design-transition.js').read()
+    src = re.sub(r'/\*[\s\S]*?\*/', '', src)
+    lines = [l.strip() for l in src.split('\n')]
+    code = '\n'.join(l for l in lines if l and not l.startswith('//'))
+    if '</' in code or '<!--' in code:
+        sys.exit('design-transition.js: cannot be inlined as it stands')
+    return f'{VT_OPEN}\n<script>\n{code}\n</script>\n{VT_CLOSE}'
 
 def digest(path):
     return hashlib.md5(open(path, 'rb').read()).hexdigest()[:8]
@@ -103,6 +122,13 @@ def process(text, missing):
         return new
 
     text = re.sub(r'(?<![\w/.-])(refinement\.css|motion\.js|design-[a-z]+\.(?:css|js))\?v=[a-f0-9]+', own, text)
+
+    if VT_OPEN in text:
+        block = transition_block()
+        new = re.sub(re.escape(VT_OPEN) + r'[\s\S]*?' + re.escape(VT_CLOSE), lambda m: block, text, count=1)
+        if new != text:
+            n += 1
+        text = new
     return text, n
 
 total, allmissing = 0, []

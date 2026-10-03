@@ -19,6 +19,7 @@ python3 -m http.server 4321
 | `styles.css` | Single stylesheet; palette lives in `:root` |
 | `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, the shortlist (the tray, its link and "Brief with these films") and the brief dialog |
 | `design-*.css` / `design-*.js` | One design layer per area: `hover` (home films and /reel/), `filmpages` (/work/ and the film pages), `about`, `compositions` (the home services) and `ending` (the end credits of the home page and of /work/). Stamped with their own md5 and served immutable |
+| `design-transition.js` | Changing pages: the still you clicked grows into the film page's player (cross-document view transitions; the CSS is the "page-to-page" block in `styles.css`, the room light's cue `.vt-film` in `design-filmpages.css`). Never linked: `pagereveal` fires before any deferred script runs, so `bin-stamp-assets.py` inlines it into the head of `/` and `/about` (between its two markers) and `bin-build-work-pages.py` copies that block onto `/work/` and every film page. Edit the file, never an inlined copy. Browsers without cross-document view transitions, and reduced motion, just navigate |
 | `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes (vertical films: `-768w` in place of `-768`). A vertical film may also have `<id>-card.jpg` (+ `-480`/`-768`, 16:9, cut from the same frame), which the `/work/` wall shows in place of a 9:16 poster cut down to its 16:9 cards (DP World at SailGP). `1083313331-2560.*` is offered only by the front page's full-row scope tile; the builders never pass anything wider than 1280w to the film pages, the About board or the reel |
 | `assets/published/` | His photographs as others published them, hand-placed (About's one print: the ICC's Khartoum meeting, Aug 2022). Master plus `-480`/`-768` JPEG and `-480`/`-768`/full-width WebP; a changed picture gets a new name. Only officials or places: never survivors, witnesses or children |
 | `functions/brief/[[kind]].js` | `/brief` and `/brief/<kind>`: a link that opens the brief. 302s to `/?brief=<kind>&film=<slug>&via=<where>`, each value checked against a fixed list (kind: brand, events, documentary, post; film: `functions/_lib/films.js`; via: ig, li, wa, x, sig, ai, qr) and dropped if it is not on it. main.js opens the dialog on arrival (also for `#brief`) and puts the address back without them; `via` travels in the brief's "came from" value (`film_seen`), so the database and the Briefs sheet are unchanged |
@@ -91,7 +92,9 @@ film page without its `VideoObject` (`/work/<slug>#film`); a `work/*.html` missi
 `sitemap.xml` or `llms.txt`; a film count in words or digits ("One of thirty-four films") that
 is not the number of films, of the front page's or of the rest; a broken internal `href`/`src`/
 `srcset` or `#fragment`; an `og:image` that is not a file here; `styles.css` and `main.js` on
-more than one `?v=`; a page without exactly one Cloudflare Web Analytics beacon. It also runs `bin-check-claims.py`, which fails if "directed by", a
+more than one `?v=`; a page without exactly one Cloudflare Web Analytics beacon; `/`, `/about`,
+`/work/` or a film page without exactly one inlined `design-transition.js` as the file now stands,
+or `styles.css` no longer turning page transitions off under reduced motion. It also runs `bin-check-claims.py`, which fails if "directed by", a
 JSON-LD `"director"`, the old "Directed, shot and edited" line, an `fp-credit` line or a
 `data-role` attribute appears in any served `.html`, `llms.txt` or `functions/`. Every page is
 read as it is served, and one `/reel/<code>` page is rendered through the real Function in Node.

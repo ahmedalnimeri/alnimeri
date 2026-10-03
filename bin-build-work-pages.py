@@ -49,6 +49,13 @@ BEACON = re.search(r'<!-- Cloudflare Web Analytics -->[\s\S]*?<!-- End Cloudflar
 if not BEACON or BEACON.group(0).count('beacon.min.js') != 1:
     sys.exit('index.html: no single Cloudflare Web Analytics beacon to copy')
 BEACON = BEACON.group(0)
+# The still becomes the player: design-transition.js, inlined into the front
+# page's <head> by bin-stamp-assets.py, carried the same way onto /work/ and
+# every film page (its pagereveal listener must exist before the first frame).
+VT = re.search(r'<!-- design-transition\.js, inlined[\s\S]*?<!-- /design-transition\.js -->', SRC)
+if not VT or '<script>' not in VT.group(0):
+    sys.exit('index.html: no inlined design-transition.js to copy (run bin-stamp-assets.py)')
+VT = VT.group(0)
 
 def field(block, pat, default=''):
     m = re.search(pat, block)
@@ -225,6 +232,7 @@ HEAD = '''<!doctype html>
 <link rel="stylesheet" href="/styles.css?v={ver}">
 <link rel="stylesheet" href="/design-filmpages.css?v={dver}">
 <script type="application/ld+json">{schema}</script>
+''' + VT.replace('{', '{{').replace('}', '}}') + '''
 </head>
 <body>
 <a class="skip" href="#film">{skip}</a>
