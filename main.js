@@ -3,7 +3,7 @@
 // ---- What visitors do (/api/e) ---------------------------------------------
 // One small beacon per thing done, never per page view (the visit log has
 // those): Play pressed on a film, the brief opened, sent or not, a view count
-// followed to the post it came from, a shortlist's link copied or shared, the
+// followed to the post it came from, a reel link copied or shared, the
 // CV downloaded. What is sent is the event, the film (a film page's slug) and
 // the page; no id and no cookie, and functions/api/e.js keeps no IP. A beacon
 // outlives the page, which a click on an outbound link leaves at once.
@@ -373,9 +373,9 @@
       '<p class="lb__outhead">That was the reel.</p>' +
       '<p class="lb__outsub">I tell stories through visuals.</p>' +
       '<div class="lb__outacts">' +
-        '<a class="btn btn--solid" href="/#contact">Send the brief</a>' +
-        '<button type="button" class="btn btn--ghost" data-again>Run it again</button>' +
-        '<button type="button" class="btn btn--ghost" data-back>Back to the deck</button>' +
+        '<a class="btn btn--solid" href="/#contact">Get in touch</a>' +
+        '<button type="button" class="btn btn--ghost" data-again>Play again</button>' +
+        '<button type="button" class="btn btn--ghost" data-back>Back to the films</button>' +
       '</div>';
     frame.appendChild(out);
     caption.textContent = '';
@@ -472,7 +472,7 @@
     startRun(null);
   });
 
-  // The end card's "Send the brief" opens the brief (its window listener is
+  // The end card's "Get in touch" opens the brief (its window listener is
   // registered later, so this one runs first): the player closes under it.
   window.addEventListener('click', function (e) {
     if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey &&
@@ -493,7 +493,7 @@
     var trt = 0;
     list.forEach(function (c) { trt += c.secs; });
     var isCut = document.body.classList.contains('is-reel');
-    var label = isCut ? 'Play them' : 'Run the reel';
+    var label = isCut ? 'Play them' : 'Play the reel';
 
     var grid = document.querySelector('.grid');
     var slate = grid && grid.closest('section') && grid.closest('section').querySelector('.slate');
@@ -660,7 +660,7 @@
     hero.classList.add('is-lit');
   }
 
-  /* The hero parallax is gone. It was a faked dolly move — this director
+  /* The hero parallax is gone. It was a faked dolly move — this site
      cuts — and once the mattes went in it broke them: translating the
      footage layer slid the frame's bottom edge out of the gate and painted
      the poster over the black matte. The picture stays in its frame; the
@@ -727,16 +727,16 @@
     // not on /work/ and the film pages: a wall and its ending (or one film)
     // are not a sequence of chapters
     if (document.querySelector('main > .fp')) return;
-    var secs = [].slice.call(document.querySelectorAll('main > section[id]'))
-                 .filter(function (s) { return s.id !== 'top'; });
-    if (secs.length < 2) return;
-
     // Read the label off the section's own heading rather than a hardcoded
-    // map, so adding a section never leaves a raw id in the HUD.
+    // map, so adding a section never leaves a raw id in the HUD. A section
+    // with no heading (the figures under the hero) gets no clip of its own.
     var labelFor = function (s) {
       var h = s.querySelector('.section__title, h2');
-      return (h && h.textContent.trim()) || s.id;
+      return h ? h.textContent.trim() : '';
     };
+    var secs = [].slice.call(document.querySelectorAll('main > section[id]'))
+                 .filter(function (s) { return s.id !== 'top' && labelFor(s); });
+    if (secs.length < 2) return;
 
     var bar = document.createElement('div');
     bar.className = 'tl';
@@ -1024,13 +1024,13 @@
 })();
 
 
-// ---- The shortlist ---------------------------------------------------------
-// The viewer shortlists tiles. The tray at the foot of the screen keeps count,
+// ---- Make a reel -----------------------------------------------------------
+// The viewer selects tiles. The tray at the foot of the screen keeps count,
 // plays them, opens the brief with them, and mints a link that names them:
 // one character per film, in the order they chose. Each tile carries its own character (data-key, written
 // by bin-build-reel.py and never given to another film), so a link someone
 // sent keeps naming the same films however the grid is re-hung.
-// /reel/<code> renders that shortlist, with its running time. Nothing about the
+// /reel/<code> renders that reel, with its running time. Nothing about the
 // viewer travels with the link; the selection lives in localStorage until
 // they clear it.
 (function () {
@@ -1068,7 +1068,7 @@
     var meta = t.querySelector('.tile__meta'); if (!meta) return;
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'tile__mark';
-    b.setAttribute('aria-label', 'Add ' + nameOf(t) + ' to your shortlist');
+    b.setAttribute('aria-label', 'Add ' + nameOf(t) + ' to your reel');
     b.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
       var k = keys[i], at = sel.indexOf(k);
@@ -1081,31 +1081,30 @@
   // The tray.
   var bin = document.createElement('div');
   bin.className = 'bin'; bin.setAttribute('role', 'status'); bin.setAttribute('aria-live', 'polite');
-  bin.innerHTML = '<span class="bin__word">Shortlist</span><span class="bin__sep bin__word">·</span>' +
-    '<span><b data-n>0</b> selected</span>' +
-    '<button type="button" class="bin__clear" aria-label="Clear the shortlist">Clear</button>' +
+  bin.innerHTML = '<span><b data-n>0</b> selected</span>' +
+    '<button type="button" class="bin__clear" aria-label="Clear the selection">Clear</button>' +
     '<span class="bin__break" aria-hidden="true"></span>' +
-    '<button type="button" class="btn btn--ghost bin__screen">Play them</button>' +
-    '<button type="button" class="btn btn--solid bin__pull">Share the shortlist →</button>';
+    '<button type="button" class="btn btn--ghost bin__screen">Play</button>' +
+    '<button type="button" class="btn btn--solid bin__pull">Make a reel →</button>';
   document.body.appendChild(bin);
 
   // The sheet.
   var sheet = document.createElement('div');
   sheet.className = 'sheet'; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true');
-  sheet.setAttribute('aria-label', 'Your shortlist'); sheet.setAttribute('aria-hidden', 'true');
+  sheet.setAttribute('aria-label', 'Your reel'); sheet.setAttribute('aria-hidden', 'true');
   sheet.innerHTML = '<div class="sheet__card">' +
     '<button type="button" class="sheet__close" aria-label="Close">✕</button>' +
-    '<p class="sheet__slate">Shortlist <b data-code></b> · <b data-n></b> films</p>' +
-    '<p class="sheet__title">Your shortlist, as a link.</p>' +
+    '<p class="sheet__slate">Reel <b data-code></b> · <b data-n></b> films</p>' +
+    '<p class="sheet__title">Your reel, as a link.</p>' +
     '<ol class="sheet__list" data-list></ol>' +
     '<code class="sheet__url" data-url></code>' +
     '<div class="sheet__acts">' +
       '<button type="button" class="btn btn--solid" data-act="share">Send it</button>' +
       '<button type="button" class="btn btn--ghost" data-act="copy">Copy link</button>' +
-      '<a class="btn btn--ghost" data-act="open" href="#">Open the link</a>' +
-      '<button type="button" class="btn btn--ghost" data-act="brief">Brief with these films</button>' +
+      '<a class="btn btn--ghost" data-act="open" href="#">Open the reel</a>' +
+      '<button type="button" class="btn btn--ghost" data-act="brief">Get in touch</button>' +
     '</div>' +
-    '<p class="sheet__note">Anyone with the link sees these films, in this order. The link carries the films and nothing about you.</p>' +
+    '<p class="sheet__note">Anyone with the link sees these films, in this order. The link carries the reel and nothing about you.</p>' +
     '</div>';
   document.body.appendChild(sheet);
 
@@ -1117,7 +1116,7 @@
       var at = sel.indexOf(keys[i]), b = t.querySelector('.tile__mark');
       t.classList.toggle('is-selected', at > -1);
       if (b) {
-        b.innerHTML = at > -1 ? 'Selected <b>' + (at + 1) + '</b>' : '+ Shortlist';
+        b.innerHTML = at > -1 ? 'Selected <b>' + (at + 1) + '</b>' : '+ Select';
         b.setAttribute('aria-pressed', at > -1 ? 'true' : 'false');
       }
     });
@@ -1126,12 +1125,12 @@
     lift();
     if (!sel.length) closeSheet();
     // An empty tray is invisible (opacity 0), so it leaves the Tab order and
-    // the accessibility tree too: Enter on its hidden "Play them" ran the reel.
+    // the accessibility tree too: Enter on its hidden "Play" ran the reel.
     bin.inert = !sel.length;
   }
 
   // The sheet is aria-modal: while it is up the page behind is inert, and
-  // closing it puts focus back where it was ("Share the shortlist →").
+  // closing it puts focus back where it was ("Make a reel →").
   var sheetFrom = null;
   function sealSheet() {
     var keep = [sheet, document.querySelector('.cut')];
@@ -1191,7 +1190,7 @@
   }
 
   bin.querySelector('.bin__pull').addEventListener('click', openSheet);
-  // Play the shortlist before sending it: the projector takes DOM indices.
+  // Play the selection before sending it: the projector takes DOM indices.
   bin.querySelector('.bin__screen').addEventListener('click', function () {
     document.dispatchEvent(new CustomEvent('reel:run', {
       detail: { order: sel.map(function (k) { return keys.indexOf(k); }) } }));
@@ -1290,7 +1289,7 @@
   d.innerHTML =
     '<form class="brief__form" novalidate>' +
       '<button class="brief__close" type="button" aria-label="Close">×</button>' +
-      '<p class="brief__eyebrow" id="brief-title">Send the brief<span class="brief__films" hidden></span></p>' +
+      '<p class="brief__eyebrow" id="brief-title">Get in touch<span class="brief__films" hidden></span></p>' +
       '<p class="brief__sentence">' +
         'Hi Ahmed, I’m <input name="name" maxlength="120" placeholder="your name" aria-label="Your name" autocomplete="name" required> ' +
         'from <span class="brief__tie"><input name="org" maxlength="160" placeholder="your company" aria-label="Company or organisation" autocomplete="organization">.</span> ' +
@@ -1316,7 +1315,7 @@
         '<button class="btn btn--solid" type="submit">Send to Ahmed <span aria-hidden="true">↗</span></button>' +
         '<button class="brief__copy" type="button">Copy the message</button>' +
       '</div>' +
-      '<p class="brief__note">It comes straight to me. I answer my own email.</p>' +
+      '<p class="brief__note">It comes straight to me.</p>' +
     '</form>';
   document.body.appendChild(d);
 
@@ -1341,8 +1340,8 @@
     delete f.dataset.payload; delete f.dataset.mailto; delete f.dataset.delivered;
   };
   var about = '';   // a film named by the page the visitor came from
-  // the films it is about, said quietly beside "Send the brief": a film page's
-  // own film, or the visitor's shortlist
+  // the films it is about, said quietly beside "Get in touch": a film page's
+  // own film, or the films the visitor selected
   var films = d.querySelector('.brief__films');
   var via = '';     // where a /brief link was shared (?via=), for the "came from" column
   var viaCode = ''; // and its short code (ig, li…), for the event log
@@ -1477,7 +1476,7 @@
       result.appendChild(document.createTextNode('.'));
       line.hidden = true; result.hidden = false;
       copyBtn.hidden = true;
-      note.textContent = 'I answer my own email, usually the same day.';
+      note.textContent = '';
     };
     var beat = setTimeout(thank, 1200);
 
@@ -1538,10 +1537,10 @@
     var a = e.target.closest && e.target.closest('a');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var href = a.getAttribute('href') || '';
-    // (a shared shortlist's "Brief with these films" names its films and their kind)
+    // (a shared reel page's contact link names its films and their kind)
     if (href === '#contact' || href === '/#contact') {
       e.preventDefault(); e.stopPropagation();
-      // (a pulled reel's "Brief with these films" is about the films on that page)
+      // (a shared reel page's contact button is about the films on that page)
       var listed = a.hasAttribute('data-films') ? [].map.call(document.querySelectorAll('.tile__link[data-title]'),
         function (l) { return l.getAttribute('data-title'); }) : [];
       open(a.getAttribute('data-kind') || '', a.getAttribute('data-films') || '', listed); return;
@@ -1557,7 +1556,7 @@
     }
   }, true);
 
-  // the shortlist's "Brief with these films" (the tray is its own module)
+  // the reel sheet's "Get in touch", with the selected films (the tray is its own module)
   document.addEventListener('brief:open', function (e) {
     var o = e.detail || {};
     open(o.kind || '', o.film || '', o.films || []);

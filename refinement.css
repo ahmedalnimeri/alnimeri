@@ -25,13 +25,11 @@
   .hero__feature:focus-visible { outline: 3px solid #fff; outline-offset: 5px; }
   .marquee { padding-top: 24px; padding-bottom: 24px; border-block: 1px solid var(--line-soft); }
   #numbers { padding-top: 36px; padding-bottom: 36px; }
-  #numbers .slate { display: none; }
   #numbers .stats b { font-size: clamp(28px, 3.2vw, 48px); }
   #numbers .stats span { font-size: 11px; }
   #work { padding-top: 35px; }
   #work .slate { margin-bottom: 18px; flex-wrap: wrap; }
   #work .slate__title { font-size: clamp(28px, 3.4vw, 44px); }
-  .work__intro { max-width: 1320px; margin: 0 auto 32px; color: var(--fg-dim); font-size: 13px; }
   #work .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 24px; }
   #work .tile--wide { grid-column: auto; }
   #work .tile--tall { grid-row: auto; }
@@ -58,9 +56,7 @@
 
 /* Commission paths and an easier first enquiry. */
 .commission { max-width: 1496px; margin: 0 auto; padding: 30px var(--gut) 55px; }
-.commission__heading > p { font: 10px var(--mono); letter-spacing: .14em; color: var(--fg-dim); }
 .commission__heading h2 { font-size: clamp(28px, 3.5vw, 44px); line-height: 1.2; letter-spacing: -.04em; margin: 12px 0; }
-.commission__heading > span { color: var(--fg-dim); font-size: 14px; }
 .commission__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 24px; margin-top: 30px; }
 .commission__card { border-top: 1px solid var(--line); padding: 22px 0 0; display: flex; flex-direction: column; }
 .commission__number { font: 11px var(--mono); color: var(--fg-dim); }
@@ -72,13 +68,9 @@
 .commission__card a:hover { text-decoration: underline; text-underline-offset: 4px; }
 @media(max-width:760px) { .commission__grid { grid-template-columns: 1fr; gap: 18px; } .commission { padding-bottom: 30px; } }
 
-/* Searchable project information, available without JavaScript. */
+/* Film names are links to their pages. */
 .tile__name a { color: inherit; text-decoration: none; }
 .tile__name a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.project-questions details { border-bottom: 1px solid var(--line); padding: 20px 0; }
-.project-questions summary { cursor: pointer; font-size: 16px; line-height: 1.5; }
-.project-questions details p { max-width: 780px; color: var(--fg-dim); font-size: 14px; line-height: 1.8; margin-top: 16px; }
-.project-questions a { color: var(--fg); text-underline-offset: 3px; }
 
 /* Each commission path leads to the proof: that whole group on /work/. */
 .commission__group { display: block; margin-top: 12px; font-size: 12px; color: var(--fg-dim); }
@@ -104,9 +96,7 @@
 .commission { max-width: none; padding-block: clamp(92px, 13vh, 150px); }
 .commission__heading, .commission__grid { max-width: 1320px; margin-inline: auto; }
 .commission__heading { text-align: center; }
-.commission__heading > p { display: none; }
 .commission__heading h2 { font-size: clamp(36px, 5vw, 66px); letter-spacing: -.042em; }
-.commission__heading > span { font-size: 17px; color: var(--fg-dim); }
 .commission__grid { gap: 40px 34px; margin-top: 54px; }
 .commission__number { display: none; }
 
@@ -120,7 +110,6 @@
 .slate::before { display: none; }
 .slate__title { font-size: clamp(36px, 5vw, 66px); letter-spacing: -.042em; }
 .slate__run { position: static; order: 3; flex: 0 0 100%; width: fit-content; margin: 18px auto 0; justify-content: center; }
-.work__intro { text-align: center; margin-inline: auto; font-size: 17px; }
 .contact__head { font-size: clamp(42px, 6vw, 88px); letter-spacing: -.04em; }
 
 /* the light bands run full width and carry their own inner rhythm */
@@ -154,7 +143,6 @@
   display: grid; grid-template-columns: 1fr 1fr; gap: 28px 64px; align-items: start;
   max-width: 1320px; margin: 0 auto clamp(52px, 8vh, 88px);
 }
-.chapter__aside .work__intro { text-align: left; margin: 0; max-width: 32ch; font-size: clamp(19px, 1.7vw, 23px); line-height: 1.45; color: #d0d6e0; }
 .chapter__more { display: inline-block; margin-top: 22px; font-size: 15px; color: var(--fg-dim); text-decoration: none; }
 .chapter__more:hover { color: var(--fg); }
 #about .slate { max-width: 1320px; margin: 0 auto clamp(44px, 7vh, 72px); }
@@ -163,7 +151,6 @@
 .commission { background: var(--bg); }
 .commission__heading { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 64px; align-items: end; text-align: left; }
 .commission__heading h2 { margin: 0; font-size: clamp(36px, 4.2vw, 58px); }
-.commission__heading > span { font-size: clamp(19px, 1.7vw, 23px); line-height: 1.45; color: #d0d6e0; max-width: 32ch; }
 .commission .commission__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 64px; border-top: 1px solid var(--line); }
 .commission .commission__card {
   background: transparent; border: 0; border-left: 1px solid var(--line); border-radius: 0;
@@ -189,6 +176,8 @@
 @media (max-width: 760px) {
   .hero--editorial { padding-top: 130px; }
   .chapter__head, .commission__heading { grid-template-columns: 1fr; }
+  /* stacked under the slate, "All films" needs only the row's own gap */
+  .chapter__aside .chapter__more { margin-top: 0; }
   .commission .commission__grid { grid-template-columns: 1fr; }
   .commission .commission__card { border-left: 0; padding: 26px 0 8px; border-top: 1px solid var(--line); }
   .commission .commission__card:first-child { border-top: 0; }

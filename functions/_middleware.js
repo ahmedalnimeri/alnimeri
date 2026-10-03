@@ -25,13 +25,14 @@ const ASSET = /\.(css|js|mjs|jpg|jpeg|png|svg|ico|webp|avif|gif|woff2?|pdf|xml|t
 const BOT   = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|curl|wget|python-requests|monitor|preview/i;
 
 
-// ---- The Screening Slate -----------------------------------------------
-// The site is an edit sequence, so a visit is a screening. Cloudflare hands
-// every request the visitor's city and timezone; the slate stamps them into
-// the hero like a burn-in, and the contact block sets their clock against
-// Dubai's. Rendered here at the edge so nothing waits on JavaScript; the
-// script only keeps the clocks ticking. Crawlers and visitors Cloudflare
-// cannot place get the page exactly as authored.
+// ---- Local time ------------------------------------------------------------
+// Cloudflare hands every request the visitor's city and timezone. The line
+// under the hero eyebrow names the city and its clock beside Dubai's, and the
+// contact line sets the two clocks side by side. Rendered here at the edge so
+// nothing waits on JavaScript; main.js only keeps the clocks ticking (it reads
+// .screening and its data-tz). No cookie, nothing kept beyond the visit log.
+// Crawlers and visitors Cloudflare cannot place get the page exactly as
+// authored.
 const HTML_PATH = /^\/(about|index\.html)?$/;
 
 function clock(tz) {
@@ -40,113 +41,42 @@ function clock(tz) {
   } catch { return null; }
 }
 
-const GREET = { nl:'Welkom', fr:'Bienvenue', de:'Willkommen', es:'Bienvenido', pt:'Bem-vindo',
-  it:'Benvenuto', tr:'Hoş geldin', sv:'Välkommen', da:'Velkommen', no:'Velkommen', fi:'Tervetuloa',
-  pl:'Witaj', ru:'Добро пожаловать', hi:'स्वागत है', ur:'خوش آمدید', bn:'স্বাগতম', id:'Selamat datang',
-  ms:'Selamat datang', zh:'欢迎', ja:'ようこそ', ko:'환영합니다', fa:'خوش آمدید', sw:'Karibu', am:'እንኳን ደህና መጡ' };
-
-// Where the visitor came in from, and which film to hand them first. Instagram
-// arrivals are used to the vertical screen; X arrivals are here for Solana;
-// anyone from a search box or an assistant is asking "who is this" — About.
-const SOURCES = [
-  [/instagram/i,                 'Instagram', '/work/el-fasher-city',  'El Fasher City — shot for the vertical screen'],
-  [/^(t\.co|x\.com|twitter\.com)$/i, 'X',    '/work/solana-accelerate', 'Solana Accelerate — 1.4M views on X'],
-  [/linkedin|lnkd\.in/i,         'LinkedIn',  '/cv',                   'the CV and the credits'],
-  [/google\.|bing\.|duckduckgo|yandex|baidu/i, 'search', '/about',   'who is behind the work'],
-  [/chatgpt|openai|claude\.ai|anthropic|perplexity|gemini\.google|copilot/i, 'an AI assistant', '/about', 'the record it was reading'],
-  [/vimeo/i,                     'Vimeo',     '/work/',                'the full sequence with its view counts'],
-  [/facebook|fb\./i,             'Facebook',  '/work/al-doroub',       'Al Doroub — the feature documentary'],
-];
-
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371, r = Math.PI / 180;
-  const a = Math.sin((lat2 - lat1) * r / 2) ** 2 +
-            Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin((lon2 - lon1) * r / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
-
-function screening(cf, request) {
+function screening(cf) {
   if (!cf || !cf.city || !cf.timezone) return null;
   const local = clock(cf.timezone), dubai = clock('Asia/Dubai');
   if (!local || !dubai) return null;
-  const h = Number(dubai.slice(0, 2));
   const cc = (cf.country || '').toUpperCase();
   const home = cf.timezone === 'Asia/Dubai';
-  // Follows "…I answer my own email. It is 01:37 here in Dubai." (a visitor in
-  // Dubai) or "It is 01:37 in Dubai, 22:37 in London." (anyone else) — so it
-  // never names the email or the city again, and says "here" only when the
-  // sentence before it has not.
-  const here = home ? '' : ' here';
-  const reply = h >= 9 && h < 20 ? 'I usually reply the same day.'
-              : h >= 20 || h < 1 ? `Late${here} — I’ll reply first thing tomorrow.`
-              : h >= 6           ? `Early${here} — I’ll reply this morning.`
-              : `The middle of the night${here} — I’ll reply in the morning.`;
-
-  // Distance the reel travelled. Dubai, where it was cut.
-  const lat = Number(cf.latitude), lon = Number(cf.longitude);
-  const km = (!home && Number.isFinite(lat) && Number.isFinite(lon))
-    ? Math.round(haversine(25.2048, 55.2708, lat, lon)) : 0;
-
-  // Referrer → source name and a first film to hand them.
-  let source = null, start = null;
-  const refHost = (() => { try { return new URL(request.headers.get('Referer') || '').hostname.replace(/^www\./, ''); } catch { return ''; } })();
-  const refPath = (() => { try { return new URL(request.headers.get('Referer') || '').pathname; } catch { return ''; } })();
-  const internal = /(^|\.)alnimeri\.(com|pages\.dev)$/i.test(refHost) && /^\/(about(\.html)?|index\.html)?$/.test(refPath);
-  if (refHost && !/alnimeri\.com$/i.test(refHost)) {
-    for (const [re, name, href, label] of SOURCES) {
-      if (re.test(refHost)) { source = name; start = { href, label }; break; }
-    }
-  }
-
-  // Browser language → one word of greeting.
-  const lang = (request.headers.get('Accept-Language') || '').split(',')[0].trim().toLowerCase().split('-')[0];
-  const greet = (lang !== 'en' && GREET[lang]) ? GREET[lang] : null;
-
-  // Screening number: one anonymous first-party cookie, a counter and nothing
-  // else. A visit is a screening, not a page view: moving between pages of
-  // this site (the Referer is the site itself) keeps the number it has.
-  const m = /(?:^|;\s*)scr=(\d{1,3})(?:;|$)/.exec(request.headers.get('Cookie') || '');
-  const bumped = !internal || !m;
-  const seen = bumped ? Math.min(999, (m ? Number(m[1]) : 0) + 1) : Number(m[1]);
-
-  return { city: cf.city, cc, tz: cf.timezone, local, dubai, reply, home,
-           km, source, start, greet, lang, seen, bumped };
+  return { city: cf.city, cc, tz: cf.timezone, local, dubai, home };
 }
 
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function personalise(res, sc) {
+  // "{City}, {CC} · {hh:mm} local · Dubai {hh:mm}"; a visitor in Dubai gets
+  // "{City}, {CC} · {hh:mm} local".
   const slate =
-    `<p class="screening" data-tz="${esc(sc.tz)}" aria-label="Screening in ${esc(sc.city)}">` +
-    `<span>Screening${sc.seen > 1 ? ' ' + sc.seen : ''}</span><span class="screening__sep">·</span>` +
+    `<p class="screening" data-tz="${esc(sc.tz)}" aria-label="Local time in ${esc(sc.city)}">` +
     `<span>${esc(sc.city)}${sc.cc ? ', ' + esc(sc.cc) : ''}</span><span class="screening__sep">·</span>` +
     (sc.home
       ? `<span><b data-clock="Asia/Dubai">${sc.dubai}</b> local</span>`
       : `<span><b data-clock="local">${sc.local}</b> local</span><span class="screening__sep">·</span>` +
         `<span>Dubai <b data-clock="Asia/Dubai">${sc.dubai}</b></span>`) +
-    (sc.km ? `<span class="screening__sep">·</span><span><b>${sc.km.toLocaleString('en-GB')}</b> km from Dubai</span>` : '') +
-    (sc.source ? `<span class="screening__sep">·</span><span>via ${esc(sc.source)}</span>` : '') +
-    (sc.seen > 1 ? `<span class="screening__sep">·</span><span>Welcome back</span>` : '') +
-    (sc.greet ? `<span class="screening__sep">·</span><span class="screening__ar" lang="${esc(sc.lang)}">${esc(sc.greet)}</span>` : '') +
     `</p>`;
-  const start = sc.start
-    ? `<p class="hero__start">Came in from ${esc(sc.source)}? <a href="${esc(sc.start.href)}">Start with ${esc(sc.start.label)} &rarr;</a></p>`
-    : '';
+  // Follows "…I answer my own email." with "It is 01:37 here in Dubai." (a
+  // visitor in Dubai) or "It is 01:37 in Dubai, 22:37 in London." (anyone
+  // else). The clock only: no promise of when a reply comes.
   const contact =
     (sc.home
-      ? ` <span class="contact__clock">It is <b data-clock="Asia/Dubai">${sc.dubai}</b> here in Dubai. ${sc.reply}</span>`
+      ? ` <span class="contact__clock">It is <b data-clock="Asia/Dubai">${sc.dubai}</b> here in Dubai.</span>`
       : ` <span class="contact__clock">It is <b data-clock="Asia/Dubai">${sc.dubai}</b> in Dubai, ` +
-        `<b data-clock="local">${sc.local}</b> in ${esc(sc.city)}. ${sc.reply}</span>`);
+        `<b data-clock="local">${sc.local}</b> in ${esc(sc.city)}.</span>`);
 
   const out = new HTMLRewriter()
     .on('html', { element(e) { e.setAttribute('data-screening', 'on'); } })
     .on('p.hero__eyebrow', { element(e) { e.after(slate, { html: true }); } })
     .on('p.contact__sub', { element(e) { e.append(contact, { html: true }); } })
-    .on('div.hero__cta', { element(e) { if (start) e.after(start, { html: true }); } })
     .transform(res);
-  // The counter behind "Screening 3": a number, one year, first-party, nothing
-  // else — and only written when it changed.
-  if (sc.bumped) out.headers.append('Set-Cookie', `scr=${sc.seen}; Max-Age=31536000; Path=/; SameSite=Lax; Secure`);
   // Personalised HTML must not be served to the next visitor from the edge:
   // private keeps it out of every shared cache. no-cache rather than no-store,
   // because no-store also shuts the page out of the back/forward cache, and
@@ -255,7 +185,7 @@ async function serve(context) {
     const ua = request.headers.get('User-Agent') || '';
     if (HTML_PATH.test(url.pathname) && !BOT.test(ua) &&
         (res.headers.get('Content-Type') || '').includes('text/html')) {
-      const sc = screening(request.cf, request);
+      const sc = screening(request.cf);
       if (sc) return personalise(res, sc);
     }
   } catch (err) {

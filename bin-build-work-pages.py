@@ -269,7 +269,7 @@ HOME_COUNT, MORE_COUNT = WORDS.get(len(HOME), str(len(HOME))), len(films) - len(
 CATEGORIES = [
     ('brand',       'Brand &amp; campaign films',      ('Campaign film', 'Brand film', 'Explainer')),
     ('events',      'Event &amp; conference films',    ('Event promo', 'Event film')),
-    ('documentary', 'Documentary &amp; human stories', ('Documentary', 'Feature documentary')),
+    ('documentary', 'Documentary &amp; institutional films', ('Documentary', 'Feature documentary')),
     ('motion',      'Motion, animation &amp; post',    ('Animation', 'Motion graphics', 'Visuals')),
     # last: the wall's last film is hung across its row, and a music video
     # is the picture that carries a row best

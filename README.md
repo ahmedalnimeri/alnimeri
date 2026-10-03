@@ -17,12 +17,12 @@ python3 -m http.server 4321
 |---|---|
 | `index.html` | Everything — markup, meta tags, JSON-LD |
 | `styles.css` | Single stylesheet; palette lives in `:root` |
-| `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, the shortlist (the tray, its link and "Brief with these films") and the brief dialog |
+| `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, "Make a reel" (the tray, its link and the sheet's "Get in touch", which opens the brief with the selected films) and the brief dialog |
 | `design-*.css` / `design-*.js` | One design layer per area: `hover` (home films and /reel/), `filmpages` (/work/ and the film pages), `about`, `compositions` (the home services) and `ending` (the end credits of the home page and of /work/). Stamped with their own md5 and served immutable |
 | `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes (vertical films: `-768w` in place of `-768`). A vertical film may also have `<id>-card.jpg` (+ `-480`/`-768`, 16:9, cut from the same frame), which the `/work/` wall shows in place of a 9:16 poster cut down to its 16:9 cards (DP World at SailGP). `1083313331-2560.*` is offered only by the front page's full-row scope tile; the builders never pass anything wider than 1280w to the film pages, the About board or the reel |
 | `assets/published/` | His photographs as others published them, hand-placed (About's one print: the ICC's Khartoum meeting, Aug 2022). Master plus `-480`/`-768` JPEG and `-480`/`-768`/full-width WebP; a changed picture gets a new name. Only officials or places: never survivors, witnesses or children |
 | `functions/brief/[[kind]].js` | `/brief` and `/brief/<kind>`: a link that opens the brief. 302s to `/?brief=<kind>&film=<slug>&via=<where>`, each value checked against a fixed list (kind: brand, events, documentary, post; film: `functions/_lib/films.js`; via: ig, li, wa, x, sig, ai, qr) and dropped if it is not on it. main.js opens the dialog on arrival (also for `#brief`) and puts the address back without them; `via` travels in the brief's "came from" value (`film_seen`), so the database and the Briefs sheet are unchanged |
-| `functions/api/e.js` | What visitors do, not who they are: `main.js` sends one `navigator.sendBeacon` per Play pressed, brief opened/sent/failed, view count followed to its post, shortlist copied or shared, and CV downloaded (`{t, film, path, via}`). Stored in D1 `events` (`schema.sql`) with the country and nothing else (no IP, no user agent); the site's own pages only (Origin), 1 KB cap, kept 90 days. `/api/e?key=<VISITS_TOKEN>` reads it (`&format=json` for the sheet's Events tab, `docs/apps-script/Sync.gs`) |
+| `functions/api/e.js` | What visitors do, not who they are: `main.js` sends one `navigator.sendBeacon` per Play pressed, brief opened/sent/failed, view count followed to its post, reel link copied or shared (event `shortlist_share`), and CV downloaded (`{t, film, path, via}`). Stored in D1 `events` (`schema.sql`) with the country and nothing else (no IP, no user agent); the site's own pages only (Origin), 1 KB cap, kept 90 days. `/api/e?key=<VISITS_TOKEN>` reads it (`&format=json` for the sheet's Events tab, `docs/apps-script/Sync.gs`) |
 | Cloudflare Web Analytics | One beacon, one token, on every page: hand-placed on `/`, `/about`, `/cv`, `/privacy` and the 404; copied from `index.html` by the builders onto the film pages, `/work/`, `/work/solana` and the `/reel/<code>` template. `bin-check.py` fails on a page with none or two |
 | `assets/reel-keys.json` | Every `/reel/<code>` character ever given, and the film it names (written by `bin-build-reel.py`) |
 
@@ -111,7 +111,7 @@ video with its date, kind and views, each linked to its X post, and a video with
 here linked to that page. Every count and total on it, in the `/work/` lede and on its share
 card (`og-solana-<count>.jpg`, from `bin-build-og.py`) is read from that file.
 
-`bin-build-home-art.py` builds the home page's four compositions ("What are we making?") from the tiles.
+`bin-build-home-art.py` builds the home page's four compositions (under "Commissions") from the tiles.
 
 `bin-build-onset.py` renders About's On Set from `assets/onset.json`: the prints grouped by year, each laid
 out by its `shape`. `grade SRC NAME [GRAVITY]` makes the 1200 and 700 frames.
