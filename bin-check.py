@@ -44,7 +44,7 @@ def bad(where, what):
 # path on disk -> the URL it is served at (Pages strips .html). 404.html is
 # served at whatever path was asked for, so it is read from a deep one: a
 # relative URL in it would break there.
-SKIP_DIRS = {'.git', 'node_modules', 'docs', 'assets', '.claude'}
+SKIP_DIRS = {'.git', 'node_modules', 'docs', 'assets', '.claude', '_og'}   # _og: bin-build-og.py's cards, git-ignored
 NOT_SERVED = {'reel.tpl.html'}            # blocked in the middleware; rendered below
 
 def url_of(rel):

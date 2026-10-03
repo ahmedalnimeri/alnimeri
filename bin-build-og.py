@@ -6,6 +6,12 @@ a clip count that had been wrong since the seventeenth film. A card should
 carry the line, the name and the picture. The film count is still derived from
 index.html rather than typed. Render by screenshotting these through the local
 server, so the cards use the site's own typeface.
+
+The HTML goes to _og/<card>.html (git-ignored, so never committed and never
+deployed; bin-check.py does not read it). Serve the repo root locally, render
+each one at 1200x630 to assets/<card>.jpg as a JPEG, then remove
+_og/. The cards ask for /assets/... by root path, so they must be served from
+the root, not opened as files.
 """
 import re, html, pathlib
 
@@ -69,8 +75,11 @@ h1 span {{ color: #b9b7c4; display: block; }}
 </div></body></html>'''
 
 out = []
+OUT = pathlib.Path('_og')
+OUT.mkdir(exist_ok=True)
 for name, plate, l1, l2, who in CARDS:
-    p = pathlib.Path(f'_{name}.html')
+    p = OUT / f'{name}.html'
     p.write_text(TPL.format(plate=plate, line1=html.escape(l1), line2=html.escape(l2), who=who))
     out.append(str(p))
-print(f'{len(out)} share cards written for rendering ({N} clips, TRT {TRT}): ' + ', '.join(out))
+print(f'{len(out)} share cards written for rendering ({N} clips, TRT {TRT}): ' + ', '.join(out)
+      + ' (render each to assets/<card>.jpg at 1200x630, then rm -r _og)')

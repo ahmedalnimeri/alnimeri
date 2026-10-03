@@ -34,7 +34,7 @@ anywhere; it reads the repo it sits in.
 import ast, html, re, shutil, subprocess, sys, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent
-SKIP = {'.git', 'node_modules', 'docs', '.claude'}
+SKIP = {'.git', 'node_modules', 'docs', '.claude', '_og'}   # _og: git-ignored; its words are read from bin-build-og.py
 
 # the claim itself, in any text a person or a machine reads
 CLAIM = re.compile(r'directed by|\\?"director\\?"', re.I)

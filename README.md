@@ -85,6 +85,14 @@ python3 bin-build-cv-pdf.py && python3 bin-build-home-art.py && python3 bin-stam
   && python3 bin-build-reel.py && python3 bin-stamp-assets.py && python3 bin-check.py
 ```
 
+When a share card's words, picture or count change, re-render the cards apart from the chain:
+
+```sh
+python3 bin-build-og.py   # writes _og/<card>.html (git-ignored, never deployed)
+# serve the repo root locally; screenshot each _og/<card>.html at 1200x630 to assets/<card>.jpg
+rm -r _og
+```
+
 `bin-check.py` runs last, before every deploy, and changes nothing. It exits non-zero, listing
 every problem, on: JSON-LD that does not parse, an alnimeri.com `@id` no page describes, or a
 film page without its `VideoObject` (`/work/<slug>#film`); a `work/*.html` missing from
@@ -147,7 +155,8 @@ after bumping `styles.css`/`main.js` versions too. Each film keeps its reel char
 (`assets/reel-keys.json`): a new film takes the next character never given, a film that leaves
 retires its own, and the grid can be re-ordered without changing what a sent link means.
 
-`bin-build-og.py` writes the share cards' HTML for rendering at 1200x630; the `/work/` card
+`bin-build-og.py` writes the share cards' HTML to `_og/` for rendering at 1200x630 (`_og/` is
+git-ignored and `bin-check.py` skips it; remove it once the JPGs are rendered); the `/work/` card
 prints the film count, so a new count is rendered to a new file name (`og-work-2.jpg`).
 
 ## Deploying
