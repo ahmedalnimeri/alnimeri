@@ -21,6 +21,9 @@ generated functions/_lib files. Checked:
      past half a million views, which is counted here from the data: every
      film page's published figures and assets/solana-edits.json's rows, one
      film per post (a tracker row with a page here is that page's film).
+     Those two phrases ("N films past half a million", "N films published
+     for Solana") are checked on their own first, so a wrong figure fails
+     even when it equals one of the page counts.
   4. Claims: bin-check-claims.py (no "directed by", no "director" but
      "creative director", no film director or storyteller, no credit line, in
      the pages, data, scripts, share-card text and the CV PDF), run as it is.
@@ -224,6 +227,19 @@ HALF = sum(1 for _n in _figures.values() if _n > 500_000)
 KEPT = [(66, re.compile(r'Solana', re.I)), (HALF, re.compile(r'half a million', re.I))]
 SOURCES = dict((u, (label, visible(t))) for u, (label, t) in PAGES.items())
 SOURCES['llms.txt'] = ('llms.txt', llms)
+# Each of the two stated on its own, first: a wrong figure that happens to
+# equal a count of these pages (14, 20, 34) must not pass as that count.
+_SAID = [(HALF, 'films past half a million views, counted from the data',
+          re.compile(r'(?<![:.\d])\b' + NUM + r'[\s-]+films?[\s-]+past[\s-]+half[\s-]+a[\s-]+million\b', re.I)),
+         (66, 'films published for Solana, the hand-kept fact from the CV',
+          re.compile(r'(?<![:.\d])\b' + NUM + r'[\s-]+(?:published[\s-]+films?|films?[\s-]+published)[\s-]+for[\s-]+Solana\b', re.I))]
+for u, (label, words) in SOURCES.items():
+    for want, what, rx in _SAID:
+        for m in rx.finditer(words):
+            raw = m.group(1).lower()
+            n = int(raw) if raw.isdigit() else WORD[raw]
+            if n != want:
+                bad(label, f'"{m.group(0)}" says {n}; {what}: {want}')
 for u, (label, words) in SOURCES.items():
     if u == '/work/':
         # the wall's own per-kind counts ("Brand & campaign films 15 films") are

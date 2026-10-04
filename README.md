@@ -101,7 +101,9 @@ film page without its `VideoObject` (`/work/<slug>#film`); a `work/*.html` missi
 is not the number of films, of the front page's or of the rest (two counts pass only in their own
 sentence: the 66 published for Solana, a fact from the CV, and the films past half a million
 views, which it counts from the data: every film page's figures and `assets/solana-edits.json`'s
-rows, one film per post, so the home band's number moves with them); a broken internal `href`/`src`/
+rows, one film per post, so the home band's number moves with them; "N films past half a million"
+and "N films published for Solana" are each checked on their own as well, so a wrong figure fails
+even when it equals one of the page counts); a broken internal `href`/`src`/
 `srcset` or `#fragment`; an `og:image` that is not a file here; `styles.css` and `main.js` on
 more than one `?v=`; a page without exactly one Cloudflare Web Analytics beacon; `/`, `/about`,
 `/work/` or a film page without exactly one inlined `design-transition.js` as the file now stands,
