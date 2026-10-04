@@ -11,8 +11,8 @@ new row there moves every number on the page, on /work/ and on its card.
 
 No role word and no "every" in what is published (title, heading, meta, the
 card): roles appear only on /cv (his decision, 3 Oct 2026), and the tracker
-is not the whole of his Solana work (Assets API and Crypto in the UAE have
-pages here and are not in it).
+is not the whole of his Solana work (Assets API has a page here and is not
+in it; Crypto in the UAE is the tracker's "Solana x Kaio").
 
 A video that also has a film page on this site (matched by its X post) is
 named as that page names it and links to it.

@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
   <url>
     <loc>https://alnimeri.com/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-05</lastmod>
   </url>
   <url>
     <loc>https://alnimeri.com/about</loc>
@@ -14,7 +14,7 @@
   </url>
   <url>
     <loc>https://alnimeri.com/work/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-05</lastmod>
   </url>
   <url>
     <loc>https://alnimeri.com/privacy</loc>
@@ -58,7 +58,7 @@
   </url>
   <url>
     <loc>https://alnimeri.com/work/al-eid-shofa</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-05</lastmod>
     <video:video>
       <video:thumbnail_loc>https://alnimeri.com/assets/posters/al-eid-shofa.jpg</video:thumbnail_loc>
       <video:title>Al Eid Shofa</video:title>
@@ -138,11 +138,11 @@
   </url>
   <url>
     <loc>https://alnimeri.com/work/crypto-in-the-uae</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-05</lastmod>
     <video:video>
       <video:thumbnail_loc>https://alnimeri.com/assets/posters/1127131363.jpg</video:thumbnail_loc>
       <video:title>Crypto in the UAE</video:title>
-      <video:description>Crypto in the UAE — Brand film. Running time 1:43.</video:description>
+      <video:description>Crypto in the UAE — Brand film, 2025. 117K views on X. Running time 1:43.</video:description>
       <video:player_loc>https://player.vimeo.com/video/1127131363</video:player_loc>
       <video:duration>103</video:duration>
       <video:publication_date>2025-10-14</video:publication_date>
@@ -322,7 +322,7 @@
   </url>
   <url>
     <loc>https://alnimeri.com/work/solana</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-05</lastmod>
   </url>
   <url>
     <loc>https://alnimeri.com/work/stim</loc>
