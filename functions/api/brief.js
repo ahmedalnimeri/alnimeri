@@ -19,7 +19,7 @@
 
 const ORIGINS = /^https:\/\/(www\.)?alnimeri\.com$|^https:\/\/[a-z0-9-]+\.alnimeri\.pages\.dev$|^http:\/\/localhost(:\d+)?$/;
 const MAX_BODY = 8000;
-const CAP = { name: 120, company: 160, about: 80, for: 300, timing: 120, email: 200, whatsapp: 40, film_seen: 160, message: 2000 };
+const CAP = { name: 120, company: 160, about: 80, for: 300, timing: 120, email: 200, whatsapp: 40, film_seen: 800, message: 2000 };
 
 const TABLE = `CREATE TABLE IF NOT EXISTS briefs (
   id        INTEGER PRIMARY KEY AUTOINCREMENT,

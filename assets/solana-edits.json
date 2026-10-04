@@ -1,5 +1,5 @@
 {
- "_what": "Every Solana video Ahmed edited, from the team's video tracker (the rows he edited; 90 unique videos). Views, likes and reposts are the tracker's own figures, as of September 2026, each for the X post named by account + id. Dates are the tracker's posting dates (each within a day of its X post's UTC timestamp). Rendered at /work/solana by bin-build-solana.py; the /work/ lede and the share card read the count from here too.",
+ "_what": "Solana videos from the team's video tracker (the rows he worked on; 90 unique videos). Not every Solana film on this site is in it. Views, likes and reposts are the tracker's own figures, as of September 2026, each for the X post named by account + id. Dates are the tracker's posting dates (each within a day of its X post's UTC timestamp). Rendered at /work/solana by bin-build-solana.py; the /work/ lede and the share card read the count from here too.",
  "as_of": "2026-09",
  "videos": [
   {

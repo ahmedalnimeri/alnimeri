@@ -620,13 +620,14 @@ for i, f in enumerate(films):
                 f'<figcaption class="said__by">{named(html.escape(q.get("by", "")))}</figcaption></figure>')
         # A long thread (Al Doroub has two dozen) shows its first six and keeps
         # the rest in a native <details>: it opens without JavaScript and does
-        # not animate, and the count on it is the thread's own.
+        # not animate. Its count is the comments it holds back ("Read 18
+        # more"), never "all": the post's own total is printed just above.
         SHOWN = 6
         grid = f'    <div class="reception__grid">{"".join(items[:SHOWN])}</div>\n'
         if len(items) > SHOWN:
             grid += (f'    <details class="reception__more">'
-                     f'<summary><span class="reception__open">Read all {len(items)} comments</span>'
-                     f'<span class="reception__fewer">Show fewer comments</span></summary>'
+                     f'<summary><span class="reception__open">Read {len(items) - SHOWN} more</span>'
+                     f'<span class="reception__fewer">Show fewer</span></summary>'
                      f'<div class="reception__grid">{"".join(items[SHOWN:])}</div></details>\n')
         reception = (f'<section class="reception reveal" aria-labelledby="said-{f["slug"]}">\n'
                      f'    <h2 class="reception__head" id="said-{f["slug"]}">What people said</h2>\n'
@@ -693,8 +694,7 @@ for i, f in enumerate(films):
   <footer class="fp-foot">
     <nav class="fp-nav" aria-label="Films">{''.join(nav)}</nav>
     <p class="fp-note">One of {COUNT} films in the <a href="/work/">selected work</a> of Ahmed El-Nimeri,
-      a film director and Associate Creative Director based in Dubai. Every figure on this site links
-      to the published post it came from.</p>
+      based in Dubai. Every figure on this site links to the published post it came from.</p>
   </footer>
 </section>
 '''
@@ -708,11 +708,12 @@ for i, f in enumerate(films):
     open(f"work/{f['slug']}.html", 'w').write(page)
 
 # ---- the index -----------------------------------------------------------
-# The Solana videos he edited have a list of their own (/work/solana, from
-# assets/solana-edits.json, bin-build-solana.py); the lede points to it with
-# the count read from the same file.
+# The Solana videos in the team's tracker have a list of their own
+# (/work/solana, from assets/solana-edits.json, bin-build-solana.py); the lede
+# points to it with the count read from the same file. No role word here:
+# roles appear only on /cv (his decision, 3 Oct 2026).
 _sol = json.load(open('assets/solana-edits.json'))['videos']
-SOLANA_LINE = (f' The {WORDS.get(len(_sol), len(_sol))} Solana videos I edited are'
+SOLANA_LINE = (f' {str(WORDS.get(len(_sol), len(_sol))).capitalize()} Solana videos are'
                f' <a href="/work/solana">listed with their views</a>.')
 LEDE = (f'The same {COUNT} films as the <a href="/">front page</a>' if not MORE_COUNT else
         f'The {HOME_COUNT} films on the <a href="/">front page</a> and {WORDS.get(MORE_COUNT, MORE_COUNT)} more')

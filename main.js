@@ -35,15 +35,22 @@
     var n = tile && tile.querySelector('.tile__name');
     return (link && link.getAttribute('data-title')) || (n ? n.textContent.trim() : '');
   };
-  // window, capturing: before any module's own handler can stop the click
+  // window, capturing: before any module's own handler can stop the click.
+  // Only the visitor's own clicks count (a keyboard Enter on a link is one
+  // too): an X-only film page passes a click on its picture on to the "Watch
+  // on X" link (design-filmpages.js), and that second, synthetic click would
+  // count the same Play twice.
   window.addEventListener('click', function (e) {
     var tgt = e.target;
-    if (!tgt || !tgt.closest || e.button !== 0) return;
+    if (!e.isTrusted || !tgt || !tgt.closest || e.button !== 0) return;
     var mod = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
-    // a film's tile (front page, a pulled reel): the player here, or its post
+    // a film's tile (front page, a pulled reel): the player here, or its post.
+    // The lightbox's own test, which lets an Alt-click through to the player
+    // (only Cmd, Ctrl and Shift open the post in a new tab).
     var tl = tgt.closest('.tile__link');
     if (tl) {
-      send('play', [nameIn(tl)], tl.hasAttribute('data-video') && !mod && document.querySelector('.lb') ? 'lightbox' : 'post');
+      var toPost = e.metaKey || e.ctrlKey || e.shiftKey;
+      send('play', [nameIn(tl)], tl.hasAttribute('data-video') && !toPost && document.querySelector('.lb') ? 'lightbox' : 'post');
       return;
     }
     // a film page's picture: the still becomes the player, or opens the post

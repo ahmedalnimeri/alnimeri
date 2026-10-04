@@ -55,7 +55,7 @@ const SOURCES = [
   [/google\.|bing\.|duckduckgo|yandex|baidu/i, 'search', '/about',   'who is behind the work'],
   [/chatgpt|openai|claude\.ai|anthropic|perplexity|gemini\.google|copilot/i, 'an AI assistant', '/about', 'the record it was reading'],
   [/vimeo/i,                     'Vimeo',     '/work/',                'the full sequence with its view counts'],
-  [/facebook|fb\./i,             'Facebook',  '/work/al-doroub',       'Al Doroub — the feature documentary'],
+  [/facebook|fb\./i,             'Facebook',  '/work/al-doroub',       'Al Doroub — the documentary'],
 ];
 
 function haversine(lat1, lon1, lat2, lon2) {

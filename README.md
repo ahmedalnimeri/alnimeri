@@ -20,7 +20,7 @@ python3 -m http.server 4321
 | `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, the shortlist (the tray, its link and "Brief with these films") and the brief dialog |
 | `design-*.css` / `design-*.js` | One design layer per area: `hover` (home films and /reel/), `filmpages` (/work/ and the film pages), `about`, `compositions` (the home services) and `ending` (the end credits of the home page and of /work/). Stamped with their own md5 and served immutable |
 | `design-transition.js` | Changing pages: the still you clicked grows into the film page's player (cross-document view transitions; the CSS is the "page-to-page" block in `styles.css`, the room light's cue `.vt-film` in `design-filmpages.css`). Never linked: `pagereveal` fires before any deferred script runs, so `bin-stamp-assets.py` inlines it into the head of `/` and `/about` (between its two markers) and `bin-build-work-pages.py` copies that block onto `/work/` and every film page. Edit the file, never an inlined copy. Browsers without cross-document view transitions, and reduced motion, just navigate |
-| `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes (vertical films: `-768w` in place of `-768`). A vertical film may also have `<id>-card.jpg` (+ `-480`/`-768`, 16:9, cut from the same frame), which the `/work/` wall shows in place of a 9:16 poster cut down to its 16:9 cards (DP World at SailGP). `1083313331-2560.*` is offered only by the front page's full-row scope tile; the builders never pass anything wider than 1280w to the film pages, the About board or the reel |
+| `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes (vertical films: `-768w` in place of `-768`). A vertical film may also have `<id>-card.jpg` (+ `-480`/`-768`, 16:9, cut from the same frame), which the `/work/` wall shows in place of a 9:16 poster cut down to its 16:9 cards (DP World at SailGP). `1083313331-1600.*` and `-2560.*` are offered only by the front page's full-row scope tile (1600 for its 1400px box on a 1x screen, 2560 for 2x); the builders never pass anything wider than 1280w to the film pages, the About board or the reel |
 | `assets/published/` | His photographs as others published them, hand-placed (About's one print: the ICC's Khartoum meeting, Aug 2022). Master plus `-480`/`-768` JPEG and `-480`/`-768`/full-width WebP; a changed picture gets a new name. Only officials or places: never survivors, witnesses or children |
 | `functions/brief/[[kind]].js` | `/brief` and `/brief/<kind>`: a link that opens the brief. 302s to `/?brief=<kind>&film=<slug>&via=<where>`, each value checked against a fixed list (kind: brand, events, documentary, post; film: `functions/_lib/films.js`; via: ig, li, wa, x, sig, ai, qr) and dropped if it is not on it. main.js opens the dialog on arrival (also for `#brief`) and puts the address back without them; `via` travels in the brief's "came from" value (`film_seen`), so the database and the Briefs sheet are unchanged |
 | `functions/api/e.js` | What visitors do, not who they are: `main.js` sends one `navigator.sendBeacon` per Play pressed, brief opened/sent/failed, view count followed to its post, shortlist copied or shared, and CV downloaded (`{t, film, path, via}`). Stored in D1 `events` (`schema.sql`) with the country and nothing else (no IP, no user agent); the site's own pages only (Origin), 1 KB cap, kept 90 days. `/api/e?key=<VISITS_TOKEN>` reads it (`&format=json` for the sheet's Events tab, `docs/apps-script/Sync.gs`) |
@@ -108,11 +108,14 @@ proves it, figure, running time, the page and the post).
 player, seconds, date) read from the same `VideoObject`s; a film with no player here (X only)
 has none.
 
-`bin-build-solana.py` writes `/work/solana`, every Solana video he edited, from
+`bin-build-solana.py` writes `/work/solana`, the Solana videos in the team's tracker, from
 `assets/solana-edits.json` (the team tracker's rows, exported): grouped by year, one line per
 video with its date, kind and views, each linked to its X post, and a video with a film page
 here linked to that page. Every count and total on it, in the `/work/` lede and on its share
-card (`og-solana-<count>.jpg`, from `bin-build-og.py`) is read from that file.
+card (`og-solana-list-<count>.jpg`, from `bin-build-og.py`) is read from that file. No role word
+and no "every" on it: the tracker is not all of his Solana work, and roles live on `/cv`. Totals are
+rounded down (25,974,000 views is 25.9M), like the credits' figures; a video with a film page here
+is that page's own node in the list's JSON-LD (`/work/<slug>#film`), the rest `CreativeWork`s.
 
 `bin-build-home-art.py` builds the home page's four compositions ("What are we making?") from the tiles.
 

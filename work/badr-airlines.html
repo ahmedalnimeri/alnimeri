@@ -16,7 +16,7 @@
 <meta property="og:title" content="Badr Airlines — Ahmed El-Nimeri">
 <meta property="og:description" content="Badr Airlines — Brand film. 164K views on Facebook. Running time 0:59.">
 <meta property="og:url" content="https://alnimeri.com/work/badr-airlines">
-<meta property="og:image" content="https://alnimeri.com/assets/posters/820388538.jpg">
+<meta property="og:image" content="https://alnimeri.com/assets/posters/710475541.jpg">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="720">
 <meta name="twitter:card" content="summary_large_image">
@@ -128,10 +128,12 @@ el = mine && seen(mine) ? mine : list.filter(seen)[0] || null;
 }
 if (!el && f && seen(f)) el = f;
 if (!el) return;
+var o = came.g, n0 = geo(el), same = function (a, b) { return Math.abs(a[2] / a[3] / (b[2] / b[3]) - 1) < 0.02; };
+if (o && o.p && n0.p && !same(o.p, n0.p)) return;
 if (el === f) root.classList.add('vt-film'); else show(el);
 name(el);
-var o = came.g, n = geo(el), fit = null;
-if (o && o.p && n.p && Math.abs(o.p[2] / o.p[3] / (n.p[2] / n.p[3]) - 1) < 0.02) {
+var n = geo(el), fit = null;
+if (o && o.p && n.p && same(o.p, n.p)) {
 var oHere = [0, 0, o.b[2], o.b[3]], nHere = [0, 0, n.b[2], n.b[3]];
 var oThere = carry(oHere, o.p, n.p), nThere = carry(nHere, n.p, o.p);
 var still2 = el !== f;   // back to a still: the player is the page left behind
@@ -188,8 +190,7 @@ vt.finished.then(done, done);
   <footer class="fp-foot">
     <nav class="fp-nav" aria-label="Films"><a class="fp-nav__prev" href="/work/solana-accelerate"><span>Previous</span>Solana Accelerate</a><a class="fp-nav__all" href="/work/">All films</a><a class="fp-nav__next" href="/work/solana-x-all-in"><span>Next</span>Solana x All In</a></nav>
     <p class="fp-note">One of thirty-four films in the <a href="/work/">selected work</a> of Ahmed El-Nimeri,
-      a film director and Associate Creative Director based in Dubai. Every figure on this site links
-      to the published post it came from.</p>
+      based in Dubai. Every figure on this site links to the published post it came from.</p>
   </footer>
 </section>
 </main>

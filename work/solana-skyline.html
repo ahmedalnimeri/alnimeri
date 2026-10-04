@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Solana Skyline — Ahmed El-Nimeri</title>
-<meta name="description" content="Solana Skyline — Visuals, 2025. 487K views on X. Running time 0:41.">
+<meta name="description" content="Solana Skyline — Visuals, 2025. 488K views on X. Running time 0:41.">
 <link rel="canonical" href="https://alnimeri.com/work/solana-skyline">
 <meta name="theme-color" content="#0a0a0c">
 <meta name="color-scheme" content="dark">
@@ -14,18 +14,18 @@
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta property="og:type" content="video.other">
 <meta property="og:title" content="Solana Skyline — Ahmed El-Nimeri">
-<meta property="og:description" content="Solana Skyline — Visuals, 2025. 487K views on X. Running time 0:41.">
+<meta property="og:description" content="Solana Skyline — Visuals, 2025. 488K views on X. Running time 0:41.">
 <meta property="og:url" content="https://alnimeri.com/work/solana-skyline">
 <meta property="og:image" content="https://alnimeri.com/assets/posters/1061799826.jpg">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="720">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Solana Skyline — Ahmed El-Nimeri">
-<meta name="twitter:description" content="Solana Skyline — Visuals, 2025. 487K views on X. Running time 0:41.">
+<meta name="twitter:description" content="Solana Skyline — Visuals, 2025. 488K views on X. Running time 0:41.">
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/poppins-600.woff2" crossorigin>
 <link rel="stylesheet" href="/styles.css?v=104">
 <link rel="stylesheet" href="/design-filmpages.css?v=3e831249">
-<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "VideoObject", "@id": "https://alnimeri.com/work/solana-skyline#film", "name": "Solana Skyline", "description": "Solana Skyline — Visuals, 2025. 487K views on X. Running time 0:41.", "thumbnailUrl": "https://alnimeri.com/assets/posters/1061799826.jpg", "duration": "PT0M41S", "url": "https://alnimeri.com/work/solana-skyline", "embedUrl": "https://player.vimeo.com/video/1061799826", "uploadDate": "2025-03-02", "creator": {"@type": "Person", "name": "Ahmed El-Nimeri", "@id": "https://alnimeri.com/#person"}, "sameAs": "https://x.com/solana/status/1887551426785923267", "interactionStatistic": {"@type": "InteractionCounter", "interactionType": {"@type": "WatchAction"}, "userInteractionCount": 487000}}, {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Ahmed El-Nimeri", "item": "https://alnimeri.com/"}, {"@type": "ListItem", "position": 2, "name": "All films", "item": "https://alnimeri.com/work/"}, {"@type": "ListItem", "position": 3, "name": "Solana Skyline"}]}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "VideoObject", "@id": "https://alnimeri.com/work/solana-skyline#film", "name": "Solana Skyline", "description": "Solana Skyline — Visuals, 2025. 488K views on X. Running time 0:41.", "thumbnailUrl": "https://alnimeri.com/assets/posters/1061799826.jpg", "duration": "PT0M41S", "url": "https://alnimeri.com/work/solana-skyline", "embedUrl": "https://player.vimeo.com/video/1061799826", "uploadDate": "2025-03-02", "creator": {"@type": "Person", "name": "Ahmed El-Nimeri", "@id": "https://alnimeri.com/#person"}, "sameAs": "https://x.com/solana/status/1887551426785923267", "interactionStatistic": {"@type": "InteractionCounter", "interactionType": {"@type": "WatchAction"}, "userInteractionCount": 488000}}, {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Ahmed El-Nimeri", "item": "https://alnimeri.com/"}, {"@type": "ListItem", "position": 2, "name": "All films", "item": "https://alnimeri.com/work/"}, {"@type": "ListItem", "position": 3, "name": "Solana Skyline"}]}]}</script>
 <!-- design-transition.js, inlined by bin-stamp-assets.py: edit that file, not this -->
 <script>
 (function () {
@@ -128,10 +128,12 @@ el = mine && seen(mine) ? mine : list.filter(seen)[0] || null;
 }
 if (!el && f && seen(f)) el = f;
 if (!el) return;
+var o = came.g, n0 = geo(el), same = function (a, b) { return Math.abs(a[2] / a[3] / (b[2] / b[3]) - 1) < 0.02; };
+if (o && o.p && n0.p && !same(o.p, n0.p)) return;
 if (el === f) root.classList.add('vt-film'); else show(el);
 name(el);
-var o = came.g, n = geo(el), fit = null;
-if (o && o.p && n.p && Math.abs(o.p[2] / o.p[3] / (n.p[2] / n.p[3]) - 1) < 0.02) {
+var n = geo(el), fit = null;
+if (o && o.p && n.p && same(o.p, n.p)) {
 var oHere = [0, 0, o.b[2], o.b[3]], nHere = [0, 0, n.b[2], n.b[3]];
 var oThere = carry(oHere, o.p, n.p), nThere = carry(nHere, n.p, o.p);
 var still2 = el !== f;   // back to a still: the player is the page left behind
@@ -169,12 +171,12 @@ vt.finished.then(done, done);
     <header class="fp-head">
       <p class="fp-crumbs"><a href="/work/">All films</a><span aria-hidden="true">/</span><a href="/work/#motion">Motion, animation &amp; post</a></p>
       <h1 class="fp-title">Solana Skyline</h1>
-      <p class="fp-meta"><span>Visuals</span><span>2025</span><span>0:41</span><a href="https://x.com/solana/status/1887551426785923267" target="_blank" rel="noopener">487K views on X <span aria-hidden="true">&#8599;</span></a></p>
+      <p class="fp-meta"><span>Visuals</span><span>2025</span><span>0:41</span><a href="https://x.com/solana/status/1887551426785923267" target="_blank" rel="noopener">488K views on X <span aria-hidden="true">&#8599;</span></a></p>
     </header>
     <div class="fp-stage"><div class="fp-light" aria-hidden="true"><picture><source type="image/webp" srcset="/assets/posters/1061799826-480.webp?h=9f66616d 480w, /assets/posters/1061799826-768.webp?h=96509267 768w, /assets/posters/1061799826-1280.webp?h=1fc2e82c 1280w" sizes="(max-width: 700px) 92vw, (max-width: 1400px) 80vw, 1180px"><img srcset="/assets/posters/1061799826-480.jpg?h=ed06b949 480w, /assets/posters/1061799826-768.jpg?h=41bf4517 768w, /assets/posters/1061799826.jpg?h=624a02e4 1280w" sizes="(max-width: 700px) 92vw, (max-width: 1400px) 80vw, 1180px" src="/assets/posters/1061799826.jpg?h=624a02e4" alt="" width="1280" height="720" loading="eager" decoding="async"></picture></div><div class="fp-frame"><picture><source type="image/webp" srcset="/assets/posters/1061799826-480.webp?h=9f66616d 480w, /assets/posters/1061799826-768.webp?h=96509267 768w, /assets/posters/1061799826-1280.webp?h=1fc2e82c 1280w" sizes="(max-width: 700px) 92vw, (max-width: 1400px) 80vw, 1180px"><img srcset="/assets/posters/1061799826-480.jpg?h=ed06b949 480w, /assets/posters/1061799826-768.jpg?h=41bf4517 768w, /assets/posters/1061799826.jpg?h=624a02e4 1280w" sizes="(max-width: 700px) 92vw, (max-width: 1400px) 80vw, 1180px" src="/assets/posters/1061799826.jpg?h=624a02e4" alt="Still from Solana Skyline" width="1280" height="720" loading="eager" fetchpriority="high" decoding="async"></picture><a class="fp-play" href="https://vimeo.com/1061799826" data-vid="1061799826" data-title="Solana Skyline"><span class="fp-play__icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z"/></svg></span><span class="fp-play__label">Play film</span><span class="fp-play__dur">0:41</span></a></div></div>
   </div>
   
-  <section class="fp-more" aria-labelledby="related-head"><div class="fp-more__head reveal"><h2 id="related-head">More motion, animation &amp; post</h2><a href="/work/#motion">All motion, animation &amp; post <span aria-hidden="true">&#8599;</span></a></div><ol class="fp-hang fp-lights"><li style="--g:1.778" class="fp-card is-peek" data-cat="motion"><a class="reveal" data-delay="0" href="/work/solana-developer-platform"><span class="fp-card__still"><img srcset="/assets/posters/1176863412-480.jpg?h=d9c6968f 480w, /assets/posters/1176863412-768.jpg?h=45757a54 768w, /assets/posters/1176863412.jpg?h=59e4c820 1280w" sizes="(max-width: 700px) 88vw, 520px" src="/assets/posters/1176863412.jpg?h=59e4c820" alt="Still from Solana Developer Platform" width="1280" height="720" loading="eager" decoding="async"></span><span class="fp-card__name">Solana Developer Platform</span><span class="fp-card__meta">Animation · Motion graphics&nbsp;&middot; 2026</span></a></li><li style="--g:1.778" class="fp-card" data-cat="motion"><a class="reveal" data-delay="125" href="/work/assets-api"><span class="fp-card__still"><img srcset="/assets/posters/1200000727-480.jpg?h=34623bcd 480w, /assets/posters/1200000727-768.jpg?h=907343de 768w, /assets/posters/1200000727.jpg?h=61a715b9 1280w" sizes="(max-width: 700px) 88vw, 520px" src="/assets/posters/1200000727.jpg?h=61a715b9" alt="Still from Assets API" width="1280" height="720" loading="lazy" decoding="async"></span><span class="fp-card__name">Assets API</span><span class="fp-card__meta">Animation · Motion graphics&nbsp;&middot; 2026</span></a></li><li style="--g:1.778" class="fp-card" data-cat="motion"><a class="reveal" data-delay="250" href="/work/stim"><span class="fp-card__still"><img srcset="/assets/posters/539945578-480.jpg?h=51fc209a 480w, /assets/posters/539945578-768.jpg?h=d127f4c4 768w, /assets/posters/539945578.jpg?h=35b3ee7f 1280w" sizes="(max-width: 700px) 88vw, 520px" src="/assets/posters/539945578.jpg?h=35b3ee7f" alt="Still from Stim" width="1280" height="720" loading="lazy" decoding="async"></span><span class="fp-card__name">Stim</span><span class="fp-card__meta">TV commercial</span></a></li></ol></section>
+  <section class="fp-more" aria-labelledby="related-head"><div class="fp-more__head reveal"><h2 id="related-head">More motion, animation &amp; post</h2><a href="/work/#motion">All motion, animation &amp; post <span aria-hidden="true">&#8599;</span></a></div><ol class="fp-hang fp-lights"><li style="--g:1.778" class="fp-card is-peek" data-cat="motion"><a class="reveal" data-delay="0" href="/work/solana-developer-platform"><span class="fp-card__still"><img srcset="/assets/posters/1176863412-480.jpg?h=d9c6968f 480w, /assets/posters/1176863412-768.jpg?h=45757a54 768w, /assets/posters/1176863412.jpg?h=59e4c820 1280w" sizes="(max-width: 700px) 88vw, 520px" src="/assets/posters/1176863412.jpg?h=59e4c820" alt="Still from Solana Developer Platform" width="1280" height="720" loading="eager" decoding="async"></span><span class="fp-card__name">Solana Developer Platform</span><span class="fp-card__meta">Animation · Motion graphics&nbsp;&middot; 2026</span></a></li><li style="--g:1.778" class="fp-card" data-cat="motion"><a class="reveal" data-delay="125" href="/work/assets-api"><span class="fp-card__still"><img srcset="/assets/posters/1200000727-480.jpg?h=34623bcd 480w, /assets/posters/1200000727-768.jpg?h=907343de 768w, /assets/posters/1200000727.jpg?h=61a715b9 1280w" sizes="(max-width: 700px) 88vw, 520px" src="/assets/posters/1200000727.jpg?h=61a715b9" alt="Still from Assets API" width="1280" height="720" loading="lazy" decoding="async"></span><span class="fp-card__name">Assets API</span><span class="fp-card__meta">Animation · Motion graphics&nbsp;&middot; 2026</span></a></li><li style="--g:1.778" class="fp-card" data-cat="motion"><a class="reveal" data-delay="250" href="/work/stim"><span class="fp-card__still"><img srcset="/assets/posters/539945578-b-480.jpg?h=9d46f622 480w, /assets/posters/539945578-b-768.jpg?h=5bc1d21a 768w, /assets/posters/539945578-b.jpg?h=c9f70746 1280w" sizes="(max-width: 700px) 88vw, 520px" src="/assets/posters/539945578-b.jpg?h=c9f70746" alt="Still from Stim" width="1280" height="720" loading="lazy" decoding="async"></span><span class="fp-card__name">Stim</span><span class="fp-card__meta">TV commercial</span></a></li></ol></section>
   <section class="fp-close reveal" aria-labelledby="brief-head">
     <div class="fp-light fp-light--end" aria-hidden="true"><picture><source type="image/webp" srcset="/assets/posters/1061799826-480.webp?h=9f66616d 480w, /assets/posters/1061799826-768.webp?h=96509267 768w, /assets/posters/1061799826-1280.webp?h=1fc2e82c 1280w" sizes="(max-width: 700px) 92vw, (max-width: 1400px) 80vw, 1180px"><img srcset="/assets/posters/1061799826-480.jpg?h=ed06b949 480w, /assets/posters/1061799826-768.jpg?h=41bf4517 768w, /assets/posters/1061799826.jpg?h=624a02e4 1280w" sizes="(max-width: 700px) 92vw, (max-width: 1400px) 80vw, 1180px" src="/assets/posters/1061799826.jpg?h=624a02e4" alt="" width="1280" height="720" loading="lazy" decoding="async"></picture></div>
     <h2 id="brief-head">Have a project in mind?</h2>
@@ -184,8 +186,7 @@ vt.finished.then(done, done);
   <footer class="fp-foot">
     <nav class="fp-nav" aria-label="Films"><a class="fp-nav__prev" href="/work/assets-api"><span>Previous</span>Assets API</a><a class="fp-nav__all" href="/work/">All films</a><a class="fp-nav__next" href="/work/bank-of-khartoum"><span>Next</span>Bank of Khartoum</a></nav>
     <p class="fp-note">One of thirty-four films in the <a href="/work/">selected work</a> of Ahmed El-Nimeri,
-      a film director and Associate Creative Director based in Dubai. Every figure on this site links
-      to the published post it came from.</p>
+      based in Dubai. Every figure on this site links to the published post it came from.</p>
   </footer>
 </section>
 </main>

@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Build /work/solana: every Solana video he edited, as one calm list.
+"""Build /work/solana: the Solana videos in the team's tracker, as one calm list.
 
 The wall on /work/ shows the films that have a page of their own; the team's
-tracker knows every Solana video he cut, ninety and counting. This page is
-that tracker, read: grouped by year like a changelog, one line per video
+tracker holds the Solana videos he worked on, ninety and counting. This page
+is that tracker, read: grouped by year like a changelog, one line per video
 (when, what, what kind, and how many people watched it, linked to the post
 the figure was read from). Nothing is typed here: every count, total and
 date comes from assets/solana-edits.json, the tracker rows as exported, so a
 new row there moves every number on the page, on /work/ and on its card.
+
+No role word and no "every" in what is published (title, heading, meta, the
+card): roles appear only on /cv (his decision, 3 Oct 2026), and the tracker
+is not the whole of his Solana work (Assets API and Crypto in the UAE have
+pages here and are not in it).
 
 A video that also has a film page on this site (matched by its X post) is
 named as that page names it and links to it.
@@ -15,7 +20,7 @@ named as that page names it and links to it.
 Writes work/solana.html. Run after bin-build-work-pages.py (it shares that
 page's design layer, stamped the same way) and before bin-build-sitemap.py.
 """
-import re, os, json, html, sys, hashlib, datetime, subprocess
+import re, os, json, html, sys, hashlib, datetime, subprocess, math
 
 SRC = open('index.html').read()
 DATA = json.load(open('assets/solana-edits.json'))
@@ -42,12 +47,22 @@ def words(n):
     return _ONES[n] if n < 20 else _TENS[n // 10] + ('-' + _ONES[n % 10] if n % 10 else '')
 
 def views(n):
-    """The site's own short form: 934K, 1.4M, 26M (bin-build-og.py rounds the
-    card's total the same way)."""
+    """The site's own short form for one video's figure: 934K, 1.4M (the
+    tracker's own label, checked against it below)."""
     if n >= 1e6:
         return f'{n / 1e6:.1f}'.rstrip('0').rstrip('.') + 'M'
     if n >= 1e3:
         return f'{round(n / 1e3)}K'
+    return str(n)
+
+def total(n):
+    """A sum of figures, rounded DOWN so no total is overstated (25,974,000 is
+    25.9M, not 26M), as the credits figures are; bin-build-og.py prints the
+    card's total the same way."""
+    if n >= 1e6:
+        return f'{math.floor(n / 1e5) / 10:.1f}'.rstrip('0').rstrip('.') + 'M'
+    if n >= 1e3:
+        return f'{math.floor(n / 1e3)}K'
     return str(n)
 
 # ---- checks: the file is the record, so it has to be whole ---------------
@@ -128,19 +143,33 @@ for k, (yr, vs) in enumerate(years.items()):
     blocks.append(
         f'<section class="sl-year{"" if k == 0 else " reveal"}" id="y{yr}" aria-labelledby="y{yr}-h">'
         f'<header class="sl-year__head"><h2 id="y{yr}-h">{yr}</h2>'
-        f'<p>{len(vs)} video{"s" if len(vs) != 1 else ""} &middot; {views(yv)} views</p></header>'
+        f'<p>{len(vs)} video{"s" if len(vs) != 1 else ""} &middot; {total(yv)} views</p></header>'
         f'<ol class="sl-list">{"".join(rows)}</ol></section>')
 
-LEDE = (f'{words(N).capitalize()} videos, {views(TOTAL)} views between them, from {SPAN}. '
+LEDE = (f'{words(N).capitalize()} videos, {total(TOTAL)} views between them, from {SPAN}. '
         f'Views as of {AS_OF_TXT}, from the team’s tracker; each figure links to its post on X. '
         f'The {words(ON_SITE)} with a page of their own on this site carry an arrow.')
-DESC = (f'Every Solana video Ahmed El-Nimeri edited: {words(N)} videos, {views(TOTAL)} views on X between them '
-        f'(from the team’s tracker, {AS_OF_TXT}), each linked to its post.')
+DESC = (f'{words(N).capitalize()} Solana videos from the team’s tracker, {total(TOTAL)} views on X between them '
+        f'({AS_OF_TXT}), each linked to its post.')
+HEAD = 'Solana videos, with their views'
 
 URL = 'https://alnimeri.com/work/solana'
+def item_of(v):
+    """A video with a film page here is that page's own node (/work/<slug>#film),
+    so it is one node with one set of figures, however it is reached. The rest
+    are CreativeWorks: a VideoObject needs a thumbnail, and these have none here."""
+    if v['id'] in PAGES:
+        return {"@id": f"https://alnimeri.com/work/{PAGES[v['id']][1]}#film"}
+    return {"@type": "CreativeWork", "name": name_of(v), "url": post_of(v),
+            "datePublished": v['date'],
+            "contributor": {"@id": "https://alnimeri.com/#person"},
+            "interactionStatistic": {"@type": "InteractionCounter",
+                                     "interactionType": {"@type": "WatchAction"},
+                                     "userInteractionCount": v['views']}}
+
 schema = {"@context": "https://schema.org", "@graph": [
     {"@type": "CollectionPage", "@id": URL + "#page", "url": URL,
-     "name": "Every Solana video I edited — Ahmed El-Nimeri",
+     "name": HEAD + " — Ahmed El-Nimeri",
      "description": DESC,
      "isPartOf": {"@id": "https://alnimeri.com/#website"},
      "about": {"@id": "https://alnimeri.com/#person"},
@@ -148,28 +177,22 @@ schema = {"@context": "https://schema.org", "@graph": [
          "@type": "ItemList", "numberOfItems": N,
          "itemListOrder": "https://schema.org/ItemListOrderDescending",
          "itemListElement": [
-             {"@type": "ListItem", "position": i + 1,
-              "item": {"@type": "VideoObject", "name": name_of(v), "url": post_of(v),
-                       "uploadDate": v['date'],
-                       "contributor": {"@id": "https://alnimeri.com/#person"},
-                       "interactionStatistic": {"@type": "InteractionCounter",
-                                                "interactionType": {"@type": "WatchAction"},
-                                                "userInteractionCount": v['views']}}}
+             {"@type": "ListItem", "position": i + 1, "item": item_of(v)}
              for i, v in enumerate(vids)]}},
     {"@type": "BreadcrumbList", "itemListElement": [
         {"@type": "ListItem", "position": 1, "name": "Ahmed El-Nimeri", "item": "https://alnimeri.com/"},
         {"@type": "ListItem", "position": 2, "name": "All films", "item": "https://alnimeri.com/work/"},
-        {"@type": "ListItem", "position": 3, "name": "Every Solana video I edited"}]}]}
+        {"@type": "ListItem", "position": 3, "name": "Solana videos"}]}]}
 
 # the share card prints the count and the total (bin-build-og.py); a new
-# count is a new file name
-OG = f'assets/og-solana-{N}.jpg'
+# count, or new words on it, is a new file name (assets/ is cached for good)
+OG = f'assets/og-solana-list-{N}.jpg'
 if not os.path.exists(OG):
     sys.exit(f'{OG} is missing: render bin-build-og.py\'s card for {N} videos first')
 _o = subprocess.run(['sips', '-g', 'pixelWidth', '-g', 'pixelHeight', OG], capture_output=True, text=True).stdout
 OGW, OGH = re.search(r'pixelWidth: (\d+)', _o).group(1), re.search(r'pixelHeight: (\d+)', _o).group(1)
 
-T = 'Every Solana video I edited — Ahmed El-Nimeri'
+T = HEAD + ' — Ahmed El-Nimeri'
 D = html.escape(DESC, quote=True)
 page = f'''<!doctype html>
 <html lang="en" class="no-js" data-theme="dark">
@@ -215,10 +238,15 @@ page = f'''<!doctype html>
 <section class="fp sl" id="film">
   <header class="fp-head">
     <p class="fp-crumbs"><a href="/work/">All films</a><span aria-hidden="true">/</span><span>Solana</span></p>
-    <h1 class="fp-title">Every Solana video I edited</h1>
+    <h1 class="fp-title">{HEAD}</h1>
     <p class="fp-lede">{LEDE}</p>
   </header>
   <div class="sl-years">{"".join(blocks)}</div>
+  <section class="fp-close reveal" aria-labelledby="brief-head">
+    <h2 id="brief-head">Have a project in mind?</h2>
+    <p>Tell me what you’re making and when you need it. A few lines are enough.</p>
+    <a class="btn btn--solid" href="/#contact" data-kind="brand">Send the brief <span aria-hidden="true">↗</span></a>
+  </section>
   <footer class="fp-foot sl-foot">
     <nav class="fp-nav" aria-label="Films"><a class="fp-nav__all" href="/work/">All films</a></nav>
     <p class="fp-note">Every figure on this site links to the published post it came from.</p>
@@ -232,4 +260,4 @@ page = f'''<!doctype html>
 </html>
 '''
 open('work/solana.html', 'w').write(page)
-print(f'work/solana.html: {N} videos, {views(TOTAL)} views, {len(years)} years ({", ".join(f"{y}: {len(v)}" for y, v in years.items())}), {ON_SITE} with a film page')
+print(f'work/solana.html: {N} videos, {total(TOTAL)} views, {len(years)} years ({", ".join(f"{y}: {len(v)}" for y, v in years.items())}), {ON_SITE} with a film page')

@@ -82,7 +82,8 @@ Film director, video producer and Associate Creative Director at 1000media
 Eleven years of commercial, documentary and institutional film.
 
 Verified record (each film's view count links to its published post on the site):
-- 100M+ views across published work; 66 films delivered for Solana alone
+- 100M+ views across published work; 66 published films delivered for Solana
+  from August 2023 to November 2025
 - 14 films past half a million views; strongest single film 12.8M views
 - Filmed the International Criminal Court's visit to Sudan
 - Broadcast credits with Al Jazeera; clients include the European Union,
@@ -121,7 +122,7 @@ editing can be booked separately. Fees are quoted per project.
 
 - Selected work with verifiable view counts: https://alnimeri.com/
 - All {N} selected film pages: https://alnimeri.com/work/
-- Every Solana video he edited, with views (from the team's tracker): https://alnimeri.com/work/solana
+- Solana videos with their views (from the team's tracker): https://alnimeri.com/work/solana
 - Services and project questions: https://alnimeri.com/#services
 - CV, full credits, published photographs and experience: https://alnimeri.com/cv
 - About, behind the scenes and what audiences say: https://alnimeri.com/about

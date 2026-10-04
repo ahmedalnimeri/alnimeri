@@ -236,10 +236,12 @@ el = mine && seen(mine) ? mine : list.filter(seen)[0] || null;
 }
 if (!el && f && seen(f)) el = f;
 if (!el) return;
+var o = came.g, n0 = geo(el), same = function (a, b) { return Math.abs(a[2] / a[3] / (b[2] / b[3]) - 1) < 0.02; };
+if (o && o.p && n0.p && !same(o.p, n0.p)) return;
 if (el === f) root.classList.add('vt-film'); else show(el);
 name(el);
-var o = came.g, n = geo(el), fit = null;
-if (o && o.p && n.p && Math.abs(o.p[2] / o.p[3] / (n.p[2] / n.p[3]) - 1) < 0.02) {
+var n = geo(el), fit = null;
+if (o && o.p && n.p && same(o.p, n.p)) {
 var oHere = [0, 0, o.b[2], o.b[3]], nHere = [0, 0, n.b[2], n.b[3]];
 var oThere = carry(oHere, o.p, n.p), nThere = carry(nHere, n.p, o.p);
 var still2 = el !== f;   // back to a still: the player is the page left behind
@@ -304,7 +306,7 @@ vt.finished.then(done, done);
           <span class="pin__cap"><span class="pin__t">The Greatest Sudanese Sit-In</span><span class="pin__k">Documentary</span></span>
         </a>
         <a class="pin" href="/work/badr-airlines" aria-label="Badr Airlines — Brand film">
-          <span class="pin__media"><picture><source type="image/webp" srcset="/assets/posters/820388538-480.webp?h=75fd6f3e 480w, /assets/posters/820388538-768.webp?h=7ee0c12c 768w, /assets/posters/820388538-1280.webp?h=d732f0b9 1280w" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px"><img src="/assets/posters/820388538-480.jpg?h=922087e8" srcset="/assets/posters/820388538-480.jpg?h=922087e8 480w, /assets/posters/820388538-768.jpg?h=918e0e74 768w, /assets/posters/820388538.jpg?h=c9567f17 1280w" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px" alt="Still from Badr Airlines" width="480" height="270" loading="lazy" decoding="async"></picture></span>
+          <span class="pin__media"><picture><source type="image/webp" srcset="/assets/posters/710475541-480.webp?h=0a77c209 480w, /assets/posters/710475541-768.webp?h=4b3672a2 768w, /assets/posters/710475541-1280.webp?h=aca5cad3 1280w" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px"><img src="/assets/posters/710475541-480.jpg?h=1935fedf" srcset="/assets/posters/710475541-480.jpg?h=1935fedf 480w, /assets/posters/710475541-768.jpg?h=c6875038 768w, /assets/posters/710475541.jpg?h=f53a7bc1 1280w" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px" alt="Still from Badr Airlines" width="480" height="270" loading="lazy" decoding="async"></picture></span>
           <span class="pin__cap"><span class="pin__t">Badr Airlines</span><span class="pin__k">Brand film</span></span>
         </a>
         <a class="pin pin--tall" href="/work/el-fasher-city" aria-label="El Fasher City — Documentary">
@@ -355,9 +357,9 @@ vt.finished.then(done, done);
           <span class="pin__media"><picture><source type="image/webp" srcset="/assets/posters/1083313331-480.webp?h=8c285a55 480w, /assets/posters/1083313331-768.webp?h=fdd4314b 768w, /assets/posters/1083313331-1280.webp?h=28b7e8f8 1280w" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px"><img src="/assets/posters/1083313331-480.jpg?h=773dac8d" srcset="/assets/posters/1083313331-480.jpg?h=773dac8d 480w, /assets/posters/1083313331-768.jpg?h=532e13dd 768w, /assets/posters/1083313331.jpg?h=a57df66d 1280w" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px" alt="Still from 60 Secs of New York" width="480" height="270" loading="lazy" decoding="async"></picture></span>
           <span class="pin__cap"><span class="pin__t">60 Secs of New York</span><span class="pin__k">Campaign film</span></span>
         </a>
-        <a class="pin" href="/work/al-doroub" aria-label="Al Doroub — Feature documentary · Compass Creative">
+        <a class="pin" href="/work/al-doroub" aria-label="Al Doroub — Documentary · Compass Creative">
           <span class="pin__media"><picture><source type="image/webp" srcset="/assets/posters/843280565-480.webp?h=98a9bde0 480w, /assets/posters/843280565-768.webp?h=315e5578 768w, /assets/posters/843280565-1280.webp?h=9491d898 1280w" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px"><img src="/assets/posters/843280565-480.jpg?h=f9b9139e" srcset="/assets/posters/843280565-480.jpg?h=f9b9139e 480w, /assets/posters/843280565-768.jpg?h=9c819345 768w, /assets/posters/843280565.jpg?h=60978943 1280w" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px" alt="Still from Al Doroub" width="480" height="270" loading="lazy" decoding="async"></picture></span>
-          <span class="pin__cap"><span class="pin__t">Al Doroub</span><span class="pin__k">Feature documentary · Compass Creative</span></span>
+          <span class="pin__cap"><span class="pin__t">Al Doroub</span><span class="pin__k">Documentary · Compass Creative</span></span>
         </a>
         <a class="pin pin--tall" href="/work/sugar-vs-jaggery" aria-label="Sugar vs Jaggery — Explainer · FITTR">
           <span class="pin__media"><picture><source type="image/webp" srcset="/assets/posters/999041155-480.webp?h=0bd260f6 480w, /assets/posters/999041155-768w.webp?h=1e58d1c5 768w, /assets/posters/999041155-1280.webp?h=80ab2b6a 1280w" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px"><img src="/assets/posters/999041155-480.jpg?h=2f51d8d0" srcset="/assets/posters/999041155-480.jpg?h=2f51d8d0 480w, /assets/posters/999041155-768w.jpg?h=7154d786 768w, /assets/posters/999041155.jpg?h=d9d75afa 1280w" sizes="(max-width: 899px) calc(50vw - 30px), (max-width: 1439px) calc(25vw - 36px), 312px" alt="Still from Sugar vs Jaggery" width="480" height="854" loading="lazy" decoding="async"></picture></span>

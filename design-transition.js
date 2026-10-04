@@ -140,6 +140,12 @@
     }
     if (!el && f && seen(f)) el = f;
     if (!el) return;
+    // Two different pictures (a vertical film's 16:9 card on /work/, cut from
+    // its frame, and its 9:16 player) are never drawn into one moving frame:
+    // cross-fading them shows two heads. This one is not named, so the picture
+    // left behind goes out with its page and this one is simply here.
+    var o = came.g, n0 = geo(el), same = function (a, b) { return Math.abs(a[2] / a[3] / (b[2] / b[3]) - 1) < 0.02; };
+    if (o && o.p && n0.p && !same(o.p, n0.p)) return;
     // the player lands where it stands: no entrance of its own on top
     if (el === f) root.classList.add('vt-film'); else show(el);
     name(el);
@@ -148,10 +154,10 @@
     // .vt-fit), so the still and the player never show as two pictures. The
     // player's picture carries the move; the still lifts off it on the way
     // to the player, and settles back onto it on the way to the still.
-    // (Two different pictures of different shapes, a landscape film's player
-    // and a vertical one's, simply cross-fade.)
-    var o = came.g, n = geo(el), fit = null;
-    if (o && o.p && n.p && Math.abs(o.p[2] / o.p[3] / (n.p[2] / n.p[3]) - 1) < 0.02) {
+    // (Where a side cannot be measured yet, both fill the moving frame and
+    // cross-fade.)
+    var n = geo(el), fit = null;
+    if (o && o.p && n.p && same(o.p, n.p)) {
       var oHere = [0, 0, o.b[2], o.b[3]], nHere = [0, 0, n.b[2], n.b[3]];
       var oThere = carry(oHere, o.p, n.p), nThere = carry(nHere, n.p, o.p);
       var still2 = el !== f;   // back to a still: the player is the page left behind
