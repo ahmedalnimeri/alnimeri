@@ -1,43 +1,71 @@
 /**
- * alnimeri.com — visitor log sync
+ * alnimeri.com — visitor log sync (v4)
  *
- * Pulls the Cloudflare D1 visit log and keeps four sheets current:
+ * Pulls the Cloudflare D1 visit and event logs and keeps five sheets current:
  *   Visitors    — people only, one row per visit, enriched
  *   All traffic — every hit including bots and scanners
  *   Summary     — recomputed totals and breakdowns
+ *   Events      — what visitors did (/api/e): played a film, opened or sent
+ *                 the brief, followed a view count, shared a shortlist,
+ *                 downloaded the CV; newest first, under a funnel line
+ *                 (visits → plays → brief opens → briefs sent, last 30 days)
  *   Briefs      — every brief sent through the site's "Get in touch" form,
  *                 newest first; each new one is also emailed to the owner
  *
  * The site key is NOT in this file: add it once as a Script property named
  * VISITS_TOKEN (Project Settings → Script properties). The same key opens
- * /api/visits and /api/brief.
+ * /api/visits, /api/e and /api/brief.
+ *
+ * Ninety days. Visit rows (Visitors, All traffic) and events older than
+ * KEEP_DAYS are deleted on every run, and never added, as alnimeri.com/privacy
+ * promises: the sheet is a copy of the site's log, IP addresses included, so
+ * it keeps no more than the site does. IP addresses stay whole while a row is
+ * kept. Briefs are not deleted here (the site keeps them a year).
  *
  * Rows already in the sheet are never re-written or duplicated: each run
- * appends only what it has not seen, so the history outlives whatever the
- * API is still holding.
+ * appends only what it has not seen. Each run asks the API only for what is
+ * new, not for the whole log, since every row read counts against D1's daily
+ * allowance: visits logged since the sheet's newest row (less a few hours of
+ * overlap, and never from before the ninety days), events with an id above the
+ * highest the Events tab has had.
  *
- * Each run asks the API only for what was logged since the sheet's newest
- * row (less a few hours of overlap), not for the whole log: every row read
- * counts against D1's daily allowance. Visit numbers, sessions and the
- * Summary are counted over the sheet's own history, which reaches back past
- * the 90 days the API keeps.
+ * Visit numbers, sessions and the Summary are counted over the rows the sheet
+ * holds, which is the last ninety days:
+ *   - Visit # and New/Returning count only the visits still kept. An address
+ *     whose earlier visits were deleted starts again at 1, New. Rows already
+ *     written keep the numbers they were given then, so an address's older
+ *     row can show a higher Visit # than its newer one.
+ *   - Session numbers carry on across the deletions: a new row gets the
+ *     number it would have had if nothing had been deleted. Each run starts
+ *     from the number of sessions already deleted, kept as one count in the
+ *     Script property SESSIONS_PRUNED (a number and a date, no address). A
+ *     session still running when its first rows are deleted keeps its number
+ *     and is counted once.
+ *   - The Summary counts the kept rows: "Covering" starts at most ninety days
+ *     back, and "New vs returning" counts an address's first kept visit as New.
  *
- * So All traffic is the record. A row deleted from it by hand stays deleted
- * and drops out of the counts, and later visit and session numbers are
- * counted without it; to hide rows, use a filter view. A row deleted from
- * Visitors alone comes back, since Visitors is refilled from All traffic.
- * Each row keeps the Type it was written with: after a change to what the
- * API counts as a person (the humans filter in functions/api/visits.js), run
- * rebuild() while the API still holds the rows that matter.
+ * So All traffic is the record of those ninety days. A row deleted from it by
+ * hand stays deleted and drops out of the counts, and later visit and session
+ * numbers are counted without it; to hide rows, use a filter view. A row
+ * deleted from Visitors alone comes back, since Visitors is refilled from All
+ * traffic. A row whose Timestamp (UTC) was typed over can't be dated, so it is
+ * neither counted nor deleted: delete it by hand. Each row keeps the Type it
+ * was written with: after a change to what the API counts as a person (the
+ * humans filter in functions/api/visits.js), run rebuild().
  *
- * Run setUp() once. It installs the triggers (visits hourly, briefs every
- * ten minutes) and does a first sync. Existing briefs are written to the
- * sheet but not emailed; only briefs that arrive afterwards are.
+ * Run setUp() once. It installs the triggers (visits and events hourly,
+ * briefs every ten minutes) and does a first sync. Existing briefs are written
+ * to the sheet but not emailed; only briefs that arrive afterwards are.
  */
 
 var API   = 'https://alnimeri.com/api/visits';
+var EVENTS_API = 'https://alnimeri.com/api/e';
 var TZ    = 'Asia/Dubai';
 var LIMIT = 20000;
+// What alnimeri.com/privacy promises for visit rows and events.
+var KEEP_DAYS = 90;
+// Two hits from one address further apart than this are two sessions.
+var SESSION_MINUTES = 30;
 // A hit is stamped when the request starts and lands in the log a moment
 // later, so one stamped earlier can arrive after one stamped later. Each run
 // reads this far back past the sheet's newest row; rows it has already got
@@ -272,37 +300,75 @@ function pull(humansOnly, since) {
   }
 }
 
+/**
+ * The events with an id above `after`, oldest first, LIMIT at a time: each
+ * page starts after the last id of the one before. Ids only grow, so this is
+ * exactly what the Events tab has not had.
+ */
+function pullEvents(after) {
+  var out = [];
+  for (;;) {
+    var res = UrlFetchApp.fetch(EVENTS_API + '?key=' + encodeURIComponent(siteKey()) +
+                                '&format=json&limit=' + LIMIT + '&after=' + after, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200)
+      throw new Error('Event log returned ' + res.getResponseCode() + ' — is the key still valid?');
+    var page = JSON.parse(res.getContentText()).events || [];
+    out = out.concat(page);
+    if (page.length < LIMIT) return out;
+    // A site that does not know &after yet sends its newest rows, the same
+    // page again: stop rather than ask forever (the repeats are skipped).
+    var last = Number(page[page.length - 1].id);
+    if (!(last > after)) return out;
+    after = last;
+  }
+}
+
 /* ------------------------------------------------------------------- sync */
 
 function sync() {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) return;            // a run is already in flight
   try {
-    // The sheet is the history: All traffic holds every hit it was ever
-    // given, people and bots, while the API keeps 90 days. So the API is
-    // asked only for what came after the sheet's newest row, less the
-    // overlap, and everything up to that cutoff is replayed from the sheet.
-    // An empty sheet (the first run, or after rebuild) takes the whole log.
+    // Nothing logged before this moment is kept, written or counted.
+    var cutoff = Date.now() - KEEP_DAYS * 864e5;
+    // The sheet is the history: All traffic holds every hit of the last
+    // ninety days, people and bots. So the API is asked only for what came
+    // after the sheet's newest row, less the overlap, and everything up to
+    // that point is replayed from the sheet. An empty sheet (the first run,
+    // or after rebuild) takes the ninety days the API holds.
     var traffic = stored('All traffic'), visitors = stored('Visitors');
     var col = function (name) { return HEAD.indexOf(name); };
     var TS = col('Timestamp (UTC)'), IP = col('IP'), TYPE = col('Type'), PAGE = col('Page'),
         UA = col('User agent'), CODE = col('Code'), CITY = col('City'), REGION = col('Region'),
-        NET = col('Network'), REF = col('Referrer');
+        NET = col('Network'), REF = col('Referrer'), SESSION = col('Session');
     var key = function (x) { return String(x[TS]) + '|' + x[IP] + '|' + x[PAGE]; };
+    var at = function (x) { return Date.parse(String(x[TS])); };
     // A stamp typed by hand with a wrong year would become the newest row and
     // push since into the future, and nothing new would ever arrive: only
     // stamps between the start of the log and tomorrow count.
     var latest = Date.now() + 86400000;
-    var kept = traffic.filter(function (x) {
-      var t = Date.parse(String(x[TS]));
+    var dated = traffic.filter(function (x) {
+      var t = at(x);
       return STAMP.test(String(x[TS])) && isFinite(t) && t >= LOG_START && t <= latest;
     });
+    // Rows past the ninety days are deleted at the end of this run. Until
+    // then they only settle how many sessions went with them.
+    var gone = dated.filter(function (x) { return at(x) < cutoff; });
+    var kept = dated.filter(function (x) { return at(x) >= cutoff; });
     var newest = '';
-    kept.forEach(function (x) { if (String(x[TS]) > newest) newest = String(x[TS]); });
+    dated.forEach(function (x) { if (String(x[TS]) > newest) newest = String(x[TS]); });
+    // since means "logged after", so the cutoff less a millisecond asks for
+    // everything from the cutoff on and nothing before it, even when the
+    // sheet's newest row is older than that (a long outage) or there is none.
+    var floor = new Date(cutoff - 1).toISOString();
     var since = newest ?
       new Date(Date.parse(newest) - OVERLAP_HOURS * 3600000).toISOString() : '';
+    if (since < floor) since = floor;
 
-    var all = pull(false, since), humans = pull(true, since);
+    // The site deletes its old rows now and then, not on the dot: a row older
+    // than the cutoff is never added, whatever the API still holds.
+    var inTime = function (r) { return Date.parse(r.ts) >= cutoff; };
+    var all = pull(false, since).filter(inTime), humans = pull(true, since).filter(inTime);
 
     var isHuman = {};
     humans.forEach(function (r) {
@@ -313,11 +379,9 @@ function sync() {
     // oldest first, so "visit #" and sessions count forward in time
     all.sort(function (a, b) { return a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0; });
 
-    // The sheet's rows up to the cutoff are counted from the sheet. Rows
-    // after it are counted from the API's copy, which may hold one that
-    // landed late; but a row the API no longer has is counted from the sheet
-    // (the API drops rows at 90 days, so after an outage that long the
-    // sheet's newest rows are gone from it).
+    // The sheet's rows up to since are counted from the sheet. Rows after it
+    // are counted from the API's copy, which may hold one that landed late;
+    // but a row the API no longer has is counted from the sheet.
     var fromApi = {};
     all.forEach(function (r) {
       var k = r.ts + '|' + (r.ip || '') + '|' + (r.path || '');
@@ -340,20 +404,24 @@ function sync() {
     var listed = {};
     visitors.forEach(function (x) { listed[vkey(x)] = (listed[vkey(x)] || 0) + 1; });
     past.forEach(function (x) { if (x[TYPE] === 'Person' && listed[vkey(x)]) listed[vkey(x)]--; });
+    gone.forEach(function (x) { if (x[TYPE] === 'Person' && listed[vkey(x)]) listed[vkey(x)]--; });
+    var person = function (x) {
+      if (x[TYPE] === 'Person') return true;
+      if (listed[vkey(x)]) { listed[vkey(x)]--; return true; }
+      return false;
+    };
 
-    // Every hit, oldest first, as [hit, person?]. The sheet's are worked out
-    // again from what was logged, as the API's are, so the Summary follows
-    // the current page names and sources across the whole history. Rows that
-    // share a stamp and were written in one run are listed newest-logged
-    // first; reversed, they replay in the order they were logged.
+    // Every hit, oldest first, as [hit, person?, its Session cell if the sheet
+    // has it]. The sheet's are worked out again from what was logged, as the
+    // API's are, so the Summary follows the current page names and sources.
+    // Rows that share a stamp and were written in one run are listed
+    // newest-logged first; reversed, they replay in the order they were logged.
     var hits = past.reverse().map(function (x) {
-      var person = x[TYPE] === 'Person';
-      if (!person && listed[vkey(x)]) { listed[vkey(x)]--; person = true; }
       return [{
         ts: String(x[TS]), ip: x[IP], country: String(x[CODE]), city: x[CITY],
         region: x[REGION], asn: x[NET], path: String(x[PAGE]),
         referrer: String(x[REF]), ua: String(x[UA])
-      }, person];
+      }, person(x), String(x[SESSION])];
     });
     var used = {};
     all.forEach(function (r) {
@@ -363,7 +431,16 @@ function sync() {
     });
     hits.sort(function (a, b) { return a[0].ts < b[0].ts ? -1 : a[0].ts > b[0].ts ? 1 : 0; });
 
-    var seenIp = {}, lastSeen = {}, sessionOf = {}, sessions = 0, minutes = {};
+    // Sessions are numbered across everything the sheet was ever given, so
+    // the count starts from the sessions already deleted with older rows.
+    var prior = sessionsPruned(), carry = settle(gone.map(function (x) {
+      return { t: at(x), who: (x[IP] || '') + '|' + (person(x) ? 'p' : 'b'), label: x[SESSION] };
+    }), hits, prior, cutoff);
+    if (carry.counted)
+      PropertiesService.getScriptProperties().setProperty('SESSIONS_PRUNED',
+        JSON.stringify({ n: carry.base, upTo: new Date(cutoff).toISOString() }));
+
+    var seenIp = {}, lastSeen = {}, sessionOf = {}, sessions = carry.base, minutes = {};
 
     // Visitor, Visit # and Session for one hit. Counted per IP *and* per
     // type: a person's visit number should not be inflated by the thousands
@@ -372,7 +449,12 @@ function sync() {
       var who = ip + '|' + (human ? 'p' : 'b');
       seenIp[who] = (seenIp[who] || 0) + 1;
       var gap = lastSeen[who] ? (t - lastSeen[who]) / 60000 : Infinity;
-      if (gap > 30) { sessions += 1; sessionOf[who] = sessions; }
+      if (gap > SESSION_MINUTES) {
+        sessions += 1;
+        // A session that was running at the cutoff keeps the number it has
+        // (see settle); every other one takes the next.
+        sessionOf[who] = (!lastSeen[who] && carry.number[who]) || sessions;
+      }
       lastSeen[who] = t;
       return [seenIp[who] === 1 ? 'New' : 'Returning', seenIp[who], 'S' + sessionOf[who]];
     };
@@ -389,15 +471,213 @@ function sync() {
 
     write('Visitors', people, visitors);
     write('All traffic', rows, traffic);
+    prune('Visitors', TS + 1, 2, cutoff);
+    prune('All traffic', TS + 1, 2, cutoff);
     summary(rows, people);
+    var events = syncEvents(people, cutoff);
 
     SpreadsheetApp.getActive().toast(
-      people.length + ' visits, ' + rows.length + ' hits', 'Visitor log synced', 5);
+      people.length + ' visits, ' + rows.length + ' hits, ' + events + ' events', 'Visitor log synced', 5);
   } finally {
     // Commit the writes before the next run can take the lock, so it never
     // reads the sheet as it was before this one and appends the same rows.
     try { SpreadsheetApp.flush(); } finally { lock.releaseLock(); }
   }
+}
+
+/** The sessions deleted so far with rows past the ninety days, and the
+ *  cutoff they were counted up to (ms): {n, upTo}. */
+function sessionsPruned() {
+  try {
+    var p = JSON.parse(PropertiesService.getScriptProperties().getProperty('SESSIONS_PRUNED') || 'null');
+    var upTo = p ? Date.parse(String(p.upTo)) : NaN;
+    if (p && isFinite(p.n) && p.n >= 0 && isFinite(upTo)) return { n: Number(p.n), upTo: upTo };
+  } catch (e) { /* typed over by hand: count afresh */ }
+  return { n: 0, upTo: -Infinity };
+}
+
+/** 'S12' → 12; anything else → 0, so a cell typed over by hand is ignored. */
+function sessionNumber(cell) {
+  var m = /^S(\d+)$/.exec(String(cell));
+  return m ? Number(m[1]) : 0;
+}
+
+/**
+ * Settles the sessions at the cutoff. gone: the rows about to be deleted, as
+ * {t, who, label}; hits: the run's hits, oldest first, as [hit, person?,
+ * Session cell]; prior: what sessionsPruned() returned.
+ *
+ * A session that ends among the gone rows is counted now, once, into
+ * SESSIONS_PRUNED. One still running at the cutoff (an address's first kept
+ * hit within SESSION_MINUTES of its last gone one) is not: the kept rows count
+ * it, from that first kept hit. Rows older than prior.upTo are left over from
+ * a run whose deletion did not finish; they were counted then.
+ *
+ * A session running at the cutoff keeps its number. The rows that hold it are
+ * its gone ones and its first kept ones, or, when its gone rows went in an
+ * earlier run, its first kept ones alone (which then start within
+ * SESSION_MINUTES of the cutoff). Its number is the smallest on those rows: a
+ * row written while a late hit was still missing carries a later, larger
+ * number, and once that hit lands the session is whole again under its first.
+ *
+ * Returns {base, counted, number}: the sessions before the kept rows, whether
+ * new gone rows were counted, and the number to carry for an address whose
+ * first kept session was running at the cutoff.
+ */
+function settle(gone, hits, prior, cutoff) {
+  var gap = function (a, b) { return (b - a) / 60000 > SESSION_MINUTES; };
+  var least = function (a, b) { return a && b ? Math.min(a, b) : a || b; };
+  gone.sort(function (a, b) { return a.t - b.t; });
+  // the gone rows: sessions started among those not counted before, and each
+  // address's last session (its end, and the smallest number on it)
+  var last = {}, seen = {}, starts = 0, counted = false;
+  gone.forEach(function (g) {
+    if (g.t >= prior.upTo) {
+      if (!seen[g.who] || gap(seen[g.who], g.t)) starts++;
+      seen[g.who] = g.t;
+      counted = true;
+    }
+    var l = last[g.who];
+    if (!l || gap(l.t, g.t)) l = last[g.who] = { t: g.t, n: 0 };
+    l.t = g.t; l.n = least(l.n, sessionNumber(g.label));
+  });
+  // the kept hits: each address's first session (its start, and the smallest
+  // number on its rows that the sheet holds)
+  var first = {};
+  hits.forEach(function (h) {
+    var who = (h[0].ip || '') + '|' + (h[1] ? 'p' : 'b'), t = Date.parse(h[0].ts), f = first[who];
+    if (!f) f = first[who] = { start: t, t: t, n: 0, open: true };
+    else if (f.open && gap(f.t, t)) f.open = false;
+    if (f.open) { f.t = t; f.n = least(f.n, sessionNumber(h[2])); }
+  });
+  var running = 0, number = {};
+  Object.keys(seen).forEach(function (who) {
+    if (first[who] && !gap(seen[who], first[who].start)) running++;
+  });
+  Object.keys(first).forEach(function (who) {
+    var f = first[who], l = last[who];
+    if (l && !gap(l.t, f.start)) number[who] = least(l.n, f.n);
+    else if (f.start < cutoff + SESSION_MINUTES * 60000 && f.n) number[who] = f.n;
+  });
+  return { base: prior.n + starts - running, counted: counted, number: number };
+}
+
+/* ----------------------------------------------------------------- events */
+
+var EVENT_HEAD = ['Date', 'Time', 'Event', 'Film', 'Page', 'Via', 'Country',
+                  'Timestamp (UTC)', 'Event #'];
+var EVENT_NAME = {
+  play: 'Played a film', brief_open: 'Opened the brief', brief_sent: 'Sent a brief',
+  brief_failed: 'Brief did not send', proof_click: 'Followed a view count to its post',
+  shortlist_share: 'Shared a shortlist', cv_pdf: 'Downloaded the CV'
+};
+var VIA_NAME = {
+  lightbox: 'Front page player', page: 'Film page', post: 'On its post',
+  copy: 'Copied the link', share: 'Shared the link',
+  ig: 'Instagram', li: 'LinkedIn', wa: 'WhatsApp', x: 'X', sig: 'Email signature',
+  ai: 'AI assistant', qr: 'QR code'
+};
+
+/**
+ * Copies new events from the site (/api/e) into the Events sheet, newest
+ * first under its funnel line, and deletes those older than the cutoff.
+ * Only ids above the highest the tab has had are asked for (it is kept in
+ * the Script property EVENTS_UP_TO as well, so a quiet spell that empties the
+ * tab does not send the next run back for the whole table). A tab made
+ * afresh, deleted or with its header changed, takes every event the site
+ * still holds. people: this run's Visitors rows, for the funnel's first
+ * number. Returns how many events the sheet now holds.
+ */
+function syncEvents(people, cutoff) {
+  var ss = SpreadsheetApp.getActive();
+  var sh = ss.getSheetByName('Events') || ss.insertSheet('Events', 1);
+  var n = EVENT_HEAD.length, idCol = n, tsCol = EVENT_HEAD.indexOf('Timestamp (UTC)') + 1;
+  var props = PropertiesService.getScriptProperties();
+  var fresh = false;
+  grow(sh, 3, n);
+  if (sh.getLastRow() < 2 || sh.getRange(2, 1).getValue() !== EVENT_HEAD[0]) {
+    sh.clear();
+    sh.getRange(1, tsCol, sh.getMaxRows(), 1).setNumberFormat('@');   // the stamp stays the API's string
+    sh.getRange(1, 1).setValue('Last 30 days: …');                       // the funnel line, filled below
+    sh.getRange(2, 1, 1, n).setValues([EVENT_HEAD]);
+    fresh = true;
+  }
+  var held = sh.getLastRow() > 2 ? sh.getRange(3, 1, sh.getLastRow() - 2, n).getValues() : [];
+  var have = {}, top = 0;
+  held.forEach(function (r) {
+    have[String(r[idCol - 1])] = 1;
+    if (Number(r[idCol - 1]) > top) top = Number(r[idCol - 1]);
+  });
+
+  var after = fresh ? 0 : Math.max(top, Number(props.getProperty('EVENTS_UP_TO')) || 0);
+  var high = after, seen = {};
+  var fetched = pullEvents(after).filter(function (e) {
+    var id = String(e.id);
+    if (Number(e.id) > high) high = Number(e.id);
+    // never one the tab has, twice, or one the privacy page says is gone
+    if (have[id] || seen[id] || !(Date.parse(e.ts) >= cutoff)) return false;
+    seen[id] = 1;
+    return true;
+  });
+  var rows = fetched.map(function (e) {
+    var t = new Date(e.ts);
+    var cc = String(e.country || '').toUpperCase();
+    return [Utilities.formatDate(t, TZ, 'yyyy-MM-dd'), Utilities.formatDate(t, TZ, 'HH:mm'),
+            EVENT_NAME[e.t] || e.t, e.title || e.film || '', e.path || '',
+            VIA_NAME[e.via] || e.via || '', (COUNTRY[cc] || [cc])[0], e.ts, e.id];
+  });
+  if (rows.length) {
+    grow(sh, sh.getLastRow() + rows.length, n);
+    sh.getRange(sh.getLastRow() + 1, 1, rows.length, n).setValues(rows);
+    sh.getRange(3, 1, sh.getLastRow() - 2, n).sort({ column: idCol, ascending: false });
+  }
+  if (high > (Number(props.getProperty('EVENTS_UP_TO')) || 0)) props.setProperty('EVENTS_UP_TO', String(high));
+  prune('Events', tsCol, 3, cutoff);
+
+  // The funnel, last 30 days: page visits by people, then what they did.
+  var since = new Date(Date.now() - 30 * 864e5).toISOString();
+  var tsAt = HEAD.indexOf('Timestamp (UTC)');
+  var visits = people.filter(function (r) { return String(r[tsAt]) >= since; }).length;
+  var did = {};
+  held.concat(rows).forEach(function (r) {
+    if (String(r[tsCol - 1]) >= since) did[r[2]] = (did[r[2]] || 0) + 1;
+  });
+  var count = function (t) { return did[EVENT_NAME[t]] || 0; };
+  sh.getRange(1, 1).setValue('Last 30 days: ' + visits + ' visits → ' + count('play') + ' plays → ' +
+    count('brief_open') + ' brief opens → ' + count('brief_sent') + ' briefs sent' +
+    '   (updated ' + Utilities.formatDate(new Date(), TZ, 'd MMM HH:mm') + ', Dubai)');
+  sh.getRange(1, 1).setFontWeight('bold');
+  sh.setFrozenRows(2);
+  sh.getRange(2, 1, 1, n).setFontWeight('bold');
+  return Math.max(0, sh.getLastRow() - 2);
+}
+
+/**
+ * Deletes the rows of a sheet whose UTC stamp (column tsCol) is older than
+ * the cutoff (ms). Rows start at firstRow, in any order. A cell that is not a
+ * stamp can't be dated and is left. Runs of rows are deleted from the bottom
+ * up, so the row numbers still to come do not move.
+ */
+function prune(name, tsCol, firstRow, cutoff) {
+  var sh = SpreadsheetApp.getActive().getSheetByName(name);
+  if (!sh || sh.getLastRow() < firstRow) return 0;
+  var stamps = sh.getRange(firstRow, tsCol, sh.getLastRow() - firstRow + 1, 1).getValues();
+  var old = function (i) {
+    var s = String(stamps[i][0]);
+    return STAMP.test(s) && Date.parse(s) < cutoff;
+  };
+  var gone = 0;
+  for (var i = stamps.length - 1; i >= 0; i--) {
+    if (!old(i)) continue;
+    var end = i;
+    while (i > 0 && old(i - 1)) i--;
+    // A sheet must keep one row below its frozen ones: when every row would
+    // go, add an empty one first.
+    if (sh.getMaxRows() - (end - i + 1) < firstRow) sh.insertRowsAfter(sh.getMaxRows(), 1);
+    sh.deleteRows(firstRow + i, end - i + 1);
+    gone += end - i + 1;
+  }
+  return gone;
 }
 
 /* ----------------------------------------------------------------- briefs */
@@ -642,12 +922,12 @@ function summary(all, people) {
 
 /* ------------------------------------------------------------------ setup */
 
-/** Wipe both logs and re-derive every row. Use after changing the columns or
- *  what counts as a person — a normal sync only appends, so it would leave
- *  old rows as they were. Run it once when this version replaces the full
- *  pull (see README). The rows come back from the API, which keeps only the
- *  last 90 days: anything older lives only in the sheet, and a rebuild
- *  loses it. */
+/** Wipe both visit logs and re-derive every row from the ninety days the
+ *  API holds, the same ninety days the sheet keeps. Use after changing the
+ *  columns or what counts as a person — a normal sync only appends, so it
+ *  would leave old rows as they were. Visit and session numbers start again
+ *  from the oldest row, as on a first run. Events are left as they are; to
+ *  refill that tab, delete it and run sync(). */
 function rebuild() {
   var ss = SpreadsheetApp.getActive();
   // Under the lock, so an hourly sync already running can't write back what
@@ -659,6 +939,7 @@ function rebuild() {
       var sh = ss.getSheetByName(n);
       if (sh) sh.clear();
     });
+    PropertiesService.getScriptProperties().deleteProperty('SESSIONS_PRUNED');
     SpreadsheetApp.flush();
   } finally {
     lock.releaseLock();
