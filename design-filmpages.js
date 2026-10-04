@@ -202,10 +202,16 @@
       if (st) st.style.aspectRatio = c === pair && cw ? ((2 * cw + gap) / (cw * 9 / 16)).toFixed(4)
         : c === wide && cols > 2 ? '768 / 324' : '';
     });
-    var im = (wide || pair) && (wide || pair).querySelector('img');
     // a film across the whole row asks for a picture that wide, not the lead's
     var want = wide ? '(max-width: 1480px) 92vw, 1320px' : lead_sizes;
-    if (im && want && im.getAttribute('sizes') !== want) im.setAttribute('sizes', want);
+    if ((wide || pair) && want) sized(wide || pair, want);
+  };
+  // a card's picture asks for its size on the WebP <source> and the <img> alike
+  // (the browser picks from the <source>, so an <img> alone would change nothing)
+  var sized = function (c, want) {
+    [].forEach.call(c.querySelectorAll('picture source, img'), function (x) {
+      if (x.getAttribute('sizes') !== want) x.setAttribute('sizes', want);
+    });
   };
 
   var apply = function (cat, animate, to) {
@@ -237,9 +243,7 @@
     // a card hung large asks for a picture that size (the browser only ever
     // trades up, so going back to small costs nothing)
     mine.forEach(function (c) {
-      if (!(few || c === lead)) return;
-      var im = c.querySelector('img');
-      if (im && lead_sizes && im.getAttribute('sizes') !== lead_sizes) im.setAttribute('sizes', lead_sizes);
+      if ((few || c === lead) && lead_sizes) sized(c, lead_sizes);
     });
     pill(cat);
     // the wall's top back under the tabs, in the same frame as the re-hang

@@ -229,10 +229,11 @@ HEAD = '''<!doctype html>
 <meta name="twitter:title" content="{title} — Ahmed El-Nimeri">
 <meta name="twitter:description" content="{desc}">
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/poppins-600.woff2" crossorigin>
+<!-- before the first stylesheet: an inline script after one waits for it, and holds the parser -->
+''' + VT.replace('{', '{{').replace('}', '}}') + '''
 <link rel="stylesheet" href="/styles.css?v={ver}">
 <link rel="stylesheet" href="/design-filmpages.css?v={dver}">
 <script type="application/ld+json">{schema}</script>
-''' + VT.replace('{', '{{').replace('}', '}}') + '''
 </head>
 <body>
 <a class="skip" href="#film">{skip}</a>
@@ -411,7 +412,9 @@ def card(f, eager_first=0, sizes='(max-width: 700px) 46vw, (max-width: 1100px) 3
     n = _card_n[0]; _card_n[0] += 1
     eager = n < eager_first
     shown = n < max(eager_first, shown_first)
-    img = still(wall_still(f) if wall else f, sizes, eager=eager, high=eager and n == 0)
+    # the wall's cards offer the tile's WebP set first (about 30% lighter);
+    # a vertical film's own 16:9 card still has no WebP (wall_still)
+    img = still(wall_still(f) if wall else f, sizes, eager=eager, high=eager and n == 0, webp=wall)
     yr = year_of(f)
     if short:
         bits = [kind_and_client(f['kind'])[0]] + ([yr] if yr else [])
@@ -743,11 +746,23 @@ for cid, label, _n in CATEGORIES:
     sections.append('<section class="fp-cat" id="' + cid + '"' + few + '>'
                     '<h2 class="fp-cat__head">' + label + ' <span>' + count + '</span></h2>'
                     '<ol class="fp-cards">' + ''.join(card(f, eager_first=1, shown_first=5, delay=_delay(), wall=True) for f in groups[cid]) + '</ol></section>')
-# the first film on the wall is hung large (and asks for a picture that size);
-# the script moves this with the tabs
+# the first film on the wall is hung large (and asks for a picture that size,
+# on its WebP <source> and its <img> alike); the script moves this with the tabs
 LEAD_SIZES = '(max-width: 700px) 92vw, (max-width: 1100px) 64vw, 660px'
+# A film left alone in the wall's last row hangs across it (design-filmpages.js,
+# is-wide) and asks for a picture that wide. The lead takes four cells, so
+# with every film showing the wall has len(films) + 3 cells; where that leaves
+# one over at each column count the wall uses (4, 3 and 2), the last card asks
+# for the wide picture from the start, instead of fetching its small one first
+# and the wide one again when the script hangs it. Filtered views stay the
+# script's.
+WIDE_SIZES = '(max-width: 1480px) 92vw, 1320px'
+def _sizes_in(html_, start, end, want):
+    return html_[:start] + re.sub(r'sizes="[^"]*"', 'sizes="' + want + '"', html_[start:end]) + html_[end:]
 _wall = ''.join(sections).replace('<li class="fp-card"', '<li class="fp-card is-lead"', 1)
-_wall = re.sub(r'sizes="[^"]*"', 'sizes="' + LEAD_SIZES + '"', _wall, count=1)
+_a = _wall.index('<li class="fp-card is-lead"'); _wall = _sizes_in(_wall, _a, _wall.index('</li>', _a), LEAD_SIZES)
+if all((len(films) + 3) % cols == 1 for cols in (4, 3, 2)):
+    _a = _wall.rindex('<li class="fp-card'); _wall = _sizes_in(_wall, _a, _wall.index('</li>', _a), WIDE_SIZES)
 rows = ('<nav class="fp-tabs" aria-label="Kinds of film"><div class="fp-tabs__row">' + nav + '</div></nav>'
         + '<div class="fp-wall fp-lights" id="all" data-lead-sizes="' + LEAD_SIZES + '">' + _wall + '</div>')
 
@@ -795,7 +810,9 @@ ENDING = re.sub(r'<!-- The end credits\.[\s\S]*?-->',
                 '         landscape stills on this wall. -->', ENDING, count=1)
 # the front page's relative asset URLs, rooted for /work/
 ENDING = re.sub(r'(src|href)="assets/', r'\1="/assets/', ENDING)
-if re.search(r'(src|href)="(?![/#]|https?:|mailto:)', ENDING):
+ENDING = re.sub(r'srcset="([^"]*)"', lambda m: 'srcset="' + re.sub(r'(^|,\s*)assets/', r'\1/assets/', m.group(1)) + '"', ENDING)
+if re.search(r'(src|href)="(?![/#]|https?:|mailto:)', ENDING) or \
+        any(re.match(r'(?![/#]|https?:)', c.strip()) for ss in re.findall(r'srcset="([^"]*)"', ENDING) for c in ss.split(',')):
     sys.exit('the ending carries a relative URL that /work/ would break')
 idx = idx.replace('</section>\n</main>\n',
                   '</section>\n'

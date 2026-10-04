@@ -27,8 +27,9 @@ generated functions/_lib files. Checked:
   8. One Cloudflare Web Analytics beacon on every page, with one token.
   9. The still becomes the player: the front page, About, /work/ and every
      film page carry design-transition.js inlined once, as it stands now
-     (bin-stamp-assets.py, bin-build-work-pages.py), and reduced motion still
-     turns page transitions off in styles.css.
+     (bin-stamp-assets.py, bin-build-work-pages.py), above the first
+     stylesheet, and reduced motion still turns page transitions off in
+     styles.css.
 
 Run from anywhere; it reads the repo it sits in. Needs node for the reel page.
 """
@@ -332,6 +333,12 @@ for url, (label, text) in PAGES.items():
     for b in blocks:
         if b != _vt:
             bad(label, 'its inlined design-transition.js is not the current file (run bin-stamp-assets.py, then bin-build-work-pages.py)')
+    # above the first stylesheet: an inline script after one waits for the CSS
+    # and holds the parser (DOMContentLoaded ~100ms later on every such page)
+    if blocks:
+        _at, _css = text.find('<!-- design-transition.js, inlined'), text.find('<link rel="stylesheet"')
+        if _css != -1 and _css < _at:
+            bad(label, 'its inlined design-transition.js comes after a stylesheet (move it above the first <link rel="stylesheet">)')
 if not re.search(r'@media \(prefers-reduced-motion: reduce\)\s*\{\s*@view-transition\s*\{\s*navigation:\s*none;\s*\}', (ROOT / 'styles.css').read_text()):
     bad('styles.css', 'reduced motion no longer turns page transitions off (@view-transition { navigation: none; })')
 
