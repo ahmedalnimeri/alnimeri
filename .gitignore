@@ -1,4 +1,6 @@
 assets/src/
 .claude/
+# bin-build-og.py: the share cards' HTML, only for rendering the JPGs (never deployed)
+_og/
 # bin-indexnow.py: what this machine has already sent (never deployed)
 .indexnow-sent.json

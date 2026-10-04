@@ -1172,7 +1172,7 @@ body.is-locked { overflow: hidden; }
    the ledes and body copy. The hero lede's own <br> still breaks where it
    did. Ignored by engines that don't support it, which wrap as before. */
 h1, h2, h3, .about__lead, .hero__eyebrow, .lost__title { text-wrap: balance; }
-.hero__lede, .pagehead__lede, .fp-lede, .work__intro, .contact__sub, .about__body,
+.hero__lede, .pagehead__lede, .fp-lede, .contact__sub, .about__body,
 .track__brief, .card__body, .stats span, .lost__body { text-wrap: pretty; }
 
 .reveal { opacity: 0; transform: translateY(20px); }
@@ -1514,10 +1514,10 @@ h1, h2, h3, .about__lead, .hero__eyebrow, .lost__title { text-wrap: balance; }
   }
 }
 
-/* ---- The Screening Slate ----------------------------------------------
-   Injected at the edge for visitors Cloudflare can place: a burn-in under
-   the hero eyebrow stamping their city and two clocks. Machine chrome, so
-   mono, small, and never brighter than the picture. Absent by default. */
+/* ---- Local time ---------------------------------------------------------
+   Injected at the edge for visitors Cloudflare can place: a line under the
+   hero eyebrow with their city and two clocks. Machine chrome, so mono,
+   small, and never brighter than the picture. Absent by default. */
 .screening {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 0.55rem;
   margin: -0.6rem 0 clamp(1.5rem, 4vh, 2.25rem);
@@ -1527,23 +1527,12 @@ h1, h2, h3, .about__lead, .hero__eyebrow, .lost__title { text-wrap: balance; }
 }
 .screening b { font-weight: 500; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
 .screening__sep { color: var(--line); }
-.screening__ar { text-transform: none; letter-spacing: 0; font-family: var(--ff); font-size: 0.8rem; color: var(--fg-dim); }
 .hero .screening { text-align: center; }
 .pagehead .screening { justify-content: flex-start; }
 @media (max-width: 900px) { .pagehead .screening { justify-content: flex-start; } }
 .contact__clock { display: block; margin-top: 0.6rem; color: var(--fg-faint); font-size: 0.88rem; }
 .contact__clock b { font-weight: 500; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
 @media print { .screening, .contact__clock { display: none; } }
-
-/* "Start with →": one pointer under the hero buttons, only for arrivals whose
-   referrer tells us what they came for. Never reorders the grid. */
-.hero__start {
-  margin: 1.1rem 0 0; font-size: 0.86rem; color: var(--fg-faint);
-  animation: expose calc(var(--f) * 8) steps(8, end) both;
-}
-.hero__start a { color: var(--fg-dim); text-decoration: underline; text-underline-offset: 0.2em; }
-.hero__start a:hover { color: var(--fg); }
-@media print { .hero__start { display: none; } }
 
 /* Resume line: the deck offering to cut back to the last clip this device
    was on. Sits under the slate; mono, faint, one frame-stepped entrance. */
@@ -1559,12 +1548,9 @@ h1, h2, h3, .about__lead, .hero__eyebrow, .lost__title { text-wrap: balance; }
 .screening + .resume { margin-top: -1.2rem; }
 @media print { .resume { display: none; } }
 
-/* Phones: the slate can run to four facts; let it breathe as two short
-   rows rather than one long one, and drop the tracking a touch. */
+/* Phones: drop the slate's tracking a touch, and let it wrap in short rows. */
 @media (max-width: 560px) {
   .screening, .resume { font-size: 0.58rem; letter-spacing: 0.08em; gap: 0.25rem 0.45rem; }
-  .screening__ar { font-size: 0.74rem; }
-  .hero__start { font-size: 0.8rem; }
 }
 
 /* ---- Pull a reel -------------------------------------------------------
@@ -1601,7 +1587,6 @@ h1, h2, h3, .about__lead, .hero__eyebrow, .lost__title { text-wrap: balance; }
 }
 .bin.is-up { transform: translate(-50%, 0); }
 .bin b { color: var(--fg); font-weight: 500; font-variant-numeric: tabular-nums; }
-.bin__sep { color: var(--line); }
 .bin__break { display: none; }
 .bin .btn { padding: 0.5rem 1rem; font-size: 0.78rem; letter-spacing: 0; text-transform: none; font-family: var(--ff); }
 .bin__clear { background: none; border: 0; color: var(--fg-faint); font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; padding: 0.25rem 0.35rem; }
@@ -1616,7 +1601,6 @@ h1, h2, h3, .about__lead, .hero__eyebrow, .lost__title { text-wrap: balance; }
     border-radius: var(--card); padding: 0.65rem 0.8rem; font-size: 0.58rem;
   }
   .bin.is-up { transform: translateY(0); }
-  .bin__word { display: none; }
   .bin__clear { margin-left: auto; }
   /* A zero-height full-width item forces the two actions onto their own row,
      so they split it evenly instead of one trailing after the tally. */
@@ -1995,7 +1979,7 @@ body { background: var(--bg); color: var(--fg); }
 .hero__name, .slate__title, .commission__heading h2, .contact__head {
   font-weight: 500; letter-spacing: -0.022em; line-height: 1.02;
 }
-.hero--editorial .hero__lede, .work__intro, .commission__heading > span { font-size: 17px; line-height: 1.6; color: var(--fg-dim); }
+.hero--editorial .hero__lede { font-size: 17px; line-height: 1.6; color: var(--fg-dim); }
 .masthead__nav a { font-size: 13px; font-weight: 400; color: var(--fg-dim); }
 .masthead__nav a:hover { color: var(--fg); }
 
@@ -2083,9 +2067,10 @@ body { background: var(--bg); color: var(--fg); }
   }
 }
 /* The brief is one tap away on a phone too. The bar's button comes back as a
-   quiet outlined pill, "Brief", the height of the links beside it, and stays
-   put when the bar contracts; wider screens still read "Get in touch". Under
-   360px the CV link gives way (About and every footer link to it). */
+   quiet outlined pill, "Get in touch" as on wider screens (B01: one label for
+   every way into the brief; it fits at 320px), the height of the links beside
+   it, and stays put when the bar contracts. Under 360px the CV link gives way
+   (About and every footer link to it). */
 .masthead__short { display: none; }
 @media (max-width: 620px) {
   .masthead .masthead__nav a.btn--solid {

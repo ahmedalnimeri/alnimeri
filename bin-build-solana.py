@@ -184,9 +184,9 @@ schema = {"@context": "https://schema.org", "@graph": [
         {"@type": "ListItem", "position": 2, "name": "All films", "item": "https://alnimeri.com/work/"},
         {"@type": "ListItem", "position": 3, "name": "Solana videos"}]}]}
 
-# the share card prints the count and the total (bin-build-og.py); a new
-# count, or new words on it, is a new file name (assets/ is cached for good)
-OG = f'assets/og-solana-list-{N}.jpg'
+# the share card prints the count (bin-build-og.py); a new count, or new
+# words on the card, is a new file name (assets/ is cached for good)
+OG = f'assets/og-solana-videos-{N}.jpg'
 if not os.path.exists(OG):
     sys.exit(f'{OG} is missing: render bin-build-og.py\'s card for {N} videos first')
 _o = subprocess.run(['sips', '-g', 'pixelWidth', '-g', 'pixelHeight', OG], capture_output=True, text=True).stdout
@@ -231,7 +231,7 @@ page = f'''<!doctype html>
     <a href="/">Work</a>
     <a href="/about">About</a>
     <a href="/cv">CV</a>
-    <a class="btn btn--solid" href="/#contact"><span class="masthead__long">Get in touch</span><span class="masthead__short">Brief</span></a>
+    <a class="btn btn--solid" href="/#contact"><span class="masthead__long">Get in touch</span><span class="masthead__short">Get in touch</span></a>
   </nav>
 </header>
 <main id="top">
@@ -244,12 +244,11 @@ page = f'''<!doctype html>
   <div class="sl-years">{"".join(blocks)}</div>
   <section class="fp-close reveal" aria-labelledby="brief-head">
     <h2 id="brief-head">Have a project in mind?</h2>
-    <p>Tell me what you’re making and when you need it. A few lines are enough.</p>
-    <a class="btn btn--solid" href="/#contact" data-kind="brand">Send the brief <span aria-hidden="true">↗</span></a>
+    <p>English or Arabic. I answer my own email.</p>
+    <a class="btn btn--solid" href="/#contact" data-kind="brand">Get in touch <span aria-hidden="true">↗</span></a>
   </section>
   <footer class="fp-foot sl-foot">
     <nav class="fp-nav" aria-label="Films"><a class="fp-nav__all" href="/work/">All films</a></nav>
-    <p class="fp-note">Every figure on this site links to the published post it came from.</p>
   </footer>
 </section>
 </main>

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build the home page's four compositions from the real material.
 
-"What are we making?" is answered four times, and each answer is a
+The four kinds of work under "Commissions" are each a
 composition: three stills from that kind of film, pinned at three depths
-around the words, like prints on a director's board. Each still is a link
+around the words, like prints on a board. Each still is a link
 to its film and carries a small chip naming the film and its reach, exactly
 as the film's tile in #work states it (nothing is typed twice, nothing is
 invented). design-compositions.js gives every still its own response to the
@@ -11,7 +11,7 @@ pointer: a rack focus — the still you point at sharpens and comes forward,
 the others fall soft and recede, and its chip comes into focus with it.
 
 Each composition shows only films from that chapter's own group on /work/
-(the "See all" link must lead to the same films), and only stills that read
+(the "All …" link must lead to the same films), and only stills that read
 as pictures: a white UI frame or a near-black frame is left out. Events and
 motion have two such films, so they are two-still compositions (the lead and
 the near plane); that difference is the real material, not a variation.
@@ -23,7 +23,7 @@ the 768x432 poster, measured from the bars.
 Writes between <!-- ART:CHAPTERS --> markers in index.html. Run
 bin-stamp-assets.py afterwards to hash the poster URLs.
 """
-import os, re, html
+import ast, os, re, html
 
 SRC = open('index.html').read()
 # the front page's own films: <template id="more-films"> is never rendered
@@ -61,29 +61,48 @@ PHONE_CHIP = {
     'Sia x Solana': 'end',
 }
 
-# The enquiry links sit inside <!--email_off-->: Cloudflare's email
-# obfuscation would otherwise rewrite the mailto: and main.js could no longer
-# open the brief from it (as on every other mailto: link on the site).
-BODY = ('&amp;body=Hi%20Ahmed%2C%0A%0AI%E2%80%99d%20like%20to%20discuss%20a%20project.%0A%0AWhat%20we%E2%80%99re%20making%3A%0A'
-        'Audience%20and%20where%20it%20will%20run%3A%0ATiming%20and%20location%3A%0ABudget%20range%20%28if%20known%29%3A%0A%0AName%20%2F%20company%3A%0A')
+# No enquiry link on the cards (Ahmed, 3 Oct 2026): the masthead and the
+# Contact section ask for the brief; a card says what the work is and leads
+# to it. The film pages still pre-select the brief's kind (data-kind).
 
-# (key, title, words, see-all link, enquiry subject, [lead, second, third])
+# A card's "All …" link names what it opens: the /work/ category of the same
+# key, by the name /work/ gives it (bin-build-work-pages.py CATEGORIES, read
+# from that file so the two never drift), as the film pages' own "All …" link
+# does. The card's title may differ ("Creative direction & post" opens
+# "Motion, animation & post").
+def _work_categories():
+    tree = ast.parse(open('bin-build-work-pages.py').read())
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(getattr(t, 'id', '') == 'CATEGORIES' for t in node.targets):
+            return {key: label for key, label, _kinds in ast.literal_eval(node.value)}
+    raise SystemExit('bin-build-work-pages.py: no CATEGORIES list to name the cards\' links from')
+WORK_CATEGORIES = _work_categories()
+
+
+def all_link(key):
+    if key not in WORK_CATEGORIES:
+        raise SystemExit(f'no /work/ category "{key}" for its card to link to')
+    label = WORK_CATEGORIES[key]
+    return (f'/work/#{key}', 'All ' + label[0].lower() + label[1:])
+
+
+# (key, title, words, all-films link, [lead, second, third])
 CHAPTERS = [
     ('brand', 'Brand &amp; campaign films',
-     'A launch, a brand story or a campaign that needs a film. Direction, cinematography and editing, shaped around your audience.',
-     ('/work/#brand', 'See all brand &amp; campaign films'), 'Brand%20%2F%20campaign%20film%20enquiry',
+     'Launches, brand stories and campaigns. Direction, cinematography and editing.',
+     all_link('brand'),
      ['Solana Accelerate', 'Badr Airlines', '60 Secs of New York']),
     ('events', 'Event &amp; conference films',
-     'Conferences, launches and summits. Speaker films, multi-camera coverage and recaps cut on site, while the event is still happening.',
-     ('/work/#events', 'See all event &amp; conference films'), 'Event%20%2F%20conference%20film%20enquiry',
+     'Conferences, launches and summits. Speaker films, multi-camera coverage and recaps cut on site.',
+     all_link('events'),
      ['Solana x All In', 'Solana Solstice']),
-    ('documentary', 'Documentary &amp; human stories',
-     'Real people, places and stories. Documentary and institutional films, with eleven years of work across Sudan and the Gulf.',
-     ('/work/#documentary', 'See all documentary work'), 'Documentary%20%2F%20institutional%20film%20enquiry',
+    ('documentary', 'Documentary &amp; institutional films',
+     'People and places, from eleven years of work across Sudan and the Gulf.',
+     all_link('documentary'),
      ['Al Doroub', 'Sia x Solana', 'The Greatest Sudanese Sit-In']),
     ('motion', 'Creative direction &amp; post',
-     'A concept to develop or footage to shape. Creative direction, editorial, motion, colour and sound for your next piece.',
-     ('/work/#motion', 'See all motion &amp; post work'), 'Creative%20direction%20%2F%20post-production%20enquiry',
+     'Creative direction, editorial, motion, colour and sound.',
+     all_link('motion'),
      ['Solana Developer Platform', 'Solana Skyline']),
 ]
 
@@ -119,7 +138,7 @@ def still(f, n):
 
 
 out = []
-for n, (key, title, words, (all_href, all_text), subject, names) in enumerate(CHAPTERS):
+for n, (key, title, words, (all_href, all_text), names) in enumerate(CHAPTERS):
     fs = [films[x] for x in names]
     # planes: 1 = the lead, 2 = the far plane, 3 = the near plane (the lowest
     # still). A two-still composition is the lead and the near plane.
@@ -132,7 +151,7 @@ for n, (key, title, words, (all_href, all_text), subject, names) in enumerate(CH
       <div class="cmp__text reveal">
         <h3 class="cmp__title" id="cmp-{key}">{title}</h3>
         <p class="cmp__words">{words}</p>
-        <p class="cmp__links"><a href="{all_href}">{all_text} <span aria-hidden="true">&rarr;</span></a><!--email_off--><a href="mailto:ahmed@alnimeri.com?subject={subject}{BODY}">Discuss a project <span aria-hidden="true">&rarr;</span></a><!--/email_off--></p>
+        <p class="cmp__links"><a href="{all_href}">{all_text} <span aria-hidden="true">&rarr;</span></a></p>
       </div>
       <div class="cmp__art">{stills}
       </div>
@@ -145,4 +164,4 @@ if a not in page:
     raise SystemExit(f'marker {a} missing from index.html')
 page = re.sub(re.escape(a) + r'[\s\S]*?' + re.escape(z), lambda m: a + block + '\n    ' + z, page)
 open('index.html', 'w').write(page)
-print('home art: ' + ' | '.join(f'{c[0]}: ' + ', '.join(c[5]) for c in CHAPTERS))
+print('home art: ' + ' | '.join(f'{c[0]}: ' + ', '.join(c[4]) for c in CHAPTERS))

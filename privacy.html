@@ -16,11 +16,11 @@
 <meta property="og:url" content="https://alnimeri.com/privacy">
 <meta property="og:title" content="Privacy — Ahmed El-Nimeri">
 <meta property="og:description" content="What alnimeri.com records about visitors, why, how long it is kept, and how to have it deleted.">
-<meta property="og:image" content="https://alnimeri.com/assets/og-home-2.jpg">
+<meta property="og:image" content="https://alnimeri.com/assets/og-home-3.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="styles.css?v=104">
+<link rel="stylesheet" href="styles.css?v=105">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
     <a href="/">Work</a>
     <a href="/about">About</a>
     <a href="/cv">CV</a>
-    <a class="btn btn--solid" href="/#contact"><span class="masthead__long">Get in touch</span><span class="masthead__short">Brief</span></a>
+    <a class="btn btn--solid" href="/#contact"><span class="masthead__long">Get in touch</span><span class="masthead__short">Get in touch</span></a>
   </nav>
 </header>
 
@@ -38,7 +38,7 @@
   <section class="pagehead">
     <p class="hero__eyebrow">Privacy</p>
     <h1 class="pagehead__title">What this site records.</h1>
-    <p class="pagehead__lede">Plainly, and only what is true of this site. Last updated 4 October 2026.</p>
+    <p class="pagehead__lede">Last updated 4 October 2026.</p>
   </section>
 
   <section class="section">
@@ -54,7 +54,7 @@
       </ul>
       <p>Requests for images, fonts and stylesheets are not recorded — only pages.</p>
       <p>The site also notes a few things done on it — pressing Play on a film, opening or sending
-        the brief, following a view count to its post, sharing a shortlist, downloading the CV — as
+        the contact form, following a view count to its post, sharing a reel link, downloading the CV — as
         one line each holding what happened, the film, the page, how it was done or where a shared
         link came from, and your country, with no IP address and no browser details, deleted after
         ninety days.</p>
@@ -69,24 +69,20 @@
         code that writes the log, not merely stated here.</p>
 
       <h2>Cookies</h2>
-      <p>One, and it is a number. The hero slate counts your screenings — <em>Screening 3 · Welcome back</em> —
-        with a first-party cookie called <code>scr</code> that holds that count and nothing else, for a year.
-        It identifies nothing, is sent nowhere but here, and the site works identically without it.
-        Visitor statistics come from
+      <p>None. Visitor statistics come from
         <a href="https://www.cloudflare.com/web-analytics/" rel="noopener" target="_blank">Cloudflare Web Analytics</a>,
-        which is aggregate and cookie-free — which is why you were not asked to accept anything.</p>
+        which is aggregate and sets no cookies, so you were not asked to accept anything.</p>
 
-      <h2>The slate</h2>
-      <p>The line above the headline naming your city, your clock and the distance the reel travelled
-        is written at the edge from the same geolocation Cloudflare attaches to every request; it is
-        read once to render the page and is not kept beyond the visit log described above. Where you
-        came in from is read from the referrer your browser sends, if it sends one.
+      <h2>Local time</h2>
+      <p>The line above the headline naming your city and your clock, and the time beside the contact
+        line, are written at the edge from the same geolocation Cloudflare attaches to every request; it is
+        read once to render the page and is not kept beyond the visit log described above.
         Crawlers get the page without any of it.</p>
 
-      <h2>Shortlists</h2>
-      <p>You can add films to a shortlist and make a link to it, such as <code>alnimeri.com/reel/5a3</code>.
-        The link is the shortlist: one character per film, in your order. Nothing else is encoded in it and nothing is
-        stored on the server when you make one (copying or sharing it is noted as above) — your shortlist lives in your browser's own storage until you clear it.
+      <h2>Reel links</h2>
+      <p>You can select films and make a link to your own reel, such as <code>alnimeri.com/reel/5a3</code>.
+        The link is the reel: one character per film, in your order. Nothing else is encoded in it and nothing is
+        stored on the server when you make one (copying or sharing it is noted as above) — your selection lives in your browser's own storage until you clear it.
         Opening a reel link is logged like any other page view, described above.</p>
 
       <h2>Video</h2>
@@ -105,10 +101,10 @@
         and keeps its own operational logs under
         <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener" target="_blank">its privacy policy</a>.</p>
 
-      <h2>The brief form</h2>
+      <h2>The contact form</h2>
       <p>The form behind &ldquo;Get in touch&rdquo; saves what you type &mdash; your name, company,
-        what the film is about, who it is for, its timing, the film or shortlist you came from and
-        where a shared link to the brief came from, the email or WhatsApp number you give, and the message the form writes
+        what the film is about, who it is for, its timing, the film or the selected films you came
+        from and where a shared link to the form came from, the email or WhatsApp number you give, and the message the form writes
         from them &mdash; in this site&rsquo;s own database on Cloudflare, so it reaches me. With it go
         your IP address (so no more than five briefs an hour come from one sender), your country and
         your browser. It is kept for a year and used only to reply to you. If saving fails,
@@ -137,7 +133,7 @@
     </div>
   </section>
 </main>
-<script src="main.js?v=104" defer></script>
+<script src="main.js?v=105" defer></script>
 <!-- Cloudflare Web Analytics -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "031672bac7b743a990b8dfcf074f7a38"}'></script>
 <!-- End Cloudflare Web Analytics -->

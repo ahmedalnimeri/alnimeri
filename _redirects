@@ -1,8 +1,40 @@
-# Nothing here yet.
-#
 # www -> apex is not done from this file: Cloudflare Pages only matches
 # path-relative sources in _redirects, not hostnames, and it serves an
 # existing static file before consulting redirects at all. It is the first
 # thing functions/_middleware.js does: a 301 from www.alnimeri.com to the same
 # path on alnimeri.com. Static files on www (excluded from the middleware in
 # _routes.json) still answer there; every page's canonical tag names the apex.
+
+# Files that called Ahmed a film director (Ahmed, 3 Oct 2026: "I'm not a film
+# director I'm a creative director"). They are gone from assets/, so these
+# rules answer instead (Pages consults _redirects only when no file matches):
+# an old link to the CV, or a share that still names an old card, lands on the
+# current one. The first CV PDF ("Storyteller · Film Director · Associate
+# Creative Director") has been unlinked since 30 Sep 2026, and the second
+# (-2026-09) went live with the same title line; the CV printed from /cv is
+# -2026-10 (bin-build-cv-pdf.py). The three old home
+# cards read "Film director & editor" (og.jpg, the first one, the home page's
+# share image until 29 Sep 2026; then og-home.jpg and og-home-2.jpg).
+/assets/Ahmed_ElNimeri_CV.pdf /assets/Ahmed_ElNimeri_CV-2026-10.pdf 301
+/assets/Ahmed_ElNimeri_CV-2026-09.pdf /assets/Ahmed_ElNimeri_CV-2026-10.pdf 301
+/assets/og.jpg /assets/og-home-3.jpg 301
+/assets/og-home.jpg /assets/og-home-3.jpg 301
+/assets/og-home-2.jpg /assets/og-home-3.jpg 301
+
+# Share cards replaced by a new file name (assets/* is cached immutable for a
+# year, so a card whose words or count change gets a new name; bin-build-og.py).
+# og-work.jpg and og-work-2.jpg printed old film counts ("Seventeen films",
+# "Twenty-four films"); og-about.jpg and og-cv.jpg are the same cards before
+# their 3 Oct 2026 wording. The /work/solana card had three names before one
+# shipped: og-solana-90.jpg (a total, rounded up), og-solana-90-2.jpg ("Every
+# Solana video I edited": the tracker is not all of his Solana work) and
+# og-solana-list-90.jpg (the total, before the plainer line); the card is
+# og-solana-videos-90.jpg. A share or a crawler that still names an old card
+# lands on the current one.
+/assets/og-work.jpg /assets/og-work-3.jpg 301
+/assets/og-work-2.jpg /assets/og-work-3.jpg 301
+/assets/og-about.jpg /assets/og-about-2.jpg 301
+/assets/og-cv.jpg /assets/og-cv-2.jpg 301
+/assets/og-solana-90.jpg /assets/og-solana-videos-90.jpg 301
+/assets/og-solana-90-2.jpg /assets/og-solana-videos-90.jpg 301
+/assets/og-solana-list-90.jpg /assets/og-solana-videos-90.jpg 301

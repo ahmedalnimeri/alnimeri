@@ -17,13 +17,13 @@ python3 -m http.server 4321
 |---|---|
 | `index.html` | Everything — markup, meta tags, JSON-LD |
 | `styles.css` | Single stylesheet; palette lives in `:root` |
-| `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, the shortlist (the tray, its link and "Brief with these films") and the brief dialog |
+| `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, "Make a reel" (the tray, its link and the sheet's "Get in touch", which opens the brief with the selected films) and the brief dialog |
 | `design-*.css` / `design-*.js` | One design layer per area: `hover` (home films and /reel/), `filmpages` (/work/ and the film pages), `about`, `compositions` (the home services) and `ending` (the end credits of the home page and of /work/). Stamped with their own md5 and served immutable |
 | `design-transition.js` | Changing pages: the still you clicked grows into the film page's player (cross-document view transitions; the CSS is the "page-to-page" block in `styles.css`, the room light's cue `.vt-film` in `design-filmpages.css`). Never linked: `pagereveal` fires before any deferred script runs, so `bin-stamp-assets.py` inlines it into the head of `/` and `/about` (between its two markers) and `bin-build-work-pages.py` copies that block onto `/work/` and every film page. Edit the file, never an inlined copy. Browsers without cross-document view transitions, and reduced motion, just navigate |
 | `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes (vertical films: `-768w` in place of `-768`). A vertical film may also have `<id>-card.jpg` (+ `-480`/`-768`, 16:9, cut from the same frame), which the `/work/` wall shows in place of a 9:16 poster cut down to its 16:9 cards (DP World at SailGP). `1083313331-1600.*` and `-2560.*` are offered only by the front page's full-row scope tile (1600 for its 1400px box on a 1x screen, 2560 for 2x); the builders never pass anything wider than 1280w to the film pages, the About board or the reel |
 | `assets/published/` | His photographs as others published them, hand-placed (About's one print: the ICC's Khartoum meeting, Aug 2022). Master plus `-480`/`-768` JPEG and `-480`/`-768`/full-width WebP; a changed picture gets a new name. Only officials or places: never survivors, witnesses or children |
 | `functions/brief/[[kind]].js` | `/brief` and `/brief/<kind>`: a link that opens the brief. 302s to `/?brief=<kind>&film=<slug>&via=<where>`, each value checked against a fixed list (kind: brand, events, documentary, post; film: `functions/_lib/films.js`; via: ig, li, wa, x, sig, ai, qr) and dropped if it is not on it. main.js opens the dialog on arrival (also for `#brief`) and puts the address back without them; `via` travels in the brief's "came from" value (`film_seen`), so the database and the Briefs sheet are unchanged |
-| `functions/api/e.js` | What visitors do, not who they are: `main.js` sends one `navigator.sendBeacon` per Play pressed, brief opened/sent/failed, view count followed to its post, shortlist copied or shared, and CV downloaded (`{t, film, path, via}`). Stored in D1 `events` (`schema.sql`) with the country and nothing else (no IP, no user agent); the site's own pages only (Origin), 1 KB cap, kept 90 days. `/api/e?key=<VISITS_TOKEN>` reads it (`&format=json` for the sheet's Events tab, `docs/apps-script/Sync.gs`) |
+| `functions/api/e.js` | What visitors do, not who they are: `main.js` sends one `navigator.sendBeacon` per Play pressed, brief opened/sent/failed, view count followed to its post, reel link copied or shared (event `shortlist_share`), and CV downloaded (`{t, film, path, via}`). Stored in D1 `events` (`schema.sql`) with the country and nothing else (no IP, no user agent); the site's own pages only (Origin), 1 KB cap, kept 90 days. `/api/e?key=<VISITS_TOKEN>` reads it (`&format=json` for the sheet's Events tab, `docs/apps-script/Sync.gs`) |
 | Cloudflare Web Analytics | One beacon, one token, on every page: hand-placed on `/`, `/about`, `/cv`, `/privacy` and the 404; copied from `index.html` by the builders onto the film pages, `/work/`, `/work/solana` and the `/reel/<code>` template. `bin-check.py` fails on a page with none or two |
 | `assets/reel-keys.json` | Every `/reel/<code>` character ever given, and the film it names (written by `bin-build-reel.py`) |
 
@@ -79,11 +79,19 @@ carry their timestamp); a Facebook link does not, so those films show no year.
 After touching the tiles in `index.html`, regenerate everything that derives from them, in this order:
 
 ```sh
-python3 bin-build-home-art.py && python3 bin-stamp-assets.py && python3 bin-build-work-pages.py \
+python3 bin-build-cv-pdf.py && python3 bin-build-home-art.py && python3 bin-stamp-assets.py && python3 bin-build-work-pages.py \
   && python3 bin-build-solana.py && python3 bin-build-about-strip.py \
   && python3 bin-build-onset.py && python3 bin-build-about-said.py \
   && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-llms.py \
   && python3 bin-build-reel.py && python3 bin-stamp-assets.py && python3 bin-check.py
+```
+
+When a share card's words, picture or count change, re-render the cards apart from the chain:
+
+```sh
+python3 bin-build-og.py   # writes _og/<card>.html (git-ignored, never deployed)
+# serve the repo root locally; screenshot each _og/<card>.html at 1200x630 to assets/<card>.jpg
+rm -r _og
 ```
 
 `bin-check.py` runs last, before every deploy, and changes nothing. It exits non-zero, listing
@@ -95,11 +103,38 @@ is not the number of films, of the front page's or of the rest; a broken interna
 more than one `?v=`; a page without exactly one Cloudflare Web Analytics beacon; `/`, `/about`,
 `/work/` or a film page without exactly one inlined `design-transition.js` as the file now stands,
 or `styles.css` no longer turning page transitions off under reduced motion. It also runs `bin-check-claims.py`, which fails if "directed by", a
-JSON-LD `"director"`, the old "Directed, shot and edited" line, an `fp-credit` line or a
-`data-role` attribute appears in any served `.html`, `llms.txt` or `functions/`. Every page is
+JSON-LD `"director"`, a title he does not hold ("film director", "Storyteller"), a "Director:"
+credit line, any other "director" that is not "creative director" (his title is "Associate
+Creative Director", the descriptor "creative director and editor"; he is not a film director,
+3 Oct 2026; a /cv credit's "Assistant Director" passes, and a third party's own title goes in its
+`THIRD_PARTY` list), the old "Directed, shot and edited" line, an `fp-credit` line or a
+`data-role` attribute appears in anything served: every `.html`, `llms.txt`, `sitemap.xml`,
+`robots.txt`, `assets/*.json`, the stylesheets' visible strings, the scripts, `functions/`, the
+share-card text in `bin-build-og.py` and the text and metadata of every PDF in `assets/`; if any
+other role ("edited by", "Editor", "Cinematographer", ...) sits next to a film (the film pages,
+`/work/`, `/work/solana`, the front page's tiles, the reel, `sitemap.xml`, `llms.txt`,
+`assets/*.json`; his descriptor, "creative director and editor", is not a film's credit); and if a retired file in its `RETIRED` list (the old share cards whose pixels say
+"Film director", the first two CV PDFs) or its `REPLACED` list (share cards with an old count or
+wording) comes back to `assets/`, loses its 301 in `_redirects`, or 301s to a file that is not
+here. Every page is
 read as it is served, and one `/reel/<code>` page is rendered through the real Function in Node.
 
-`bin-build-llms.py` writes `llms.txt`: the record, the commissioning notes and the profiles are
+`bin-build-cv-pdf.py` prints the downloadable CV, `assets/Ahmed_ElNimeri_CV-2026-10.pdf` (every
+"Download CV (PDF)" link), from `/cv` as it stands: its sections in the page's own words and
+headings, the title from its JSON-LD, the opening line from the home page's "Behind the work",
+the contact lines from its Contact section. A4, two to three pages, Poppins embedded, every link
+live. Headless Chrome prints it over the DevTools pipe (`$CHROME_BIN`, else Playwright's
+`chrome-headless-shell`, else Google Chrome); it refuses to print if a line runs past the margin
+or a font fails. The file is rewritten only when what Chrome prints changes, so a second run
+leaves it and its `?h=` stamp alone. Run it first: `bin-stamp-assets.py` stamps the new bytes
+into the links. A bare link to the file carries no `?h=` and `/assets/*` is cached for a year, so
+when the words change the file takes a new name (the month it was printed: `-2026-09` went live
+as the hand-made PDF, `-2026-10` is the one printed from `/cv`), the links follow, and
+`_redirects` sends the old name to it. A list item on `/cv` that is only a link to a page here
+("Every Solana video I edited") is printed with its address, which paper cannot otherwise show.
+Change the CV on `/cv`, never in the PDF.
+
+`bin-build-llms.py` writes `llms.txt`: the record, the contact notes and the profiles are
 its own prose (edit them there, not in `llms.txt`), and the films, one line each, by kind, in
 /work/'s order, come from the film pages' own `VideoObject`s (title, kind, year where the post
 proves it, figure, running time, the page and the post).
@@ -112,12 +147,12 @@ has none.
 `assets/solana-edits.json` (the team tracker's rows, exported): grouped by year, one line per
 video with its date, kind and views, each linked to its X post, and a video with a film page
 here linked to that page. Every count and total on it, in the `/work/` lede and on its share
-card (`og-solana-list-<count>.jpg`, from `bin-build-og.py`) is read from that file. No role word
+card (`og-solana-videos-<count>.jpg`, from `bin-build-og.py`) is read from that file. No role word
 and no "every" on it: the tracker is not all of his Solana work, and roles live on `/cv`. Totals are
 rounded down (25,974,000 views is 25.9M), like the credits' figures; a video with a film page here
 is that page's own node in the list's JSON-LD (`/work/<slug>#film`), the rest `CreativeWork`s.
 
-`bin-build-home-art.py` builds the home page's four compositions ("What are we making?") from the tiles.
+`bin-build-home-art.py` builds the home page's four compositions (under "Commissions") from the tiles.
 
 `bin-build-onset.py` renders About's On Set from `assets/onset.json`: the prints grouped by year, each laid
 out by its `shape`. `grade SRC NAME [GRAVITY]` makes the 1200 and 700 frames.
@@ -127,7 +162,7 @@ films a `/brief?film=` link may name), ends `/work/` on the home page's ending (
 `<section class="contact ending">`, lifted from `index.html`, so the two never drift;
 `design-ending.js` builds its roll from the wall's landscape cards), and on a film page with
 more than six audience comments (Al Doroub) shows six and keeps the rest in a native
-`<details>` ("Read all 24 comments").
+`<details>` ("Read 18 more"), never "all": the post's own total is printed above it.
 
 `bin-build-reel.py` compiles the film list and `reel.tpl.html` into `functions/_lib/reel.js`,
 which the `/reel/<code>` function renders at the edge. It also reads the `?v=` numbers, so run it
@@ -135,8 +170,11 @@ after bumping `styles.css`/`main.js` versions too. Each film keeps its reel char
 (`assets/reel-keys.json`): a new film takes the next character never given, a film that leaves
 retires its own, and the grid can be re-ordered without changing what a sent link means.
 
-`bin-build-og.py` writes the share cards' HTML for rendering at 1200x630; the `/work/` card
-prints the film count, so a new count is rendered to a new file name (`og-work-2.jpg`).
+`bin-build-og.py` writes the share cards' HTML to `_og/` for rendering at 1200x630 (`_og/` is
+git-ignored and `bin-check.py` skips it; remove it once the JPGs are rendered); the `/work/` card
+prints the film count, so a new count is rendered to a new file name (`og-work-3.jpg`), and a
+card whose words change takes a new name too (`og-about-2.jpg`); the old name gets a 301 in
+`_redirects` and goes on `bin-check-claims.py`'s `REPLACED` list.
 
 ## Deploying
 
@@ -177,8 +215,6 @@ there too, so check Email Routing after any DNS change.
   countdown leader, advancing on the player's own `ended` event, with a single
   timeline across the whole sequence. A cut reel on the Vimeo profile would
   still be worth having as a file; the site no longer waits for it.
-- **`assets/og.jpg`** is a crop of a still. A purpose-made 1200×630 card would
-  be better.
 - Some of the highest-performing pieces live only on X (Solana x All In, Breakpoint London,
   Electric Capital Developer Report, Roam and more): they have pages and stills here, but
   play on X, not on the site. APEX Mexico has no page yet; it is on `/work/solana`.

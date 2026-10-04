@@ -243,7 +243,7 @@ HEAD = '''<!doctype html>
     <a href="/">Work</a>
     <a href="/about">About</a>
     <a href="/cv">CV</a>
-    <a class="btn btn--solid" href="/#contact"><span class="masthead__long">Get in touch</span><span class="masthead__short">Brief</span></a>
+    <a class="btn btn--solid" href="/#contact"><span class="masthead__long">Get in touch</span><span class="masthead__short">Get in touch</span></a>
   </nav>
 </header>
 <main id="top">
@@ -278,7 +278,7 @@ HOME_COUNT, MORE_COUNT = WORDS.get(len(HOME), str(len(HOME))), len(films) - len(
 CATEGORIES = [
     ('brand',       'Brand &amp; campaign films',      ('Campaign film', 'Brand film', 'Explainer')),
     ('events',      'Event &amp; conference films',    ('Event promo', 'Event film')),
-    ('documentary', 'Documentary &amp; human stories', ('Documentary', 'Feature documentary')),
+    ('documentary', 'Documentary &amp; institutional films', ('Documentary', 'Feature documentary')),
     ('motion',      'Motion, animation &amp; post',    ('Animation', 'Motion graphics', 'Visuals')),
     # last: the wall's last film is hung across its row, and a music video
     # is the picture that carries a row best
@@ -634,8 +634,8 @@ for i, f in enumerate(films):
                      f'<div class="reception__grid">{"".join(items[SHOWN:])}</div></details>\n')
         reception = (f'<section class="reception reveal" aria-labelledby="said-{f["slug"]}">\n'
                      f'    <h2 class="reception__head" id="said-{f["slug"]}">What people said</h2>\n'
-                     f'    <p class="reception__sub">Unedited comments on the <a href="{rec["url"]}" target="_blank" rel="noopener">original post</a>\n'
-                     f'      &mdash; {rec["stat"]}. Comments written in Arabic are shown in translation.</p>\n'
+                     f'    <p class="reception__sub">Unedited comments from the <a href="{rec["url"]}" target="_blank" rel="noopener">original post</a>.\n'
+                     f'      Comments written in Arabic are shown in translation.</p>\n'
                      + grid +
                      f'  </section>')
 
@@ -691,13 +691,13 @@ for i, f in enumerate(films):
   <section class="fp-close reveal" aria-labelledby="brief-head">
     <div class="fp-light fp-light--end" aria-hidden="true">{_light.replace('loading="eager"', 'loading="lazy"')}</div>
     <h2 id="brief-head">Have a project in mind?</h2>
-    <p>Tell me what you’re making and when you need it. A few lines are enough.</p>
-    <!--email_off--><a class="btn btn--solid" href="{enquiry}" data-kind="{BRIEF_KIND[_cid]}">Send the brief <span aria-hidden="true">↗</span></a><!--/email_off-->
+    <p>English or Arabic. I answer my own email.</p>
+    <!--email_off--><a class="btn btn--solid" href="{enquiry}" data-kind="{BRIEF_KIND[_cid]}">Get in touch <span aria-hidden="true">↗</span></a><!--/email_off-->
   </section>
   <footer class="fp-foot">
     <nav class="fp-nav" aria-label="Films">{''.join(nav)}</nav>
     <p class="fp-note">One of {COUNT} films in the <a href="/work/">selected work</a> of Ahmed El-Nimeri,
-      based in Dubai. Every figure on this site links to the published post it came from.</p>
+      a creative director and editor in Dubai.</p>
   </footer>
 </section>
 '''

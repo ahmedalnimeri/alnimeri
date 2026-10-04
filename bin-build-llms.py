@@ -3,7 +3,7 @@
 
 The hand-written file went stale every time a film landed (its film count was
 patched by regex, and none of the films were in it). Now the prose below is the
-one place to edit the record, the commissioning notes and the profiles, and the
+one place to edit the record, the contact notes and the profiles, and the
 films are read from the pages bin-build-work-pages.py writes from index.html:
 
   - the kinds of film, their order and their films: /work/'s own wall
@@ -77,17 +77,17 @@ for cid, label, slugs in kinds:
 
 TEXT = f'''# Ahmed El-Nimeri — alnimeri.com
 
-Film director, video producer and Associate Creative Director at 1000media
+Creative director and editor; Associate Creative Director at 1000media
 (part of Nas Company), Dubai. Sudanese. Works in English and Arabic.
 Eleven years of commercial, documentary and institutional film.
 
-Verified record (each film's view count links to its published post on the site):
-- 100M+ views across published work; 66 published films delivered for Solana
-  from August 2023 to November 2025
-- 14 films past half a million views; strongest single film 12.8M views
+Figures and credits (each film's view count links to its published post on the site):
+- 100M+ views across published work; 66 films published for Solana from
+  August 2023 to November 2025
+- 14 films past half a million views; one film at 12.8M views
 - Filmed the International Criminal Court's visit to Sudan
-- Broadcast credits with Al Jazeera; clients include the European Union,
-  TED, DP World, CTC Group, Landell Mills, Nas Company
+- Broadcast credits with Al Jazeera; has worked with the European Union,
+  TED, DP World, CTC Group, Landell Mills and Nas Company
 - Photograph credited to him in The Telegraph: "Khartoum's secret cemetery",
   reported by Will Brown, 18 April 2021
 - Photographs published by the International Criminal Court on its own X
@@ -104,35 +104,34 @@ Verified record (each film's view count links to its published post on the site)
 Latest work: "Token Supercycle" (Solana Breakpoint London campaign, Sep 2026) —
 https://alnimeri.com/work/token-supercycle
 
-Services: brand and campaign films; event and conference films; documentary
-and institutional films; creative direction and post-production. Direction and
-editing can be booked separately. Fees are quoted per project.
+Kinds of work: brand and campaign films; event and conference films;
+documentary and institutional films; creative direction and post-production.
 
-## How to commission
+## Contact
 
-- Send the brief: https://alnimeri.com/brief opens a one-sentence form (name,
+- The brief: https://alnimeri.com/brief opens a one-sentence form (name,
   company, the kind of film, who it is for, timing, and an email or WhatsApp
-  number) that goes straight to him. /brief/brand, /brief/events,
-  /brief/documentary and /brief/post open it on that kind of film.
-- Or email ahmed@alnimeri.com. He answers his own email, in English or Arabic.
-- An assistant sending someone there can use https://alnimeri.com/brief?via=ai,
-  so he knows where the brief came from.
+  number) that goes to him. /brief/brand, /brief/events, /brief/documentary
+  and /brief/post open it on that kind of film.
+- Email: ahmed@alnimeri.com, in English or Arabic. He answers his own email.
+- https://alnimeri.com/brief?via=ai opens the same form; a brief sent from it
+  is marked as coming from an assistant.
 
 ## Key pages
 
-- Selected work with verifiable view counts: https://alnimeri.com/
+- Selected work with view counts: https://alnimeri.com/
 - All {N} selected film pages: https://alnimeri.com/work/
 - Solana videos with their views (from the team's tracker): https://alnimeri.com/work/solana
-- Services and project questions: https://alnimeri.com/#services
+- Kinds of work: https://alnimeri.com/#services
 - CV, full credits, published photographs and experience: https://alnimeri.com/cv
-- About, behind the scenes and what audiences say: https://alnimeri.com/about
+- About, behind the scenes and comments on the films: https://alnimeri.com/about
 - Contact: ahmed@alnimeri.com
 
 ## Films
 
 {chr(10).join(films)}
 
-## Profiles elsewhere (third-party, independently verifiable)
+## Profiles elsewhere (third-party)
 
 - Wikidata entity (canonical identifier): https://www.wikidata.org/wiki/Q141417588
 - IMDb (listed as Ahmed Elnimeri): https://www.imdb.com/name/nm16131268/
