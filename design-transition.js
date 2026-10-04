@@ -1,7 +1,7 @@
 /* alnimeri.com — the still becomes the player.
 
    Changing pages runs through cross-document view transitions (styles.css,
-   "page-to-page"). The page itself only cross-fades; the still that was
+   "page-to-page"). The page itself cuts, through black; the still that was
    clicked is lifted out of it and carried, as one picture, to where the film
    page's player stands, and the room light comes up once it has landed
    (design-filmpages.css, .vt-film). Leaving a film page, its player is carried
@@ -26,10 +26,12 @@
   };
   var kept = function (k) { try { return JSON.parse(sessionStorage.getItem('vt:' + k)); } catch (e) { return null; } };
   var path = function (u) { try { return new URL(u, location.href).pathname.replace(/(.)\/$/, '$1'); } catch (e) { return ''; } };
-  var name = function (el) {
-    if (on) on.style.viewTransitionName = '';
+  var name = function (el, bare) {
+    if (on) { on.style.viewTransitionName = ''; on.classList.remove('vt-bare'); }
     on = el || null;
     if (on) on.style.viewTransitionName = 'film';
+    // the picture leaving goes without its words (styles.css, .vt-bare)
+    if (on && bare) on.classList.add('vt-bare');
   };
   // the picture a link to a film page stands for: a tile's poster (its name
   // links to the page), a composition's still, the hero's shot on screen, a
@@ -119,7 +121,7 @@
     if (!el && frame() && seen(frame())) el = frame();
     if (!el && to) el = stills(path(to)).filter(seen)[0];
     if (!el || !seen(el)) return;
-    name(el);
+    name(el, true);
     keep('from', { from: path(location.href), to: to ? path(to) : '', g: geo(el), t: Date.now() });
     vt.finished.then(function () { name(null); }, function () { name(null); });
   });

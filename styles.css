@@ -1267,16 +1267,27 @@ h1, h2, h3, .about__lead, .hero__eyebrow, .lost__title { text-wrap: balance; }
 
 /* ---------- page-to-page: the still becomes the player ----------
    Same-origin navigation runs through the View Transitions API. The page
-   itself only cross-fades, briefly; the still that was clicked is carried
-   out of it, as one picture, to where the film page's player stands, and
-   back into its place on the way out. design-transition.js (inlined in the
-   head of the pages that take part) gives that one element the name 'film'
-   and takes it off again when the transition is over. A picture with no
-   partner on the other side goes with the page. Browsers without support
-   just navigate; reduced motion turns it off entirely. */
+   itself cuts: the old one holds for two frames and goes to black, and the
+   new one comes up two frames later, in two steps. The two pages are never
+   on screen together (a cross-fade lays one page's words over the other's:
+   double text). The still that was clicked is carried out of it, as one
+   picture, to where the film page's player stands, and back into its place
+   on the way out. design-transition.js (inlined in the head of the pages
+   that take part) gives that one element the name 'film' and takes it off
+   again when the transition is over. A picture with no partner on the other
+   side goes with the page. Browsers without support just navigate; reduced
+   motion turns it off entirely. */
 
 @view-transition { navigation: auto; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; animation-timing-function: ease; }
+::view-transition-old(root) { animation: vt-out calc(var(--f) * 2) steps(1, end) both; }
+::view-transition-new(root) { animation: vt-in calc(var(--f) * 2) steps(2, end) calc(var(--f) * 2) both; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in  { from { opacity: 0; } to { opacity: 1; } }
+/* The picture leaving is carried bare: its words (a tile's play mark and
+   running time, the hover cue "Play 1:46", the player's "Play film", a
+   composition's chip) stay behind, so they never show over the other side's
+   own (design-transition.js puts .vt-bare on it as the old page is captured). */
+.vt-bare .tile__play, .vt-bare .tile__dur, .vt-bare .hv-cue, .vt-bare .fp-play, .vt-bare .cmp__chip { visibility: hidden; }
 /* The bar is the same on every page, but not the same shape (compact once a
    page is scrolled): cross-faded with the page it shows twice, a few pixels
    apart. It is lifted out and simply cut to the new page's bar. */
@@ -1307,7 +1318,9 @@ h1, h2, h3, .about__lead, .hero__eyebrow, .lost__title { text-wrap: balance; }
 .vt-fit.vt-to-still::view-transition-new(film) { animation-name: vt-fit-new, vt-fade-in; }
 @keyframes vt-fade-out { to { opacity: 0; } }
 @keyframes vt-fade-in  { from { opacity: 0; } }
-::view-transition-old(film):only-child, ::view-transition-new(film):only-child { animation-duration: .25s; animation-timing-function: ease; }
+/* a picture with no partner goes with its page, on the page's own cut */
+::view-transition-old(film):only-child { animation: vt-out calc(var(--f) * 2) steps(1, end) both; }
+::view-transition-new(film):only-child { animation: vt-in calc(var(--f) * 2) steps(2, end) calc(var(--f) * 2) both; }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
 }

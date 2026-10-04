@@ -42,10 +42,11 @@ try { if (v == null) sessionStorage.removeItem('vt:' + k); else sessionStorage.s
 };
 var kept = function (k) { try { return JSON.parse(sessionStorage.getItem('vt:' + k)); } catch (e) { return null; } };
 var path = function (u) { try { return new URL(u, location.href).pathname.replace(/(.)\/$/, '$1'); } catch (e) { return ''; } };
-var name = function (el) {
-if (on) on.style.viewTransitionName = '';
+var name = function (el, bare) {
+if (on) { on.style.viewTransitionName = ''; on.classList.remove('vt-bare'); }
 on = el || null;
 if (on) on.style.viewTransitionName = 'film';
+if (on && bare) on.classList.add('vt-bare');
 };
 var still = function (a) {
 var t = a.closest('.tile');
@@ -117,7 +118,7 @@ var el = picked && (to ? path(to) === path(picked.href) : Date.now() - picked.t 
 if (!el && frame() && seen(frame())) el = frame();
 if (!el && to) el = stills(path(to)).filter(seen)[0];
 if (!el || !seen(el)) return;
-name(el);
+name(el, true);
 keep('from', { from: path(location.href), to: to ? path(to) : '', g: geo(el), t: Date.now() });
 vt.finished.then(function () { name(null); }, function () { name(null); });
 });
