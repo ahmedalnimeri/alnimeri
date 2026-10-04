@@ -372,3 +372,40 @@
   #work .tile--scope .tile__img { object-position: var(--focus, 50% 50%); }
   .has-motion #work .tile--scope[style*="--focus"] .tile__img { transform-origin: var(--focus); }
 }
+
+/* ---- the phone opening: picture first -------------------------------------
+   Ahmed approved (3 Oct): on a phone the films come up first, under the bar,
+   then the line about them. The whole opening (the picture and its caption,
+   the line, the lede, both buttons, the career line) sits inside the first
+   screen. Same slideshow (motion.js), same 16:9 films, same words; only the
+   order and the spacing change. Wider screens keep the two columns. */
+@media (max-width: 760px) {
+  /* under the bar (61px tall on a phone) the frame keeps the margin it has at its sides */
+  .hero--editorial { gap: 0; padding-top: calc(61px + var(--gut)); padding-bottom: 30px; }
+  .hero--editorial .twoshot { order: -1; margin: 0 0 32px; }
+  /* the picture settles from just above the line, not from below the fold */
+  .hero--editorial .twoshot__frame { transform-origin: 50% 0; animation-delay: .1s; }
+  .hero--editorial .twoshot__bar { margin-top: 12px; }
+  /* the caption on one line: the film, and what kind of film it is. One line
+     for every film, or the line below would move as the films change: under
+     375px the two sizes follow the screen (The Greatest Sudanese Sit-In and
+     Documentary need 317px at 15/12.5px), and a title that still ran over
+     would end in an ellipsis rather than wrap */
+  .hero--editorial .twoshot__cap { margin-top: 4px; }
+  .hero--editorial .twoshot__label { flex-direction: row-reverse; justify-content: space-between; align-items: baseline; width: 100%; gap: 12px; }
+  .hero--editorial .twoshot__label b { font-size: clamp(13px, 4vw, 15px); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hero--editorial .twoshot__label span { flex: none; font-size: clamp(11px, 3.4vw, 12.5px); }
+  .hero--editorial .hero__name { font-size: clamp(38px, 10.6vw, 46px); line-height: 1.04; }
+  .hero--editorial .hero__lede { margin-top: 16px; font-size: 15.5px; line-height: 1.6; }
+  /* the two buttons share the row, never wider than a phone's (up to 760px a
+     tablet would otherwise stretch each one across half the page) */
+  .hero--editorial .hero__cta { flex-wrap: nowrap; gap: 10px; margin-top: 22px; max-width: 440px; }
+  .hero--editorial .hero__cta .btn { flex: 1 1 0; justify-content: center; padding: 13px 8px; font-size: 14px; }
+  .hero--editorial .hero__career { margin-top: 18px; font-size: 12px; line-height: 1.85; text-wrap: balance; }
+  /* a visitor's local time (functions/_middleware.js puts it over the line)
+     belongs to the line, not to the caption above it */
+  .hero--editorial .screening { margin: 0 0 18px; }
+  /* the words resolve after the picture is down, not before it */
+  .hero__name.has-words .w { animation-delay: calc(var(--i) * 55ms + 520ms); }
+  .hero__name.has-words .shot--2 .w { animation-delay: calc(var(--i) * 55ms + 900ms); }
+}
