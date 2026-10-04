@@ -126,7 +126,8 @@
 .fp-lights-down .fp-head, .fp-lights-down .fp-credit, .fp-lights-down .fp > :not(.fp-hero) { opacity: .16; }
 .fp-lights-down .fp-light { opacity: .5; }
 /* The bar's words dim, never the bar itself: at .16 its glass went clear too,
-   and a title scrolled under it read straight through the name and the links. */
+   and a title scrolled under it read straight through the name and the links.
+   (Republished under a new hash: the edge kept the old file under the first.) */
 .masthead > * { transition: opacity .8s var(--ease); }
 .fp-lights-down .masthead { border-color: transparent; }
 .fp-lights-down .masthead > * { opacity: .16; transition: opacity 1.2s var(--ease); }
