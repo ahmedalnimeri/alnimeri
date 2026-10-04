@@ -15,8 +15,9 @@ headings), plus three things the page says elsewhere:
     Contact section
 
 and laid out as a quiet A4 document (two to three pages) in the site's own
-typeface: Poppins, from assets/fonts, embedded in the template, and for the
-Arabic the same system fallback the site uses (the site ships no Arabic face).
+typefaces, from assets/fonts, embedded in the template: Poppins, and for the
+Arabic Readex Pro, whose @font-face (file, unicode-range, line metrics) is read
+from styles.css, so the paper and the page never set Arabic differently.
 Every link on the page is a link in the PDF. The ↗ marks (aria-hidden on the
 page) are left out.
 
@@ -58,6 +59,7 @@ ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'assets' / 'Ahmed_ElNimeri_CV-2026-10.pdf'
 SITE = 'https://alnimeri.com/'
 FONTS = {400: 'poppins-400', 500: 'poppins-500', 600: 'poppins-600', 700: 'poppins-700'}
+ARABIC = 'Readex Pro'   # the site's Arabic face: its @font-face in styles.css
 
 
 # ---------------------------------------------------------------- reading ---
@@ -340,37 +342,37 @@ def link(label, href):
 CSS = r'''
 @page {
   size: A4; margin: 15mm 17mm 17mm;
-  @bottom-left  { content: "%(name)s"; font: 400 6.8pt/1 P, sans-serif; color: #8a8a8a; vertical-align: top; padding-top: 5mm; }
-  @bottom-right { content: counter(page) " / " counter(pages); font: 400 6.8pt/1 P, sans-serif; color: #8a8a8a; vertical-align: top; padding-top: 5mm; }
+  @bottom-left  { content: "%(name)s"; font: 400 6.8pt/1 P, R, sans-serif; color: #8a8a8a; vertical-align: top; padding-top: 5mm; }
+  @bottom-right { content: counter(page) " / " counter(pages); font: 400 6.8pt/1 P, R, sans-serif; color: #8a8a8a; vertical-align: top; padding-top: 5mm; }
 }
 * { box-sizing: border-box; }
 html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-body { margin: 0; font: 400 8.6pt/1.5 P, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+body { margin: 0; font: 400 8.6pt/1.5 P, R, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
        color: #141414; background: #fff; font-kerning: normal; }
 p, li { orphans: 3; widows: 3; }
 a { color: inherit; text-decoration: underline; text-decoration-thickness: 0.4pt;
     text-decoration-color: #b9b9b9; text-underline-offset: 1.6pt; }
 b, strong { font-weight: 500; }
-[lang="ar"] { font-size: 1.06em; white-space: nowrap; }
+[lang="ar"] { white-space: nowrap; }
 .nw { white-space: nowrap; }
 .dim { color: #6e6e6e; }
 .sep { color: #b0b0b0; }
 
-header h1 { margin: 0; font: 700 23pt/1.05 P, sans-serif; letter-spacing: -0.02em; }
-header .title { margin: 4pt 0 9pt; font: 500 10.5pt/1.3 P, sans-serif; }
+header h1 { margin: 0; font: 700 23pt/1.05 P, R, sans-serif; letter-spacing: -0.02em; }
+header .title { margin: 4pt 0 9pt; font: 500 10.5pt/1.3 P, R, sans-serif; }
 header .contact { margin: 0; font-size: 7.8pt; line-height: 1.65; color: #555; }
 header .contact a { text-decoration: none; }
 .rule { border: 0; border-top: 0.75pt solid #141414; margin: 11pt 0 10pt; }
 .summary { margin: 0; font-size: 9.6pt; line-height: 1.55; max-width: 152mm; }
 
-h2 { margin: 15pt 0 6pt; font: 600 6.4pt/1 P, sans-serif; letter-spacing: 0.17em;
+h2 { margin: 15pt 0 6pt; font: 600 6.4pt/1 P, R, sans-serif; letter-spacing: 0.17em;
      text-transform: uppercase; break-after: avoid; page-break-after: avoid; }
 .list { margin: 0; color: #2a2a2a; }
 
 .job, .project, .school { break-inside: avoid; page-break-inside: avoid; margin: 0 0 8.5pt; }
 .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10pt; }
 .row .when { flex: none; font-size: 7.6pt; color: #555; font-variant-numeric: tabular-nums; }
-.role { margin: 0; font: 600 9.3pt/1.35 P, sans-serif; }
+.role { margin: 0; font: 600 9.3pt/1.35 P, R, sans-serif; }
 .role .tag { font-weight: 400; font-size: 7.6pt; color: #7a7a7a; }
 .org { margin: 0.5pt 0 2.5pt; font-size: 7.8pt; color: #333; }
 .org .city { color: #7a7a7a; }
@@ -404,12 +406,30 @@ ul.points li::before { content: ""; position: absolute; left: 1.5pt; top: 0.62em
 .craft dt { margin: 0; font-weight: 500; break-after: avoid; }
 .craft dd { margin: 0; color: #2a2a2a; }
 
-.school .title { margin: 0; font: 600 9.3pt/1.35 P, sans-serif; }
+.school .title { margin: 0; font: 600 9.3pt/1.35 P, R, sans-serif; }
 .school .org { margin: 0.5pt 0 1.5pt; }
 .school .body { margin: 0; color: #444; }
 section { break-inside: auto; }
 .keep { break-inside: avoid; page-break-inside: avoid; }
 '''
+
+
+def arabic_face():
+    """styles.css's Readex Pro @font-face as family R: the same file, the same
+    unicode-range and line metrics, embedded."""
+    css = re.sub(r'/\*[\s\S]*?\*/', '', (ROOT / 'styles.css').read_text())
+    faces = [b for b in re.findall(r'@font-face\s*\{([^}]*)\}', css)
+             if re.search(r'font-family:\s*"?' + re.escape(ARABIC) + r'"?\s*;', b)]
+    if len(faces) != 1:
+        sys.exit(f'bin-build-cv-pdf: styles.css has {len(faces)} @font-face for {ARABIC} (want one)')
+    src = re.search(r'src:\s*url\(([^)]+)\)\s*format\("woff2"\)\s*;', faces[0])
+    if not src:
+        sys.exit(f'bin-build-cv-pdf: the {ARABIC} @font-face has no single woff2 src')
+    data = base64.b64encode((ROOT / src.group(1).strip('"\'').lstrip('/')).read_bytes()).decode()
+    keep = [d.strip() for d in faces[0].split(';')
+            if d.strip() and not re.match(r'(font-family|src|font-display)\s*:', d.strip())]
+    return (f'@font-face {{ font-family: R; {"; ".join(keep)}; font-display: block; '
+            f'src: url(data:font/woff2;base64,{data}) format("woff2"); }}')
 
 
 def font_faces():
@@ -418,6 +438,7 @@ def font_faces():
         data = base64.b64encode((ROOT / 'assets' / 'fonts' / f'{name}.woff2').read_bytes()).decode()
         out.append(f'@font-face {{ font-family: P; font-weight: {weight}; font-style: normal; '
                    f'font-display: block; src: url(data:font/woff2;base64,{data}) format("woff2"); }}')
+    out.append(arabic_face())
     return '\n'.join(out)
 
 

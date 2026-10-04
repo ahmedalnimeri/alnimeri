@@ -32,7 +32,10 @@ generated functions/_lib files. Checked:
      so do the ones a script puts on the wire later (the hero's lazy stills,
      data-src / data-srcset, and its loops, data-loop-webm / data-loop-mp4),
      and every loop in assets/loops/ and every still in assets/frames/ is
-     named by md5[:8] of its own bytes.
+     named by md5[:8] of its own bytes. Fonts: every @font-face src in a
+     stylesheet is a file here, a font named <name>-<md5[:8]>.woff2 (Readex
+     Pro) is named by its bytes and has its licence beside it, and every font
+     preload names a styles.css @font-face src exactly, with crossorigin.
   6. Share images: every og:image and twitter:image is a file here.
   7. styles.css and main.js carry one and the same ?v= on every page.
   8. One Cloudflare Web Analytics beacon on every page, with one token.
@@ -353,6 +356,38 @@ for f in sorted((ROOT / 'assets/frames').glob('*/*')):
         bad(f'assets/frames/{f.parent.name}/{f.name}', 'a frame is named <still>-<width>-<md5[:8]>.jpg or .webp')
     elif hashlib.md5(f.read_bytes()).hexdigest()[:8] != m.group(1):
         bad(f'assets/frames/{f.parent.name}/{f.name}', 'its name is not the md5[:8] of its bytes: a changed still takes a new name')
+# the fonts: every @font-face src is a file here; a font named <name>-<md5[:8]>
+# (Readex Pro, the Arabic face) is named by its bytes, with its licence beside it;
+# and a font preload names exactly a src of styles.css, with crossorigin, or the
+# browser fetches the file twice
+_srcs = set()
+for css in sorted(ROOT.glob('*.css')):
+    _src = re.sub(r'/\*[\s\S]*?\*/', '', css.read_text())
+    for face in re.findall(r'@font-face\s*\{([^}]*)\}', _src):
+        for u in re.findall(r'url\(\s*["\']?([^"\')]+)["\']?\s*\)', face):
+            if re.match(r'(data|https?):', u):
+                continue
+            p = urljoin(f'{SITE}/{css.name}', u)
+            if not (ROOT / urlsplit(p).path.lstrip('/')).is_file():
+                bad(css.name, f'@font-face src {u} is not a file here')
+            if css.name == 'styles.css':
+                _srcs.add(urlsplit(p).path)
+for f in sorted((ROOT / 'assets/fonts').glob('*.woff2')):
+    m = re.fullmatch(r'(.+)-([0-9a-f]{8})\.woff2', f.name)
+    if m and hashlib.md5(f.read_bytes()).hexdigest()[:8] != m.group(2):
+        bad(f'assets/fonts/{f.name}', 'its name is not the md5[:8] of its bytes: a changed font takes a new name')
+    if f.name.startswith('readex-pro-') and not (ROOT / 'assets/fonts/readex-pro-OFL.txt').is_file():
+        bad(f'assets/fonts/{f.name}', 'Readex Pro ships with its licence, assets/fonts/readex-pro-OFL.txt')
+for url, (label, text) in PAGES.items():
+    for tag in re.findall(r'<link\b[^>]*\brel="preload"[^>]*>', text):
+        if 'as="font"' not in tag:
+            continue
+        h = re.search(r'\shref="([^"]+)"', tag)
+        p = urlsplit(urljoin(SITE + url, h.group(1) if h else '')).path
+        if p not in _srcs:
+            bad(label, f'preloads the font {h.group(1) if h else "(no href)"}, which is no @font-face src in styles.css: unused, or fetched twice')
+        if ' crossorigin' not in tag:
+            bad(label, f'its font preload {h.group(1) if h else ""} has no crossorigin: the font would download twice')
 
 # ---- 6. share images ------------------------------------------------------
 for url, (label, text) in PAGES.items():

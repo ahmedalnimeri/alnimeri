@@ -6,6 +6,20 @@
 @font-face { font-family: Poppins; font-weight: 500; font-style: normal; font-display: swap; src: url(assets/fonts/poppins-500.woff2) format("woff2"); }
 @font-face { font-family: Poppins; font-weight: 600; font-style: normal; font-display: swap; src: url(assets/fonts/poppins-600.woff2) format("woff2"); }
 @font-face { font-family: Poppins; font-weight: 700; font-style: normal; font-display: swap; src: url(assets/fonts/poppins-700.woff2) format("woff2"); }
+/* Arabic: Readex Pro (Ahmed's choice, 3 Oct 2026). Google Fonts' Arabic subset
+   and its unicode-range, one variable file for every weight, named by its md5;
+   licence: readex-pro-OFL.txt beside it. It comes after Poppins in --ff and
+   --mono, so Poppins sets every Latin letter, only Arabic reaches it, and a page
+   with no Arabic never fetches it (/about, whose first screen holds its Arabic
+   line, preloads it). At one size the two faces match: its alef stands as tall
+   as Poppins's l (740 of 1000) and its letters' bodies at about Poppins's
+   x-height, so it takes no size of its own. Its line metrics are Poppins's
+   (ascent 1050, descent 350, gap 100 of 1000), so even an engine that measures a
+   line by every face on it gives a line holding Arabic the height and baseline
+   of the lines around it. bin-build-cv-pdf.py embeds this face in the CV PDF. */
+@font-face { font-family: "Readex Pro"; font-weight: 160 700; font-style: normal; font-display: swap; src: url(assets/fonts/readex-pro-arabic-ff1a813f.woff2) format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+  ascent-override: 105%; descent-override: 35%; line-gap-override: 10%; }
 
 :root {
   --hero-poster: url("assets/posters/843280565.jpg?h=60978943");
@@ -17,7 +31,7 @@
   --line:      rgba(255, 255, 255, 0.12);
   --line-soft: rgba(255, 255, 255, 0.07);
 
-  --ff: Poppins, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --ff: Poppins, "Readex Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 
   --gut:  clamp(1.25rem, 5vw, 5.5rem);
   --pill: 100px;
@@ -30,7 +44,7 @@
   /* Two voices. Poppins is for what Ahmed says; mono is for what the deck
      writes — timecode, slates, IN/OUT/TRT, durations. Mono is always small,
      uppercase, tracked, and never brighter than the picture. */
-  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", "Readex Pro", monospace;
 
   color-scheme: dark;
 }
@@ -888,11 +902,13 @@ a { color: inherit; }
 .pagehead__title em { font-style: normal; color: var(--fg-dim); }
 .pagehead__act { margin: clamp(1.75rem, 4vh, 2.5rem) 0 0; }
 /* The one Arabic line on the site. His voice, not chrome — Poppins falls
-   through to the system's Arabic face; small, dim, earned. */
+   through to Readex Pro, the site's Arabic face, at the line's own size (the
+   two match there: the 1.05em the system's smaller Arabic needed would now
+   set it a size above the English); small, dim, earned. */
 .pagehead__grace {
   margin: 1.4rem auto 0; font-size: 0.92rem; color: var(--fg-faint);
 }
-.pagehead__grace [lang="ar"] { color: var(--fg-dim); font-size: 1.05em; }
+.pagehead__grace [lang="ar"] { color: var(--fg-dim); }
 
 .pagehead__lede {
   margin: clamp(1.5rem, 4vh, 2.25rem) auto 0;
