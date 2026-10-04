@@ -8,6 +8,11 @@
  *   &limit=200  rows to return; max 20000 for JSON, 5000 for the HTML table
  *   &offset=0   skip N rows — page back through history beyond one screenful
  *   &days=30    only the last N days
+ *   &since=<ISO timestamp>  only rows logged after it (the sheet's hourly
+ *               pull asks for what is new since its last row, so it reads a
+ *               few hundred rows instead of the whole table)
+ *   &counts=1   JSON only: add the matching/total counts as headers. They are
+ *               two extra passes over the table, so a pull leaves them out.
  *   &bots=1     include anything the user-agent check flagged
  *   &format=json
  *
@@ -76,16 +81,29 @@ export async function onRequestGet({ request, env }) {
   const days   = Math.max(0, parseInt(url.searchParams.get('days') || '0', 10) || 0);
   const bots   = url.searchParams.get('bots') === '1';
   const humans = url.searchParams.get('humans') === '1';
+  const sinceRaw = url.searchParams.get('since') || '';
+  // Only an ISO stamp in the stored shape ('2026-10-04T15:11:27.123Z') — it is
+  // compared as a string, so anything else would match the wrong rows.
+  const since = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/.test(sinceRaw) ? sinceRaw : '';
+  if (sinceRaw && !since) {
+    return new Response('since must be an ISO timestamp such as 2026-10-04T15:11:27.123Z', { status: 400 });
+  }
+  const counts = !asJson || url.searchParams.get('counts') === '1';
 
   // Filtering happens in SQL, not after the fetch: LIMIT has to apply to the
   // rows you keep. Filtering in JS would let 200 scanner rows crowd out every
   // real visit before you ever saw one.
   const where = [];
   const binds = [];
-  if (!bots) where.push('is_bot = 0');
+  // With a since, the unary + keeps SQLite off idx_visits_is_bot: on that index
+  // it would walk every non-bot row ever logged; on idx_visits_ts it reads
+  // only the rows after since.
+  if (!bots) where.push(since ? '+is_bot = 0' : 'is_bot = 0');
   // ts is stored as an ISO string ('2026-09-30T…Z'); datetime() writes a space
   // there instead, and 'T' sorts after ' ', so compare like with like.
   if (days) where.push(`ts >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-${days} days')`);
+  // Uses idx_visits_ts, so D1 reads only the new rows, not the whole log.
+  if (since) { where.push('ts > ?'); binds.push(since); }
   if (humans) {
     where.push(`(path IN (${PAGES.map(() => '?').join(',')}) OR ((path LIKE '/work/%' OR path LIKE '/reel/%') AND path NOT LIKE '%.%'))`);
     binds.push(...PAGES);
@@ -104,14 +122,21 @@ export async function onRequestGet({ request, env }) {
   // Two counts, always: how many rows match the current filter (so paging
   // knows where it ends) and how many exist at all (so a filtered view says
   // what it is hiding rather than looking like a site with no traffic).
-  const matchRow = await env.DB.prepare(
-    `SELECT COUNT(*) AS n FROM visits ${clause}`
-  ).bind(...binds).first();
-  const matching = matchRow ? matchRow.n : 0;
-  const allRow = await env.DB.prepare(
-    `SELECT COUNT(*) AS n FROM visits ${bots ? '' : 'WHERE is_bot = 0'}`
-  ).first();
-  const total = allRow ? allRow.n : 0;
+  // Each count is a full pass over the log, and D1's free tier caps the rows
+  // read per day: the hourly sheet pull made three passes per request and ran
+  // the account to 79% of the cap. So the counts are for the HTML page, or a
+  // JSON caller that asks with &counts=1.
+  let matching = null, total = null;
+  if (counts) {
+    const matchRow = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM visits ${clause}`
+    ).bind(...binds).first();
+    matching = matchRow ? matchRow.n : 0;
+    const allRow = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM visits ${bots ? '' : 'WHERE is_bot = 0'}`
+    ).first();
+    total = allRow ? allRow.n : 0;
+  }
 
   if (asJson) {
     return new Response(JSON.stringify(results, null, 2), {
@@ -122,8 +147,7 @@ export async function onRequestGet({ request, env }) {
         // counts ride in headers, so a caller can tell a full pull from a
         // truncated one without parsing the page.
         'x-rows-returned': String(results.length),
-        'x-rows-matching': String(matching),
-        'x-rows-total': String(total),
+        ...(counts ? { 'x-rows-matching': String(matching), 'x-rows-total': String(total) } : {}),
       },
     });
   }
