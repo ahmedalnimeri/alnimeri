@@ -1,0 +1,22 @@
+{
+ "_note": "Frames under the player on /work/solana-accelerate (bin-build-work-pages.py). Rows as hung on a wide screen, read in order; each frame is a still in assets/frames/solana-accelerate/ (<still>-640|1280-<md5[:8]>.jpg|.webp) and t, the second of the film it is from (a press plays from that second, rounded down). size: its share of the row; dy: how far above (-) or below (+) the line it hangs, px; depth: 1 for the one in focus at rest (exactly one), less for the planes behind it (the scroll moves them). pad: the row's inset, left and right, %. Phones: built from the same order.",
+ "rows": [
+  {
+   "pad": [0, 9],
+   "frames": [
+    {"still": "01", "t": 0.5, "size": 1, "dy": -10, "depth": 0.7},
+    {"still": "02", "t": 16.5, "size": 0.85, "dy": 16, "depth": 0.45},
+    {"still": "03", "t": 20.5, "size": 1.2, "dy": -4, "depth": 0.7}
+   ]
+  },
+  {
+   "pad": [4, 0],
+   "frames": [
+    {"still": "04", "t": 31.0, "size": 0.9, "dy": 12, "depth": 0.45},
+    {"still": "05", "t": 50.0, "size": 1.75, "dy": 0, "depth": 1},
+    {"still": "06", "t": 55.0, "size": 0.9, "dy": -12, "depth": 0.7},
+    {"still": "07", "t": 63.0, "size": 0.85, "dy": 14, "depth": 0.45}
+   ]
+  }
+ ]
+}

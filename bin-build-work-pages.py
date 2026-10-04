@@ -11,7 +11,7 @@ truth, so a film added or reordered there regenerates correctly here. Asset
 URLs are copied already-stamped, since bin-stamp-assets.py does not reach
 into this directory.
 """
-import re, os, json, html, sys, subprocess
+import re, os, json, html, sys, subprocess, glob
 from urllib.parse import urlencode, quote
 
 _ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven',
@@ -39,6 +39,8 @@ import hashlib
 def _md5(path):
     return hashlib.md5(open(path, 'rb').read()).hexdigest()[:8]
 DVER, DJVER = _md5('design-filmpages.css'), _md5('design-filmpages.js')
+# the Frames under the player (design-frames.css / .js), on the pages that have them
+FVER, FJVER = _md5('design-frames.css'), _md5('design-frames.js')
 # the home page's ending (design-ending.css / .js), which /work/ ends on too
 EVER, EJVER = _md5('design-ending.css'), _md5('design-ending.js')
 MARK = re.search(r'src="(assets/logo-96\.png\?h=[a-f0-9]+)"', SRC).group(1)
@@ -530,6 +532,122 @@ def facts(rec, yr=''):
     return ''.join(out)
 
 
+# ---- Frames: the film's own stills, under its player -----------------------
+# A few moments from the film itself, hung under the player in two lines:
+# assets/frames/<slug>.json is the hang (as Ahmed approved it, 3 Oct 2026) and
+# assets/frames/<slug>/ its stills, each <still>-640|1280-<md5[:8]>.jpg|.webp,
+# so a changed still takes a new name (as the loops do). Every frame is a link
+# to the film at its second, for a visitor without JavaScript;
+# design-filmpages.js turns a press into: back up to the player, lights down,
+# the film playing from there. design-frames.js gives the hang the home
+# compositions' rack focus. A film without a file here has no Frames.
+FRAMES_DIR = 'assets/frames'
+FRAME_W = (640, 1280)
+
+def secs_of(dur):
+    return sum(int(x) * 60 ** k for k, x in enumerate(reversed(dur.split(':'))))
+
+def clock(s):
+    """A second of the film as the player shows it: 0:45, 13:38, 1:02:05."""
+    s = int(s)
+    return f'{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}' if s >= 3600 else f'{s // 60}:{s % 60:02d}'
+
+def at_url(rec, s):
+    """The film at second s where it lives: what a frame links to without JavaScript."""
+    return (f"https://www.youtube.com/watch?v={rec['vid']}&amp;t={s}s" if rec['provider'] == 'youtube'
+            else f"https://vimeo.com/{rec['vid']}#t={s}s")
+
+def frame_files(slug, still):
+    """One still's four files, checked: one of each, each named by its bytes."""
+    out = {}
+    for w in FRAME_W:
+        for ext in ('jpg', 'webp'):
+            hits = sorted(glob.glob(f'{FRAMES_DIR}/{slug}/{still}-{w}-*.{ext}'))
+            if len(hits) != 1:
+                sys.exit(f'{FRAMES_DIR}/{slug}/: still {still} needs one {w}px .{ext}, has {len(hits)}')
+            m = re.fullmatch(rf'{re.escape(still)}-{w}-([0-9a-f]{{8}})\.{ext}', os.path.basename(hits[0]))
+            if not m or m.group(1) != _md5(hits[0]):
+                sys.exit(f'{hits[0]}: not named by the md5[:8] of its bytes (a changed still takes a new name)')
+            out[(w, ext)] = '/' + hits[0]
+    return out
+
+FRAME_PLAY = '<i aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z"/></svg></i>'
+
+def frames_of(f):
+    """The Frames section of a film page, or '' for a film with none."""
+    path = f'{FRAMES_DIR}/{f["slug"]}.json'
+    if not os.path.exists(path):
+        return ''
+    rec = f['main']
+    if not rec['vid']:
+        sys.exit(f'{path}: {f["title"]} does not play here, so no frame could play it')
+    rows = json.load(open(path))['rows']
+    order = [fr for r in rows for fr in r['frames']]
+    ids = [fr['still'] for fr in order]
+    if len(set(ids)) != len(ids) or not all(re.fullmatch(r'\d\d', i) for i in ids):
+        sys.exit(f'{path}: each still once, named by two digits')
+    if [fr['depth'] for fr in order].count(1) != 1:
+        sys.exit(f'{path}: exactly one frame at depth 1 (the one in focus at rest)')
+    if len(order) not in WORDS or len(order) < 2:
+        sys.exit(f'{path}: {len(order)} frames')
+    end = secs_of(rec['dur'])
+    for fr in order:
+        if not (0 <= fr['t'] < end):
+            sys.exit(f'{path}: still {fr["still"]} at {fr["t"]}s, outside the film ({rec["dur"]})')
+        if not (0 < fr['size'] <= 3 and 0 < fr['depth'] <= 1):
+            sys.exit(f'{path}: still {fr["still"]}: size or depth out of range')
+    stray = sorted(p for p in glob.glob(f'{FRAMES_DIR}/{f["slug"]}/*') if os.path.basename(p).split('-')[0] not in ids)
+    if stray:
+        sys.exit(f'{FRAMES_DIR}/{f["slug"]}/: {", ".join(stray)} is in no frame (delete a replaced still)')
+    # Phones hang two to a row, in the same order: the frame in focus at rest
+    # across the screen, the right one of each pair a little lower (so each
+    # frame has its own turn at the middle of the screen, where the focus is),
+    # and one left over (before the lead, or last) across the screen too.
+    phone, k = {}, 0
+    while k < len(order):
+        a, b = order[k], order[k + 1] if k + 1 < len(order) else None
+        if a['depth'] == 1 or b is None or b['depth'] == 1:
+            phone[a['still']] = 'wide'; k += 1
+        else:
+            phone[a['still']], phone[b['still']] = '', 'drop'; k += 2
+    title = html.escape(html.unescape(f['title']), quote=True)
+    out = []
+    for r in rows:
+        pl, pr = r['pad']
+        frs = r['frames']
+        files = [frame_files(f['slug'], fr['still']) for fr in frs]
+        dims = [pixels(fl[(1280, 'jpg')][1:]) for fl in files]
+        grow = [w / h * fr['size'] for (w, h), fr in zip(dims, frs)]
+        # each frame's share of the row, for the picture size it asks for
+        # (the row is the page's column, 90vw up to 1320px, less its inset and gaps)
+        inner = 1 - (pl + pr) / 100 - 0.022 * (len(frs) - 1)
+        cells = []
+        for fr, fl, (w, h), g in zip(frs, files, dims, grow):
+            share = g / sum(grow) * inner
+            sizes = (f'(max-width: 699px) {92 if phone[fr["still"]] == "wide" else 46}vw, '
+                     f'(max-width: 1466px) {round(share * 90)}vw, {round(share * 1320)}px')
+            s = int(fr['t'])
+            cls = ('frm__still' + (' is-lead' if fr['depth'] == 1 else '')
+                   + (' is-' + phone[fr['still']] if phone[fr['still']] else ''))
+            cells.append(
+                f'<a class="{cls}" href="{at_url(rec, s)}" data-from="{s}" data-depth="{fr["depth"]:g}"'
+                f' style="--x:{fr["size"]:g};--dy:{fr["dy"]:g}px;--ar:{w}/{h};--g:{w / h:.3f}"'
+                f' aria-label="Play {title} from {clock(s)}">'
+                f'<span class="frm__frame"><picture>'
+                f'<source type="image/webp" srcset="{fl[(640, "webp")]} 640w, {fl[(1280, "webp")]} 1280w" sizes="{sizes}">'
+                f'<img srcset="{fl[(640, "jpg")]} 640w, {fl[(1280, "jpg")]} 1280w" sizes="{sizes}" src="{fl[(640, "jpg")]}"'
+                f' alt="" width="{w}" height="{h}" loading="lazy" decoding="async"></picture></span>'
+                f'<span class="frm__chip" aria-hidden="true">{FRAME_PLAY}{clock(s)}<span>Play from here</span></span></a>')
+        out.append(f'      <div class="frm__row" style="--pl:{pl:g}%;--pr:{pr:g}%">' + ''.join(cells) + '</div>\n')
+    return ('\n  <!-- the Frames\' own styles, here rather than in the head so they never\n'
+            '       hold up the first paint of the film -->\n'
+            f'  <link rel="stylesheet" href="/design-frames.css?v={FVER}">\n'
+            '  <section class="frm" aria-labelledby="frames-head">\n'
+            f'    <div class="frm__head"><h2 id="frames-head">Frames</h2>'
+            f'<p>{WORDS[len(order)].capitalize()} moments from the film. Press one to play from there.</p></div>\n'
+            '    <div class="frm__board">\n' + ''.join(out) + '    </div>\n  </section>')
+
+
 for i, f in enumerate(films):
     prev_f = films[i - 1] if i else None
     next_f = films[i + 1] if i + 1 < len(films) else None
@@ -608,6 +726,9 @@ for i, f in enumerate(films):
                 f'    <div class="fp-also__films">{"".join(_items)}</div>\n'
                 f'  </section>')
 
+    # A few moments from the film, under its player, each a way into it
+    frames = frames_of(f)
+
     # What the audience said, in their own words, off the original post.
     rec = RECEPTION.get(f['slug'])
     reception = ''
@@ -669,7 +790,7 @@ for i, f in enumerate(films):
         # the first frame (is-peek, design-filmpages.css); on a wider screen,
         # where it is well below the fold, it still arrives with the others.
         # (Not card()'s eager_first/shown_first: those count across every page.)
-        if k == 0 and not f['portrait'] and not reception and not also:
+        if k == 0 and not f['portrait'] and not reception and not also and not frames:
             c = (c.replace('loading="lazy"', 'loading="eager"', 1)
                   .replace('class="fp-card', 'class="fp-card is-peek', 1))
         _hang.append(c)
@@ -685,7 +806,7 @@ for i, f in enumerate(films):
       <p class="fp-meta">{meta}</p>
     </header>
     {player}
-  </div>{also}
+  </div>{frames}{also}
   {reception}
   {related}
   <section class="fp-close reveal" aria-labelledby="brief-head">
@@ -708,6 +829,13 @@ for i, f in enumerate(films):
                         ver=VER, mark=MARK, dver=DVER,
                         schema=json.dumps(schema, ensure_ascii=False))
             + body + FOOT.format(ver=VER, djver=DJVER))
+    if frames:
+        # after the film pages' own script, whose handlers it leaves alone
+        page = page.replace(f'<script src="/design-filmpages.js?v={DJVER}" defer></script>\n',
+                            f'<script src="/design-filmpages.js?v={DJVER}" defer></script>\n'
+                            f'<script src="/design-frames.js?v={FJVER}" defer></script>\n', 1)
+        if page.count('design-frames.js?v=') != 1:
+            sys.exit(f"work/{f['slug']}.html: the Frames' script did not go in")
     open(f"work/{f['slug']}.html", 'w').write(page)
 
 # ---- the index -----------------------------------------------------------

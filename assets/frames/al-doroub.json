@@ -1,0 +1,23 @@
+{
+ "_note": "Frames under the player on /work/al-doroub (bin-build-work-pages.py). Rows as hung on a wide screen, read in order; each frame is a still in assets/frames/al-doroub/ (<still>-640|1280-<md5[:8]>.jpg|.webp) and t, the second of the film it is from (a press plays from that second, rounded down). size: its share of the row; dy: how far above (-) or below (+) the line it hangs, px; depth: 1 for the one in focus at rest (exactly one), less for the planes behind it (the scroll moves them). pad: the row's inset, left and right, %. Phones: built from the same order.",
+ "rows": [
+  {
+   "pad": [0, 5],
+   "frames": [
+    {"still": "01", "t": 45.0, "size": 1, "dy": -14, "depth": 0.7},
+    {"still": "02", "t": 186.5, "size": 0.78, "dy": 18, "depth": 0.45},
+    {"still": "03", "t": 331.0, "size": 1.75, "dy": 0, "depth": 1},
+    {"still": "04", "t": 406.0, "size": 0.9, "dy": -10, "depth": 0.7}
+   ]
+  },
+  {
+   "pad": [5, 0],
+   "frames": [
+    {"still": "05", "t": 570.0, "size": 1.1, "dy": 10, "depth": 0.45},
+    {"still": "06", "t": 723.4, "size": 0.8, "dy": -14, "depth": 0.7},
+    {"still": "07", "t": 795.5, "size": 1.2, "dy": 6, "depth": 0.7},
+    {"still": "08", "t": 818.0, "size": 0.95, "dy": -8, "depth": 0.45}
+   ]
+  }
+ ]
+}

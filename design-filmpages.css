@@ -77,6 +77,11 @@
 .fp-frame:hover img { transform: scale(1.018); }
 .fp-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity .9s var(--ease); }
 .fp-frame.is-loaded iframe { opacity: 1; }
+/* a frame pressed below while the film plays: its new player comes in over the old one once loaded */
+.fp-frame.is-loaded iframe.is-next { opacity: 0; }
+/* a frame pressed below from the keyboard takes the keyboard to the player
+   (design-filmpages.js): the playing film is the mark of where it went */
+.fp-frame[tabindex="-1"]:focus { outline: none; }
 .fp-frame.is-loaded img { opacity: 0; }
 .fp-frame.is-playing { cursor: default; }
 

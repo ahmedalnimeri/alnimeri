@@ -1,0 +1,90 @@
+/* design-frames.css — "Frames": stills from the film itself, hung under the
+   player at three depths, with the home compositions' rack focus.
+
+   At rest one frame is sharp and the others sit behind it, softer and
+   darker, as on a long lens. Point at a frame and focus racks to it: it
+   sharpens and comes forward, the rest fall soft, and its timecode comes
+   into focus in its corner. On a phone the scroll pulls focus instead: the
+   frame crossing the middle of the screen is the sharp one. A frame is a
+   way into the film: pressing it plays the film from that moment
+   (design-filmpages.js). design-frames.js drives the focus; without it the
+   lead is in focus and each frame links to the film at its second. Only
+   transform, opacity and filter animate.
+
+   Written by bin-build-work-pages.py from assets/frames/<slug>.json, and
+   linked only from the pages that have Frames, just above them. */
+
+.frm { max-width: var(--fp-w, 1320px); margin: clamp(72px, 12vh, 128px) auto 0; }
+.frm__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; margin-bottom: clamp(28px, 4.6vh, 48px); }
+.frm__head h2 { margin: 0; font-size: clamp(22px, 2.3vw, 30px); font-weight: 500; letter-spacing: -0.022em; line-height: 1.15; color: var(--fg); }
+.frm__head p { margin: 0; font-size: 13px; letter-spacing: -0.005em; color: var(--fg-faint); text-wrap: pretty; }
+
+/* ---- the hang: the film read in order, two lines of prints. Every frame
+   keeps its own shape; the lead hangs larger, the rest sit around it on
+   the line, a little higher or lower (--dy), as prints on a board do. ---- */
+.frm__board { display: flex; flex-direction: column; gap: clamp(22px, 2.6vw, 40px); }
+.frm__row { display: flex; align-items: center; gap: 2.2%; padding: 0 var(--pr, 0%) 0 var(--pl, 0%); }
+.frm__still {
+  position: relative; display: block; min-width: 0;
+  flex: calc(var(--g, 1.778) * var(--x, 1)) 1 0; top: var(--dy, 0px);
+  aspect-ratio: var(--ar, 16 / 9); border-radius: 10px;
+  color: var(--fg); text-decoration: none; transform-origin: 50% 50%;
+  container-type: inline-size;
+  filter: brightness(.62) blur(1.2px) saturate(.88);
+  transition: filter .8s var(--ease), opacity .8s var(--ease);
+}
+.frm__still.is-lead { filter: none; }
+.frm.is-racked .frm__still.is-lead { filter: brightness(.55) blur(1.6px) saturate(.85); }
+.frm .frm__still.is-focus { z-index: 2; filter: brightness(1) blur(0px) saturate(1); }
+.frm__still:focus-visible { outline: 2px solid var(--fg); outline-offset: 5px; }
+
+.frm__frame { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; background: #000; box-shadow: 0 30px 70px -32px rgba(0, 0, 0, .9); }
+.frm__frame::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid rgba(255, 255, 255, .09); pointer-events: none; }
+.frm__frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* the chip: where in the film this frame is, and what a press does */
+.frm__chip {
+  position: absolute; left: 12px; bottom: 12px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 13px 7px 9px; border-radius: 999px;
+  background: rgba(8, 9, 10, .82); border: 1px solid rgba(255, 255, 255, .1);
+  font-size: 12.5px; line-height: 1.2; white-space: nowrap; pointer-events: none;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.005em;
+  opacity: 0; filter: blur(6px);
+  transition: opacity .45s var(--ease), filter .45s var(--ease);
+}
+.frm__chip i { width: 18px; height: 18px; border-radius: 50%; background: var(--fg); display: grid; place-items: center; flex: none; }
+.frm__chip i svg { width: 7px; height: 7px; fill: #08090a; margin-left: 1px; }
+.frm__chip span { color: var(--fg-dim); }
+@container (max-width: 320px) { .frm__chip span { display: none; } }
+.frm__still.is-focus .frm__chip, .frm:not(.is-racked) .frm__still.is-lead .frm__chip { opacity: 1; filter: none; }
+.frm.is-racked .frm__still.is-lead:not(.is-focus) .frm__chip { opacity: 0; filter: blur(6px); }
+
+/* ---- phones: the lead across the screen, the rest two by two, the right
+   one of a pair hung lower, so each frame gets its own turn at the middle
+   of the screen (is-wide / is-drop, from the builder) ---------------------- */
+@media (max-width: 699px) {
+  .frm__board { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; align-items: start; }
+  .frm__row { display: contents; }
+  .frm__still { top: 0; }
+  .frm__still.is-wide { grid-column: 1 / -1; }
+  .frm__still.is-drop { margin-top: 54px; }
+  /* a small screen reads blur as a picture still loading: keep it lighter */
+  .frm__still, .frm.is-racked .frm__still.is-lead { filter: brightness(.5) blur(.6px) saturate(.8); }
+  .frm__chip { left: 8px; bottom: 8px; padding: 5px 10px 5px 6px; font-size: 11.5px; }
+  .frm__chip span { display: none; }
+}
+
+/* ---- arrival: out of focus, back plane first ---- */
+.frm.is-live:not(.is-in) .frm__still { opacity: 0; filter: brightness(.6) blur(16px) saturate(.85); }
+.frm.is-live.is-in:not(.is-settled) .frm__still { transition-duration: 1.3s, 1.1s; transition-delay: calc(var(--k, 0) * 70ms); }
+.frm.is-live.is-in:not(.is-settled) .frm__still.is-lead { transition-delay: .5s; }
+.frm.is-near .frm__still { will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+  .frm__still, .frm__chip { transition: none; }
+  .frm__still, .frm.is-racked .frm__still.is-lead { filter: brightness(.62); }
+  .frm .frm__still.is-focus, .frm:not(.is-racked) .frm__still.is-lead { filter: none; }
+  .frm__chip { filter: none; }
+}
+@media print { .frm { display: none; } }

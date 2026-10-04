@@ -31,7 +31,8 @@ generated functions/_lib files. Checked:
      a pretty URL or a Function route, and every #fragment an id on its page;
      so do the ones a script puts on the wire later (the hero's lazy stills,
      data-src / data-srcset, and its loops, data-loop-webm / data-loop-mp4),
-     and every loop in assets/loops/ is named by md5[:8] of its own bytes.
+     and every loop in assets/loops/ and every still in assets/frames/ is
+     named by md5[:8] of its own bytes.
   6. Share images: every og:image and twitter:image is a file here.
   7. styles.css and main.js carry one and the same ?v= on every page.
   8. One Cloudflare Web Analytics beacon on every page, with one token.
@@ -338,6 +339,13 @@ for f in sorted((ROOT / 'assets/loops').glob('*')):
         bad(f'assets/loops/{f.name}', 'a loop is named <film>-<md5[:8]>.webm or .mp4')
     elif hashlib.md5(f.read_bytes()).hexdigest()[:8] != m.group(1):
         bad(f'assets/loops/{f.name}', 'its name is not the md5[:8] of its bytes: a changed loop takes a new name')
+# and so are the Frames' stills (bin-build-work-pages.py): <still>-<width>-<md5[:8]>
+for f in sorted((ROOT / 'assets/frames').glob('*/*')):
+    m = re.fullmatch(r'\d\d-\d+-([0-9a-f]{8})\.(jpg|webp)', f.name)
+    if not m:
+        bad(f'assets/frames/{f.parent.name}/{f.name}', 'a frame is named <still>-<width>-<md5[:8]>.jpg or .webp')
+    elif hashlib.md5(f.read_bytes()).hexdigest()[:8] != m.group(1):
+        bad(f'assets/frames/{f.parent.name}/{f.name}', 'its name is not the md5[:8] of its bytes: a changed still takes a new name')
 
 # ---- 6. share images ------------------------------------------------------
 for url, (label, text) in PAGES.items():

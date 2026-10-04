@@ -25,30 +25,37 @@
   var holder = function (frame) { return frame.closest('.fp-stage, .fp-also__film') || frame; };
 
   var stop = function (frame) {
-    var f = frame.querySelector('iframe');
-    if (f) f.parentNode.removeChild(f);
+    [].forEach.call(frame.querySelectorAll('iframe'), function (f) { f.parentNode.removeChild(f); });
     frame.classList.remove('is-playing', 'is-loaded');
     holder(frame).classList.remove('is-on');
     if (on === frame) on = null;
   };
 
-  var start = function (frame, play) {
-    if (on === frame) return;
-    if (on) stop(on);
-    on = frame;
+  // The player, from the start or from a second of the film (from: a frame
+  // pressed under it, below): Vimeo's own #t=, YouTube's start=.
+  var player = function (play, from) {
     var f = d.createElement('iframe'), id = encodeURIComponent(play.getAttribute('data-vid'));
+    from = Math.max(0, Math.floor(+from || 0));
     // Vimeo, or a film on YouTube (data-provider): its privacy-enhanced
     // player, no related videos at the end, sent the page's origin (YouTube
     // refuses an embed that arrives with no referrer at all)
     if (play.getAttribute('data-provider') === 'youtube') {
-      f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&modestbranding=1&playsinline=1';
+      f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&modestbranding=1&playsinline=1' + (from ? '&start=' + from : '');
       f.referrerPolicy = 'strict-origin-when-cross-origin';
     } else {
-      f.src = 'https://player.vimeo.com/video/' + id + '?title=0&byline=0&portrait=0&dnt=1&autoplay=1';
+      f.src = 'https://player.vimeo.com/video/' + id + '?title=0&byline=0&portrait=0&dnt=1&autoplay=1' + (from ? '#t=' + from + 's' : '');
     }
     f.title = play.getAttribute('data-title') || 'Film';
     f.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
     f.setAttribute('allowfullscreen', '');
+    return f;
+  };
+
+  var start = function (frame, play, from) {
+    if (on === frame) return;
+    if (on) stop(on);
+    on = frame;
+    var f = player(play, from);
     // focus stays on the page, so Escape still brings the lights up; Tab
     // is the next step into the player's own controls
     f.addEventListener('load', function () { if (f.parentNode === frame) frame.classList.add('is-loaded'); });
@@ -73,13 +80,14 @@
     // The lights follow the visitor's attention: the pointer leaving the
     // picture for a moment brings them up, coming back takes them down.
     frame.addEventListener('mouseleave', function () {
-      if (on !== frame) return;
+      if (on !== frame || gliding) return;   // (the page moving under a still pointer is not leaving)
       clearTimeout(upTimer); upTimer = setTimeout(function () { lights(false); }, 900);
     });
     frame.addEventListener('mouseenter', function () { if (on === frame) { clearTimeout(upTimer); lights(true); } });
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (es) {
-        es.forEach(function (en) { if (on === frame && en.intersectionRatio < 0.45) up(); });
+        // (not while the page is on its way back up to it from a frame below)
+        es.forEach(function (en) { if (on === frame && en.intersectionRatio < 0.45 && !gliding) up(); });
       }, { threshold: [0, 0.45] }).observe(frame);
     }
 
@@ -103,12 +111,63 @@
     }
   });
 
+  /* ---- a frame below the film plays it from there --------------------- */
+  // The Frames under the player (bin-build-work-pages.py): each is a link to
+  // the film at its second (data-from), for a visitor without JavaScript.
+  // Here a press takes the page back up to the player, takes the lights down
+  // and plays the film from that second, as the play button would from the
+  // start. A film already playing is given a new player that starts there,
+  // over the old one, which goes once the new one has loaded.
+  var own = frames.filter(function (f) { return f.closest('.fp-stage') && f.querySelector('.fp-play[data-vid]'); })[0];
+  var gliding = 0, landed = null;   // the way back up: its timer, and its end
+  var glide = function () {
+    clearTimeout(gliding);
+    if (landed) removeEventListener('scrollend', landed);
+    landed = function () {
+      removeEventListener('scrollend', landed);
+      clearTimeout(gliding); gliding = 0; landed = null;
+      // arrived: if the film is still mostly out of view, the lights come up
+      var r = own.getBoundingClientRect(), seenH = Math.min(r.bottom, innerHeight) - Math.max(r.top, 0);
+      if (on === own && seenH < r.height * 0.45) up();
+    };
+    gliding = setTimeout(landed, 1600);
+    if ('onscrollend' in window) addEventListener('scrollend', landed);
+  };
+  var from = function (a, e) {
+    var play = own.querySelector('.fp-play'), t = +a.getAttribute('data-from') || 0;
+    own.scrollIntoView({ behavior: still.matches ? 'auto' : 'smooth', block: 'center' });
+    glide();
+    if (on === own) {
+      var old = [].slice.call(own.querySelectorAll('iframe')), f = player(play, t);
+      f.classList.add('is-next');
+      var drop = function () {
+        f.classList.remove('is-next');   // fades in over the old one, which then goes
+        setTimeout(function () { old.forEach(function (o) { if (o.parentNode) o.parentNode.removeChild(o); }); }, 900);
+      };
+      f.addEventListener('load', drop);
+      setTimeout(drop, 2600);
+      // the old player stops talking while the new one loads
+      old.forEach(function (o) { try { o.contentWindow.postMessage('{"method":"pause"}', 'https://player.vimeo.com'); } catch (x) {} });
+      own.appendChild(f);
+      clearTimeout(upTimer); lights(true);
+    } else {
+      d.dispatchEvent(new CustomEvent('site:event', { detail: { t: 'play', via: 'page' } }));   // main.js: a Play
+      start(own, play, t);
+    }
+    // a keyboard press takes the keyboard with it, to the player
+    if (e.detail === 0) { own.setAttribute('tabindex', '-1'); own.focus({ preventScroll: true }); }
+  };
+
   // Up: Escape, a click or a tap anywhere else, or focus moving on to the
   // rest of the page. Down again: into the player's own controls.
   if (frames.length) {
     d.addEventListener('keydown', function (e) { if (e.key === 'Escape') up(); });
     d.addEventListener('focusin', function (e) { if (on && !on.contains(e.target)) up(); });
-    d.addEventListener('click', function (e) { if (on && !on.contains(e.target)) up(); });
+    d.addEventListener('click', function (e) {
+      var a = own && e.target.closest && e.target.closest('a[data-from]');
+      if (a && e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) { e.preventDefault(); from(a, e); return; }
+      if (on && !on.contains(e.target)) up();
+    });
     window.addEventListener('blur', function () {
       setTimeout(function () { if (on && d.activeElement === on.querySelector('iframe')) { clearTimeout(upTimer); lights(true); } }, 0);
     });
