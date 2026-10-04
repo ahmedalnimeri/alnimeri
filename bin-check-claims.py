@@ -40,6 +40,12 @@ role is a credit too ("edited by", "shot by", "Editor", "Cinematographer",
 him (its title and hero, not a film) is not a film's credit, so neither is
 read for those; nor is his descriptor, "creative director and editor", where
 a film page's footer or a reel's description names him.
+
+Nor is a list called complete when it is not: the team's tracker, which
+/work/solana is read from, is not the whole of his Solana work (Assets API and
+Crypto in the UAE have pages here and are not in it; bin-build-solana.py). So
+"every Solana video" (or "all his Solana films", ...) fails wherever it is
+read, /cv and its PDF included; "not every ..." passes.
 """
 import ast, html, re, shutil, subprocess, sys, pathlib
 
@@ -70,6 +76,9 @@ ROLE = re.compile(r'\b(?:edited|shot|filmed|graded|produced|lensed|cut|animated)
 # page only its tiles
 FILM_TEXT = re.compile(r'^(work/.+\.html|sitemap\.xml|llms\.txt|reel\.tpl\.html|functions/_lib/reel\.js|functions/reel/.+\.js|assets/[^/]+\.json)$')
 TILE = re.compile(r'<article class="tile[\s\S]*?</article>')
+# a completeness claim the tracker cannot back ("Every Solana video I edited");
+# "Not every Solana film on this site is in it" (solana-edits.json) is true
+EVERY = re.compile(r'(?<!not )\b(?:every|all(?: of)?(?: the| his| my)?)\s+solana\s+(?:videos?|films?)\b', re.I)
 # Someone else's title, exactly as it is printed on the site (a quote's
 # author, a credit's client). Empty: no page names one today.
 THIRD_PARTY = []
@@ -186,7 +195,8 @@ for p, text in files():
     hits = []
     checks = [(CLAIM, 'a director claim'), (TITLE, 'a title he does not hold'),
               (CREDIT_COLON, 'a "Director:" credit line'), (LEGACY, 'the old credit line'),
-              (CREDIT_LINE, 'a credit line under a film'), (ROLE_ATTR, 'a data-role on a tile')]
+              (CREDIT_LINE, 'a credit line under a film'), (ROLE_ATTR, 'a data-role on a tile'),
+              (EVERY, 'a completeness claim the tracker cannot back')]
     if FILM_TEXT.match(rel):
         for m in ROLE.finditer(text):
             if not his_descriptor(text, m):
@@ -230,4 +240,4 @@ if bad:
     sys.exit(1)
 print(f'claims: clean ({n} files incl. PDFs and share-card text; no "directed by", no "director" but '
       f'"creative director", no film director or storyteller, no credit line, no role next to a film, '
-      f'no retired card back)')
+      f'no "every Solana video", no retired card back)')

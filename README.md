@@ -107,8 +107,9 @@ JSON-LD `"director"`, a title he does not hold ("film director", "Storyteller"),
 credit line, any other "director" that is not "creative director" (his title is "Associate
 Creative Director", the descriptor "creative director and editor"; he is not a film director,
 3 Oct 2026; a /cv credit's "Assistant Director" passes, and a third party's own title goes in its
-`THIRD_PARTY` list), the old "Directed, shot and edited" line, an `fp-credit` line or a
-`data-role` attribute appears in anything served: every `.html`, `llms.txt`, `sitemap.xml`,
+`THIRD_PARTY` list), the old "Directed, shot and edited" line, an `fp-credit` line, a
+`data-role` attribute, or a completeness claim the tracker cannot back ("every Solana video":
+it is not all of his Solana work) appears in anything served: every `.html`, `llms.txt`, `sitemap.xml`,
 `robots.txt`, `assets/*.json`, the stylesheets' visible strings, the scripts, `functions/`, the
 share-card text in `bin-build-og.py` and the text and metadata of every PDF in `assets/`; if any
 other role ("edited by", "Editor", "Cinematographer", ...) sits next to a film (the film pages,
@@ -131,7 +132,7 @@ into the links. A bare link to the file carries no `?h=` and `/assets/*` is cach
 when the words change the file takes a new name (the month it was printed: `-2026-09` went live
 as the hand-made PDF, `-2026-10` is the one printed from `/cv`), the links follow, and
 `_redirects` sends the old name to it. A list item on `/cv` that is only a link to a page here
-("Every Solana video I edited") is printed with its address, which paper cannot otherwise show.
+("Solana videos I edited") is printed with its address, which paper cannot otherwise show.
 Change the CV on `/cv`, never in the PDF.
 
 `bin-build-llms.py` writes `llms.txt`: the record, the contact notes and the profiles are

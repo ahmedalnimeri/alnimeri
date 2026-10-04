@@ -168,9 +168,9 @@ def inline(n):
 
 
 def on_paper(n):
-    """A list item that is nothing but a link to a page here ("Every Solana
-    video I edited", on /cv) says nothing on paper, where a link cannot be
-    seen: print it with its address, "Every Solana video I edited:
+    """A list item that is nothing but a link to a page here ("Solana videos
+    I edited", on /cv) says nothing on paper, where a link cannot be seen:
+    print it with its address, "Solana videos I edited:
     alnimeri.com/work/solana", the address being the link. Anything else is
     inline(n)."""
     kids = [k for k in n.kids if not (isinstance(k, Node) and hidden(k))]
