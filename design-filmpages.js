@@ -241,6 +241,9 @@
   // hangs across the row instead (is-wide); a last row one film short gives
   // its last film two cells, at the row's height (is-pair).
   var ends = function (mine, few) {
+    // the list showing (design-worklist.js): the wall has no rows to measure;
+    // it measures them when it comes back (fp:view, below)
+    if (!wall.getClientRects().length) return;
     var cs = getComputedStyle(wall);
     var tracks = cs.gridTemplateColumns.split(' ').filter(Boolean);
     var cols = tracks.length;
@@ -358,8 +361,10 @@
     var cat = t.getAttribute('data-cat');
     history.replaceState(null, '', cat === 'all' ? location.pathname + location.search : '#' + cat);
     // if the wall's top has scrolled away, it comes back under the tabs as
-    // the wall re-hangs: the answer to a click starts on the next frame
-    var top = wall.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(bar).top) || 0) - bar.offsetHeight - 16;
+    // the wall re-hangs: the answer to a click starts on the next frame (the
+    // list's top, when the list is the view showing: design-worklist.js)
+    var list = d.querySelector('.fp-list'), shown = list && list.getClientRects().length ? list : wall;
+    var top = shown.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(bar).top) || 0) - bar.offsetHeight - 16;
     apply(cat, !still.matches, scrollY > top + 4 ? top : null);
   });
   window.addEventListener('hashchange', function () { apply(fromHash(), !still.matches); });
@@ -375,11 +380,13 @@
   edge();
   // the ink sits under the row's text only once the fonts have their widths
   if (d.fonts && d.fonts.ready) d.fonts.ready.then(function () { pill(current); edge(); });
-  window.addEventListener('resize', function () {
-    pill(current);
+  var rehang = function () {
     var mine = cards.filter(function (c) { return current === 'all' || c.getAttribute('data-cat') === current; });
     ends(mine, mine.length <= 4);
-  });
+  };
+  window.addEventListener('resize', function () { pill(current); rehang(); });
+  // back from the list to the wall (design-worklist.js): its last row again
+  d.addEventListener('fp:view', rehang);
 
   // the tab bar draws its hairline only once it is holding its place
   if ('IntersectionObserver' in window) {

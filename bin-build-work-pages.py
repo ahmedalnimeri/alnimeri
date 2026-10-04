@@ -43,6 +43,8 @@ DVER, DJVER = _md5('design-filmpages.css'), _md5('design-filmpages.js')
 FVER, FJVER = _md5('design-frames.css'), _md5('design-frames.js')
 # the home page's ending (design-ending.css / .js), which /work/ ends on too
 EVER, EJVER = _md5('design-ending.css'), _md5('design-ending.js')
+# /work/ as a list, beside the wall (design-worklist.css / .js), on /work/ only
+WLVER, WLJVER = _md5('design-worklist.css'), _md5('design-worklist.js')
 MARK = re.search(r'src="(assets/logo-96\.png\?h=[a-f0-9]+)"', SRC).group(1)
 # Cloudflare Web Analytics: the front page's own beacon (one token, kept in
 # index.html), on every film page and on /work/ too. bin-check.py fails if a
@@ -891,8 +893,109 @@ _wall = ''.join(sections).replace('<li class="fp-card"', '<li class="fp-card is-
 _a = _wall.index('<li class="fp-card is-lead"'); _wall = _sizes_in(_wall, _a, _wall.index('</li>', _a), LEAD_SIZES)
 if all((len(films) + 3) % cols == 1 for cols in (4, 3, 2)):
     _a = _wall.rindex('<li class="fp-card'); _wall = _sizes_in(_wall, _a, _wall.index('</li>', _a), WIDE_SIZES)
-rows = ('<nav class="fp-tabs" aria-label="Kinds of film"><div class="fp-tabs__row">' + nav + '</div></nav>'
-        + '<div class="fp-wall fp-lights" id="all" data-lead-sizes="' + LEAD_SIZES + '">' + _wall + '</div>')
+# ---- the list: the same films, one line each (Grid | List) ----------------
+# The wall shows the pictures; the list puts each film on one line, in the
+# wall's order: a small still, its name, the client, the kind, the year and
+# its figure, linked to the post that counted it, as on the front page's
+# tiles. Each fact only where the data proves it, otherwise "—" (a phone
+# leaves it out):
+#   year    year_of(): the post's own id, or a YouTube film's published date
+#   client  the party the tile's own kind line names after the kind
+#           ("Explainer · FITTR"; kind_and_client), else the brand whose own
+#           account published the post the figure links to (ACCOUNTS; each
+#           one is also a client of his on /cv, or the account Solana's films
+#           go out on). Any other account, or no post, names no one.
+# A grid | list switch sits at the end of the kinds; the kinds filter both
+# (design-worklist.css). Which view shows is set before the first paint by
+# the few lines below: ?view=list or ?view=grid in the address (kept as the
+# visitor's view from then on: a link sent as a list stays a list on the way
+# back from a film), else the visitor's last choice, kept in this browser
+# under design-worklist.js's KEY, else the wall. design-worklist.js runs the
+# switch. Without JavaScript: no switch, no list, the wall.
+ACCOUNTS = {
+    'x.com/solana': 'Solana',
+    'x.com/SolanaFndn': 'Solana Foundation',
+    'facebook.com/BdrAirlines': 'Badr Airlines',
+    'facebook.com/BankofKhartoum1913': 'Bank of Khartoum',
+    'facebook.com/CTCGroupLtd': 'CTC Group',
+}
+
+def client_of(f):
+    named = kind_and_client(f['kind'])[1]
+    if named:
+        return named
+    m = re.match(r'https?://(?:www\.)?(x\.com|facebook\.com)/([^/?#]+)/', html.unescape(f['statref'] or ''))
+    return ACCOUNTS.get(f'{m.group(1)}/{m.group(2)}', '') if m else ''
+
+LIST_SIZES = '(max-width: 700px) 96px, (max-width: 1000px) 76px, 88px'
+
+def row_still(f):
+    """The film's still at the list's size: the wall's own still (a vertical
+    film's 16:9 card where it has one), WebP first where the tile offers it."""
+    w = wall_still(f)
+    if not w['srcset']:
+        return ''
+    wd, ht = ('720', '1280') if w['portrait'] else ('1280', '720')
+    img = ('<img srcset="' + rooted_srcset(w['srcset']) + '" sizes="' + LIST_SIZES + '" src="' + rooted(w['poster'])
+           + '" alt="" width="' + wd + '" height="' + ht + '" loading="lazy" decoding="async">')
+    if w['webp']:
+        img = ('<picture><source type="image/webp" srcset="' + rooted_srcset(w['webp']) + '" sizes="' + LIST_SIZES + '">'
+               + img + '</picture>')
+    return img
+
+NONE = '<span class="{cls} is-none" aria-hidden="true">&mdash;</span>'
+
+def list_row(f):
+    kind = html.escape(kind_and_client(f['kind'])[0])
+    client, yr = client_of(f), year_of(f)
+    if not kind:
+        sys.exit(f"{f['title']}: no kind for the list")
+    reach = ('<a class="fp-row__reach" href="' + f['statref'] + '" target="_blank" rel="noopener">'
+             + nowrap_last(f['stat']) + '&nbsp;<span aria-hidden="true">&#8599;</span></a>' if f['stat'] and f['statref'] else
+             '<span class="fp-row__reach">' + nowrap_last(f['stat']) + '</span>' if f['stat'] else
+             NONE.format(cls='fp-row__reach'))
+    return ('<li class="fp-row" data-cat="' + f['cat'] + '">'
+            '<a class="fp-row__film" href="/work/' + f['slug'] + '">'
+            '<span class="fp-row__still">' + row_still(f) + '</span>'
+            '<span class="fp-row__name">' + f['title'] + '</span></a>'
+            '<span class="fp-row__meta">'
+            + ('<span class="fp-row__client">' + html.escape(client) + '</span>' if client else NONE.format(cls='fp-row__client'))
+            + '<span class="fp-row__kind">' + kind + '</span>'
+            + ('<span class="fp-row__year">' + yr + '</span>' if yr else NONE.format(cls='fp-row__year'))
+            + '</span>' + reach + '</li>')
+
+# every film on the wall, in its order (the categories' order, then the tiles')
+LISTED = [f for cid, _l, _n in CATEGORIES for f in groups[cid]]
+if sorted(f['slug'] for f in LISTED) != sorted(f['slug'] for f in films):
+    sys.exit('the list and the wall do not hold the same films')
+LIST = ('<div class="fp-list">'
+        '<div class="fp-list__head" aria-hidden="true"><span>Film</span><span>Client</span><span>Kind</span><span>Year</span><span>Reach</span></div>'
+        '<ol class="fp-list__rows">' + ''.join(list_row(f) for f in LISTED) + '</ol></div>')
+
+_key = re.search(r"var KEY = '([\w.-]+)';", open('design-worklist.js').read())
+if not _key:
+    sys.exit('design-worklist.js: no KEY to read the visitor\'s choice under')
+VIEW = ('<div class="fp-view" role="group" aria-label="View">'
+        '<button type="button" data-view="grid" aria-pressed="true">Grid</button>'
+        '<button type="button" data-view="list" aria-pressed="false">List</button></div>')
+# before the first paint, so a visitor who chose the list never sees the wall first
+PREPAINT = ('<script>/* Grid | List: the view, before the first paint (design-worklist.js) */\n'
+            '(function (p) {\n'
+            '  var v = /[?&]view=(grid|list)(?:&|$)/.exec(location.search);\n'
+            '  v = v && v[1];\n'
+            "  try { if (v) localStorage.setItem('" + _key.group(1) + "', v); else v = localStorage.getItem('" + _key.group(1) + "'); } catch (e) {}\n"
+            "  v = v === 'list' ? 'list' : 'grid';\n"
+            "  p.setAttribute('data-view', v);\n"
+            "  [].forEach.call(p.querySelectorAll('.fp-view button'), function (b) {\n"
+            "    b.setAttribute('aria-pressed', b.getAttribute('data-view') === v ? 'true' : 'false');\n"
+            '  });\n'
+            "})(document.currentScript.closest('.fp-index'));\n"
+            '</script>')
+
+rows = ('<div class="fp-tabs"><nav class="fp-tabs__row" aria-label="Kinds of film">' + nav + '</nav>' + VIEW + '</div>\n'
+        + PREPAINT + '\n'
+        + '<div class="fp-wall fp-lights" id="all" data-lead-sizes="' + LEAD_SIZES + '">' + _wall + '</div>\n'
+        + LIST)
 
 total = _secs
 # hasPart names each film by the @id its own page gives it (the front page's
@@ -950,9 +1053,16 @@ idx = idx.replace('</section>\n</main>\n',
                   + ENDING + '\n</main>\n', 1)
 idx = idx.replace(f'<script src="/design-filmpages.js?v={DJVER}" defer></script>\n',
                   f'<script src="/design-filmpages.js?v={DJVER}" defer></script>\n'
+                  f'<script src="/design-worklist.js?v={WLJVER}" defer></script>\n'
                   f'<script src="/design-ending.js?v={EJVER}" defer></script>\n', 1)
 if 'design-ending.js' not in idx or 'class="contact ending"' not in idx:
     sys.exit('work/index.html: the ending did not go in')
+# the list's styles in the head: which view shows is decided before the first paint
+idx = idx.replace(f'<link rel="stylesheet" href="/design-filmpages.css?v={DVER}">\n',
+                  f'<link rel="stylesheet" href="/design-filmpages.css?v={DVER}">\n'
+                  f'<link rel="stylesheet" href="/design-worklist.css?v={WLVER}">\n', 1)
+if idx.count('design-worklist.css?v=') != 1 or idx.count('design-worklist.js?v=') != 1:
+    sys.exit('work/index.html: the list\'s files did not go in')
 open('work/index.html', 'w').write(idx)
 
 # /brief?film=<slug> (functions/brief) accepts only a film that has a page
@@ -971,4 +1081,5 @@ if not os.path.exists('functions/_lib/films.js') or open('functions/_lib/films.j
 # (llms.txt, with its count and one line per film, is bin-build-llms.py's,
 # from these pages)
 
-print(f'work/: {len(films)} film pages ({len(HOME)} on the front page, {sum(len(g["more"]) for g in films)} further films on their pages) + index, TRT {total // 60}:{total % 60:02d}')
+print(f'work/: {len(films)} film pages ({len(HOME)} on the front page, {sum(len(g["more"]) for g in films)} further films on their pages) + index, TRT {total // 60}:{total % 60:02d}'
+      f'; its list: {len(LISTED)} rows, a client on {sum(1 for f in LISTED if client_of(f))}, a year on {sum(1 for f in LISTED if year_of(f))}')

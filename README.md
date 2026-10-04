@@ -19,7 +19,7 @@ python3 -m http.server 4321
 | `styles.css` | Single stylesheet; palette lives in `:root` |
 | `refinement.css` | The home page's own layer over `styles.css` (linked only from `/`, stamped with its md5): the opening and its slideshow, the numbers, the offers and the films grid. At 760px and under the opening is picture first: the films under the bar, their caption on one line (the film, then its kind), then the line, the lede, both buttons side by side and the career line, all inside the first screen (they end near 650px at 390x844, near 690px with the edge's local-time line) |
 | `main.js` | Lightbox and the reel, hard-cut navigation, scroll reveal, "Make a reel" (the tray, its link and the sheet's "Get in touch", which opens the brief with the selected films) and the brief dialog |
-| `design-*.css` / `design-*.js` | One design layer per area: `hover` (home films and /reel/), `filmpages` (/work/ and the film pages), `about`, `compositions` (the home services), `ending` (the end credits of the home page and of /work/), `loops` (the films beside the opening line, moving) and `frames` (the Frames under the player on a film page that has them, linked only there). Stamped with their own md5 and served immutable |
+| `design-*.css` / `design-*.js` | One design layer per area: `hover` (home films and /reel/), `filmpages` (/work/ and the film pages), `about`, `compositions` (the home services), `ending` (the end credits of the home page and of /work/), `loops` (the films beside the opening line, moving), `frames` (the Frames under the player on a film page that has them, linked only there) and `worklist` (/work/ as a list, and its Grid \| List switch, linked only from /work/). Stamped with their own md5 and served immutable |
 | `design-transition.js` | Changing pages: the page cuts through black (the two pages are never on screen together), and the still you clicked grows into the film page's player, without its words (`.vt-bare`) (cross-document view transitions; the CSS is the "page-to-page" block in `styles.css`, the room light's cue `.vt-film` in `design-filmpages.css`). Never linked: `pagereveal` fires before any deferred script runs, so `bin-stamp-assets.py` inlines it into the head of `/` and `/about` (between its two markers) and `bin-build-work-pages.py` copies that block onto `/work/` and every film page. Edit the file, never an inlined copy. Browsers without cross-document view transitions, and reduced motion, just navigate |
 | `assets/posters/` | Poster frames per video: `<id>.jpg` (master) plus `-480`/`-768` JPEG and `-480`/`-768`/`-1280` WebP sizes (vertical films: `-768w` in place of `-768`). A vertical film may also have `<poster>-card.jpg` (+ `-480`/`-768`, 16:9, cut from the same frame), which the `/work/` wall shows in place of a 9:16 poster cut down to its 16:9 cards (DP World at SailGP, Sugar vs Jaggery). A changed poster takes a new name, `<id>-b` (the old files stay on disk, linked from nowhere). `1083313331-1600.*` and `-2560.*` are offered only by the front page's full-row scope tile (1600 for its 1400px box on a 1x screen, 2560 for 2x); the builders never pass anything wider than 1280w to the film pages, the About board or the reel |
 | `assets/loops/` | A few seconds of each of the hero's six films: one shot, about three seconds, silent, cut so that its end runs back into its start, 1280x720, about 400 KB, as `<data-video>-<md5[:8]>.webm` (VP9) and `.mp4` (H.264, faststart; Safari and every Apple browser take it). `bin-build-home-art.py` writes them onto the hero's films (`data-loop-webm`/`data-loop-mp4`); `design-loops.js` plays the one on show over its still, once the page has loaded and gone idle and the picture is on screen, fetches the next one about two seconds in, never more, stops off screen and in a hidden tab, and plays none at all under reduced motion, Save-Data or 2g/3g. A re-cut loop is a new file under its new hash; delete the one it replaces (only the hero links a loop; the builder refuses two). `bin-check.py` fails on a loop whose name is not its bytes' md5[:8]. No loops in the films grid yet (hover loops are for later) |
@@ -109,7 +109,8 @@ sentence: the 66 published for Solana, a fact from the CV, and the films past ha
 views, which it counts from the data: every film page's figures and `assets/solana-edits.json`'s
 rows, one film per post, so the home band's number moves with them; "N films past half a million"
 and "N films published for Solana" are each checked on their own as well, so a wrong figure fails
-even when it equals one of the page counts); a broken internal `href`/`src`/
+even when it equals one of the page counts); /work/'s list not holding exactly the wall's films, each
+once and under the same kind; a broken internal `href`/`src`/
 `srcset` or `#fragment` (or one a script fetches later: the hero's lazy `data-src`/`data-srcset`
 stills and its `data-loop-webm`/`data-loop-mp4` loops); a loop in `assets/loops/` not named by
 its bytes' md5[:8], or a still in `assets/frames/` not named `<still>-<width>-<md5[:8]>` of its bytes; an `og:image` that is not a file here; `styles.css` and `main.js` on
@@ -174,6 +175,25 @@ is that page's own node in the list's JSON-LD (`/work/<slug>#film`), the rest `C
 
 `bin-build-onset.py` renders About's On Set from `assets/onset.json`: the prints grouped by year, each laid
 out by its `shape`. `grade SRC NAME [GRAVITY]` makes the 1200 and 700 frames.
+
+`bin-build-work-pages.py` also writes /work/'s list, the other view of the wall: a Grid | List switch at
+the end of the kinds of film, and one row per film in the wall's order (every film on the wall,
+front page and /work/-only alike): a small still, the title, the client, the kind, the year and the
+figure, linked to its post as on the front page's tiles. A fact is printed only where the data
+proves it, otherwise "—" (a phone leaves it out). The year is `year_of()`, the same rule as
+everywhere. The client is the party the tile's own kind line names after the kind (`Explainer ·
+FITTR`), else the brand whose own account published the post the figure links to, from the
+builder's `ACCOUNTS` (`x.com/solana` is Solana, `x.com/SolanaFndn` Solana Foundation, and the
+Facebook pages of Badr Airlines, Bank of Khartoum and CTC Group, each a client on /cv); a post on any
+other account names no one, so add the account there when a film from a new client's own page
+comes in. Which view shows is set before the first paint by a few lines the builder writes after
+the switch: `?view=list` or `?view=grid` in the address (and remembered from then on), else the
+visitor's last choice (this browser only: `localStorage`, under `design-worklist.js`'s `KEY`), else
+the wall. The kinds filter both views (the list follows the wall's `data-filter`, or the address
+before the script runs; `design-worklist.css` names each kind, as `design-filmpages.css` does, so
+a new kind goes in both). Pointing at a row dims the others and brings its still up; the still is
+the one that grows into the player (`design-transition.js`). A figure followed from the list counts
+as `proof_click`, as from a tile. Without JavaScript there is no switch and no list: the wall.
 
 `bin-build-work-pages.py` also hangs a film's Frames under its player from `assets/frames/<slug>.json`
 (see `assets/frames/` above; the section comes before the audience comments, its stylesheet is

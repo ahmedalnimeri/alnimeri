@@ -35,14 +35,15 @@
   };
   // the picture a link to a film page stands for: a tile's poster (its name
   // links to the page), a composition's still, the hero's shot on screen, a
-  // card on a wall, a pin on About, a frame in the ending's roll
+  // card on a wall, a row's still in /work/'s list, a pin on About, a frame
+  // in the ending's roll
   var still = function (a) {
     var t = a.closest('.tile');
     if (t) return t.querySelector('.tile__link');
     if (a.matches('.twoshot__label')) a = d.querySelector('.twoshot__shot.is-on') || a;
     if (a.matches('.twoshot__shot')) return a.classList.contains('is-on') ? a : null;
     if (a.matches('.cmp__still')) return a;
-    return a.querySelector('.fp-card__still, .pin__media, .ending__pic');
+    return a.querySelector('.fp-card__still, .fp-row__still, .pin__media, .ending__pic');
   };
   var stills = function (href) {
     var out = [];

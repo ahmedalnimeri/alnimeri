@@ -54,7 +54,7 @@ if (t) return t.querySelector('.tile__link');
 if (a.matches('.twoshot__label')) a = d.querySelector('.twoshot__shot.is-on') || a;
 if (a.matches('.twoshot__shot')) return a.classList.contains('is-on') ? a : null;
 if (a.matches('.cmp__still')) return a;
-return a.querySelector('.fp-card__still, .pin__media, .ending__pic');
+return a.querySelector('.fp-card__still, .fp-row__still, .pin__media, .ending__pic');
 };
 var stills = function (href) {
 var out = [];

@@ -46,7 +46,7 @@ if (t) return t.querySelector('.tile__link');
 if (a.matches('.twoshot__label')) a = d.querySelector('.twoshot__shot.is-on') || a;
 if (a.matches('.twoshot__shot')) return a.classList.contains('is-on') ? a : null;
 if (a.matches('.cmp__still')) return a;
-return a.querySelector('.fp-card__still, .pin__media, .ending__pic');
+return a.querySelector('.fp-card__still, .fp-row__still, .pin__media, .ending__pic');
 };
 var stills = function (href) {
 var out = [];
@@ -203,7 +203,7 @@ vt.finished.then(done, done);
 </section>
 </main>
 <script src="/main.js?v=105" defer></script>
-<script src="/design-filmpages.js?v=bd9e39d6" defer></script>
+<script src="/design-filmpages.js?v=b75e0c6e" defer></script>
 <script src="/design-frames.js?v=f339381f" defer></script>
 <!-- Cloudflare Web Analytics -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "031672bac7b743a990b8dfcf074f7a38"}'></script>

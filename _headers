@@ -90,6 +90,14 @@
 /design-frames.js
   Cache-Control: public, max-age=31536000, immutable
 
+# /work/ as a list (Grid | List), stamped with md5[:8] by
+# bin-build-work-pages.py.
+/design-worklist.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/design-worklist.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # The visit log is private and must never be cached or indexed.
 /api/*
   Cache-Control: no-store

@@ -1,0 +1,174 @@
+/* alnimeri.com — /work/ as a list (Grid | List).
+
+   The wall shows the pictures; the list puts each film on one line: its
+   still, its name, who it was made for, what kind of film it is, its year
+   and its figure, linked to the post that counted it. The same house lights
+   as the wall: pointing at a row dims the others and its still comes up to
+   full exposure. The kinds above filter both views. Rows, hairlines, no
+   boxes.
+
+   Linked only from /work/ (bin-build-work-pages.py), stamped with its md5.
+   Tokens from styles.css: --fg, --fg-dim, --fg-faint, --line, --ease. */
+
+/* ---- the switch, at the end of the kinds -------------------------------- */
+/* the bar's row and the switch share the wall's width: the kinds start at
+   its left edge, the switch ends at its right (the bar reaches a gutter past
+   the page's column on each side; 100% is that column) */
+.fp-tabs { display: flex; align-items: center; gap: 10px; padding-inline: max(var(--gut), calc((100% + 2 * var(--gut) - var(--fp-w)) / 2)); }
+.fp-tabs .fp-tabs__row { flex: 1 1 auto; min-width: 0; max-width: none; margin: 0; }
+.fp-view {
+  flex: none; position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr;   /* two halves, equal */
+  gap: 2px; padding: 3px;
+  border: 1px solid var(--line); border-radius: 999px;
+}
+/* without the script there is nothing to switch: the wall alone */
+.fp-index:not([data-view]) .fp-view { display: none; }
+/* the lit half slides to the view that is showing */
+.fp-view::before {
+  content: ""; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 4px);
+  border-radius: 999px; background: rgba(255, 255, 255, .1);
+  transition: transform .5s var(--ease);
+}
+.fp-index[data-view="list"] .fp-view::before { transform: translateX(calc(100% + 2px)); }
+.fp-view button {
+  position: relative; z-index: 1; padding: 4px 11px;
+  border: 0; border-radius: 999px; background: none; cursor: pointer;
+  font: inherit; font-size: 13px; letter-spacing: -0.005em; line-height: 1.5; color: var(--fg-dim);
+  transition: color .35s var(--ease);
+}
+.fp-view button:hover, .fp-view button[aria-pressed="true"] { color: var(--fg); }
+.fp-view button:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+
+/* ---- which view ---------------------------------------------------------- */
+.fp-list { display: none; }
+.fp-index[data-view="list"] .fp-wall { display: none; }
+.fp-index[data-view="list"] .fp-list { display: block; }
+
+/* ---- the list ------------------------------------------------------------ */
+.fp-list {
+  --still: 88px;
+  max-width: var(--fp-w); margin: 0 auto;
+  min-height: calc(100svh - 160px);   /* as the wall: a short kind never pulls the page out from under the tabs */
+}
+.fp-list__head, .fp-row {
+  display: grid; align-items: center; column-gap: clamp(16px, 2vw, 32px);
+  /* the figure's column holds "164K views on Facebook" on one line */
+  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1.2fr) minmax(0, 1.3fr) 52px minmax(13.5em, 1.35fr);
+}
+.fp-list__head {
+  padding: 0 0 12px; font-size: 12px; letter-spacing: -0.005em; color: var(--fg-faint);
+}
+.fp-list__head > :first-child { padding-left: calc(var(--still) + 20px); }   /* over the names, not the stills */
+.fp-list__head > :last-child { text-align: right; }
+.fp-list__rows { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line); }
+.fp-row {
+  position: relative; padding: 12px 0; border-top: 1px solid var(--line);
+  font-size: 14px; line-height: 1.45; letter-spacing: -0.008em; color: var(--fg-dim);
+  transition: opacity .6s var(--ease);
+}
+.fp-row__meta { display: contents; }
+
+/* the film: its still and its name; the whole row is the way in to its
+   page, and the figure keeps its own link above that */
+.fp-row__film {
+  display: flex; align-items: center; gap: 20px; min-width: 0;
+  color: var(--fg); text-decoration: none; outline: none;
+}
+.fp-row__film::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.fp-row__film:focus-visible::after { outline: 2px solid var(--fg); outline-offset: 2px; border-radius: 8px; }
+.fp-row__still {
+  flex: none; position: relative; overflow: hidden; width: var(--still); aspect-ratio: 16 / 9;
+  border-radius: 6px; border: 1px solid var(--line); background: #0f1011;
+  transition: border-color .5s var(--ease);
+}
+.fp-row__still img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: brightness(.84);
+  transition: filter .6s var(--ease), transform 1.1s var(--ease);
+}
+.fp-row__name { min-width: 0; font-size: 16px; font-weight: 500; letter-spacing: -0.014em; line-height: 1.35; }
+.fp-row__year { font-variant-numeric: tabular-nums; }
+.fp-row .is-none { color: var(--fg-faint); }
+.fp-row__reach {
+  position: relative; z-index: 2; justify-self: end; text-align: right;
+  color: var(--fg-dim); text-decoration: none; font-variant-numeric: tabular-nums;
+  transition: color .35s var(--ease);
+}
+.fp-row__reach span { color: var(--fg-faint); transition: color .35s var(--ease); }
+a.fp-row__reach:hover, a.fp-row__reach:hover span { color: var(--fg); }
+.fp-row__reach:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; border-radius: 3px; }
+
+/* house lights: pointing at a film dims the rest, and its still comes up */
+@media (hover: hover) and (pointer: fine) {
+  .fp-list__rows:has(> .fp-row:hover) > .fp-row:not(:hover) { opacity: .4; }
+  .fp-row:hover .fp-row__still { border-color: rgba(255, 255, 255, .22); }
+  .fp-row:hover .fp-row__still img { filter: none; transform: scale(1.06); }
+  .fp-row:hover .fp-row__meta > :not(.is-none) { color: var(--fg); }
+}
+.fp-row:focus-within .fp-row__still img { filter: none; }
+
+/* a kind chosen: the other films leave the list too (script: the wall's
+   data-filter; before it runs, the address, /work/#documentary) */
+.fp-index:has(.fp-wall[data-filter="brand"]) .fp-row:not([data-cat="brand"]),
+.fp-index:has(.fp-wall[data-filter="events"]) .fp-row:not([data-cat="events"]),
+.fp-index:has(.fp-wall[data-filter="documentary"]) .fp-row:not([data-cat="documentary"]),
+.fp-index:has(.fp-wall[data-filter="music"]) .fp-row:not([data-cat="music"]),
+.fp-index:has(.fp-wall[data-filter="motion"]) .fp-row:not([data-cat="motion"]),
+.fp-index:has(.fp-wall:not([data-filter]) #brand:target) .fp-row:not([data-cat="brand"]),
+.fp-index:has(.fp-wall:not([data-filter]) #events:target) .fp-row:not([data-cat="events"]),
+.fp-index:has(.fp-wall:not([data-filter]) #documentary:target) .fp-row:not([data-cat="documentary"]),
+.fp-index:has(.fp-wall:not([data-filter]) #music:target) .fp-row:not([data-cat="music"]),
+.fp-index:has(.fp-wall:not([data-filter]) #motion:target) .fp-row:not([data-cat="motion"]) { display: none; }
+
+/* ---- narrower: the kind goes under the client ---------------------------- */
+@media (max-width: 1000px) {
+  .fp-list { --still: 76px; }
+  .fp-list__head, .fp-row { grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 46px minmax(13.5em, 1.3fr); }
+  .fp-list__head > :nth-child(3) { display: none; }
+  .fp-row { grid-template-rows: auto auto; row-gap: 1px; }
+  .fp-row__film { grid-row: 1 / span 2; gap: 16px; }
+  .fp-row__client { grid-column: 2; grid-row: 1; align-self: end; }
+  .fp-row__kind { grid-column: 2; grid-row: 2; align-self: start; font-size: 13px; color: var(--fg-faint); }
+  .fp-row__year { grid-column: 3; grid-row: 1 / span 2; }
+  .fp-row__reach { grid-column: 4; grid-row: 1 / span 2; }
+  /* no client: the kind alone, level with the name */
+  .fp-row__client.is-none { display: none; }
+  .fp-row__client.is-none + .fp-row__kind { grid-row: 1 / span 2; align-self: center; }
+}
+
+/* ---- a phone: the still, then the film in three short lines --------------
+   its name; who it was for, the kind and the year (what is not known is
+   left out); its figure */
+@media (max-width: 700px) {
+  .fp-list { --still: 96px; }
+  .fp-list__head { display: none; }
+  .fp-list__rows { border-bottom: 0; }
+  .fp-row {
+    display: block; min-height: calc(var(--still) * 9 / 16 + 30px);
+    padding: 15px 0 15px calc(var(--still) + 14px); font-size: 12.5px; line-height: 1.5;
+  }
+  .fp-row__film { display: block; }
+  .fp-row__still { position: absolute; left: 0; top: 15px; border-radius: 5px; }
+  .fp-row__name { display: block; font-size: 15px; }
+  /* each fact carries its own "·" in front; the line is shifted left by one
+     separator and clipped there, so a wrapped line never starts with a dot
+     (as the film pages' facts) */
+  .fp-row__meta {
+    --sep: 16px;
+    display: flex; flex-wrap: wrap; margin: 2px 0 0 calc(-1 * var(--sep));
+    clip-path: inset(-4px -4px -4px var(--sep)); color: var(--fg-faint);
+  }
+  .fp-row .is-none { display: none; }
+  .fp-row__meta > ::before { content: "\00b7"; display: inline-block; width: var(--sep); text-align: center; }
+  .fp-row__kind { font-size: inherit; color: inherit; }
+  .fp-row__reach { display: block; justify-self: auto; text-align: left; margin-top: 1px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fp-view::before, .fp-row, .fp-row__still, .fp-row__still img { transition: none; }
+  .fp-row:hover .fp-row__still img { transform: none; }
+}
+
+@media print {
+  .fp-view { display: none !important; }
+}

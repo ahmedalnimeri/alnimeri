@@ -265,6 +265,13 @@ for sec in re.finditer(r'<section class="fp-cat" id="(\w+)"[^>]*><h2 class="fp-c
     cards = len(re.findall(r'<li class="fp-card', sec.group(3)))
     if int(sec.group(2)) != cards:
         bad('work/index.html', f'#{sec.group(1)} says {sec.group(2)} films and hangs {cards}')
+# /work/'s list, the wall's other view: the wall's films, each once, under the
+# same kind, each row the way in to its page (bin-build-work-pages.py)
+_cards = re.findall(r'<li class="fp-card[^"]*" data-cat="(\w+)"><a\b[^>]*\shref="/work/([a-z0-9-]+)"', PAGES['/work/'][1])
+_rows = re.findall(r'<li class="fp-row" data-cat="(\w+)"><a class="fp-row__film" href="/work/([a-z0-9-]+)"', PAGES['/work/'][1])
+if len(_cards) != N or sorted(_rows) != sorted(_cards):
+    bad('work/index.html', f'its list has {len(_rows)} rows for the {len(_cards)} films on its wall ({N} film pages), '
+        f'or a film under another kind: {sorted(set(_rows) ^ set(_cards))[:6]}')
 
 # ---- 4. claims ------------------------------------------------------------
 r = subprocess.run([sys.executable, str(ROOT / 'bin-check-claims.py')], capture_output=True, text=True)
