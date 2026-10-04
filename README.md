@@ -98,7 +98,10 @@ rm -r _og
 every problem, on: JSON-LD that does not parse, an alnimeri.com `@id` no page describes, or a
 film page without its `VideoObject` (`/work/<slug>#film`); a `work/*.html` missing from
 `sitemap.xml` or `llms.txt`; a film count in words or digits ("One of thirty-four films") that
-is not the number of films, of the front page's or of the rest; a broken internal `href`/`src`/
+is not the number of films, of the front page's or of the rest (two counts pass only in their own
+sentence: the 66 published for Solana, a fact from the CV, and the films past half a million
+views, which it counts from the data: every film page's figures and `assets/solana-edits.json`'s
+rows, one film per post, so the home band's number moves with them); a broken internal `href`/`src`/
 `srcset` or `#fragment`; an `og:image` that is not a file here; `styles.css` and `main.js` on
 more than one `?v=`; a page without exactly one Cloudflare Web Analytics beacon; `/`, `/about`,
 `/work/` or a film page without exactly one inlined `design-transition.js` as the file now stands,

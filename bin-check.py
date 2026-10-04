@@ -15,9 +15,12 @@ generated functions/_lib files. Checked:
      is a page.
   3. Film counts in words or digits ("One of thirty-four films", "The twenty
      films on the front page and fourteen more", "All 34 selected film pages")
-     match the films: all of them, the front page's, or the rest. The two
-     counts that are hand-kept facts, not counts of these pages (66 published
-     for Solana, 14 past half a million), pass only in their own sentence.
+     match the films: all of them, the front page's, or the rest. Two counts
+     are not counts of these pages and pass only in their own sentence: the
+     66 published for Solana (a hand-kept fact, from the CV) and the films
+     past half a million views, which is counted here from the data: every
+     film page's published figures and assets/solana-edits.json's rows, one
+     film per post (a tracker row with a page here is that page's film).
   4. Claims: bin-check-claims.py (no "directed by", no "director" but
      "creative director", no film director or storyteller, no credit line, in
      the pages, data, scripts, share-card text and the CV PDF), run as it is.
@@ -192,8 +195,27 @@ _TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eigh
 WORD = {(_ONES[n] if n < 20 else _TENS[n // 10] + ('-' + _ONES[n % 10] if n % 10 else '')): n for n in range(1, 100)}
 NUM = r'(\d+|' + '|'.join(sorted(WORD, key=len, reverse=True)) + r')'
 COUNT = re.compile(r'(?<![:.\d])\b' + NUM + r'((?:[\s-]+(?:selected|more|published|other))*)[\s-]+(films?|film pages|pieces)\b', re.I)
-# hand-kept facts that are not counts of these pages, each only in its own sentence
-KEPT = [(66, re.compile(r'Solana', re.I)), (14, re.compile(r'half a million', re.I))]
+# Films past half a million views, from the data: each film page's figures (its
+# VideoObjects' view counts, keyed by the post they link to) and the Solana
+# tracker's rows (keyed by their X post), so a film on both is counted once.
+_figures = {}
+for _p in sorted((ROOT / 'work').glob('*.html')):
+    for _b in re.findall(r'<script type="application/ld\+json">(.*?)</script>', _p.read_text(), re.S):
+        _d = json.loads(_b)
+        for _n in _d.get('@graph', [_d]):
+            if _n.get('@type') != 'VideoObject':
+                continue
+            _st = _n.get('interactionStatistic')
+            for _s in (_st if isinstance(_st, list) else [_st] if _st else []):
+                if (_s.get('interactionType') or {}).get('@type') == 'WatchAction':
+                    _key = _n.get('sameAs') or _n.get('url') or _n.get('@id')
+                    _x = re.search(r'x\.com/\w+/status/(\d+)', _key or '')
+                    _figures[_x.group(1) if _x else _key] = _s['userInteractionCount']
+for _v in json.load(open(ROOT / 'assets' / 'solana-edits.json'))['videos']:
+    _figures.setdefault(_v['id'], _v['views'])
+HALF = sum(1 for _n in _figures.values() if _n > 500_000)
+# facts that are not counts of these pages, each only in its own sentence
+KEPT = [(66, re.compile(r'Solana', re.I)), (HALF, re.compile(r'half a million', re.I))]
 SOURCES = dict((u, (label, visible(t))) for u, (label, t) in PAGES.items())
 SOURCES['llms.txt'] = ('llms.txt', llms)
 for u, (label, words) in SOURCES.items():
@@ -351,4 +373,5 @@ if problems:
         print(f'  … and {len(problems) - 120} more', file=sys.stderr)
     sys.exit(1)
 print(f'check: clean ({len(PAGES)} pages incl. one rendered reel; {N} films, {H} on the front page; '
-      f'{len(defined)} JSON-LD @ids; one ?v= ({next(iter(vers))}); one beacon per page; the transition inlined where it belongs)')
+      f'{len(defined)} JSON-LD @ids; one ?v= ({next(iter(vers))}); one beacon per page; the transition inlined where it belongs; '
+      f'{HALF} films past half a million, from the data)')

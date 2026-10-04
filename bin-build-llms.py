@@ -84,7 +84,7 @@ Eleven years of commercial, documentary and institutional film.
 Figures and credits (each film's view count links to its published post on the site):
 - 100M+ views across published work; 66 films published for Solana from
   August 2023 to November 2025
-- 14 films past half a million views; one film at 12.8M views
+- 15 films past half a million views; one film at 12.8M views
 - Filmed the International Criminal Court's visit to Sudan
 - Broadcast credits with Al Jazeera; has worked with the European Union,
   TED, DP World, CTC Group, Landell Mills and Nas Company
