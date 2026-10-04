@@ -37,6 +37,10 @@
 .tile__link:hover .tile__img, .tile__link:focus-visible .tile__img { transform: none; }
 
 /* ---- the frames ---------------------------------------------------------- */
+/* a vertical film in a landscape frame (the home grid's 16:10, a reel's 16:9
+   on a phone): its tile says where that frame sits in the 9:16 still
+   (--focus, as a full-row scope tile does), so the cut misses the subject */
+.tile--tall .tile__img { object-position: var(--focus, 50% 50%); }
 .hv-frame { position: relative; overflow: hidden; isolation: isolate; }
 .hv-frame .hv-pic, .hv-frame .tile__preview {
   scale: var(--hv-s, 1);

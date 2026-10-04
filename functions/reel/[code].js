@@ -51,7 +51,9 @@ function tile(f, n) {
   // Poster URLs are copied already stamped; this page lives one level down,
   // so they are made root-relative.
   const srcset = f.srcset.replace(/(^|, )assets\//g, '$1/assets/');
-  return `        <article class="tile reveal${f.portrait ? ' tile--tall' : ''}" id="sc-${pad(n)}">
+  // a vertical film says where a landscape frame sits in its still (design-hover.css)
+  const focus = f.portrait && f.focus ? ` style="--focus: ${esc(f.focus)}"` : '';
+  return `        <article class="tile reveal${f.portrait ? ' tile--tall' : ''}" id="sc-${pad(n)}"${focus}>
           <a class="tile__link" href="${esc(f.href)}" ${play} aria-label="${label}">
             <img srcset="${esc(srcset)}" sizes="(max-width: 560px) 100vw, (max-width: 900px) 50vw, 33vw" class="tile__img" src="/${esc(f.poster)}" alt="${esc(f.alt)}" loading="${n === 1 ? 'eager' : 'lazy'}" decoding="async" width="${f.w}" height="${f.h}">
             ${f.vid && !prov ? '<span class="tile__preview"></span>' : ''}

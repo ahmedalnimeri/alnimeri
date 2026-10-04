@@ -20,7 +20,8 @@ Letterboxed films are shown at their true picture shape (a scope film as a
 scope strip, not a 16:9 poster with black bars): CROP is the picture area in
 the 768x432 poster, measured from the bars.
 
-Writes between <!-- ART:CHAPTERS --> markers in index.html. Run
+Writes between <!-- ART:CHAPTERS --> markers in index.html, and gives the
+hero's films (the .twoshot) the stills their tiles show. Run
 bin-stamp-assets.py afterwards to hash the poster URLs.
 """
 import ast, os, re, html
@@ -163,5 +164,34 @@ a, z = '<!-- ART:CHAPTERS -->', '<!-- /ART:CHAPTERS -->'
 if a not in page:
     raise SystemExit(f'marker {a} missing from index.html')
 page = re.sub(re.escape(a) + r'[\s\S]*?' + re.escape(z), lambda m: a + block + '\n    ' + z, page)
+
+# The hero's films (the .twoshot beside the headline) show the still their
+# tiles show: a poster changes in its tile, and the hero follows it here.
+# The hero keeps its own sizes, loading and order; only the file changes,
+# and bin-stamp-assets.py hashes it afterwards.
+by_href = {f['href']: f for f in films.values()}
+hero_n = [0]
+
+
+def hero_shot(m):
+    shot = m.group(0)
+    href = re.search(r'\bhref="([^"]+)"', shot).group(1)
+    f = by_href.get(href)
+    if not f or not f['base']:
+        raise SystemExit(f'hero film {href} has no tile on the front page to take its still from')
+    old = re.search(r'\b(?:data-)?src="(assets/posters/[^"?]+)\.jpg', shot).group(1)
+    new = f['base']
+    if old == new:
+        return shot
+    pat = re.escape(old) + r'(-480|-768w?|-1280)?\.(jpg|webp)(?:\?h=[0-9a-f]+)?'
+    for suf, ext in set(re.findall(pat, shot)):
+        if not os.path.exists(f'{new}{suf}.{ext}'):
+            raise SystemExit(f'hero film {href}: {new}{suf}.{ext} is missing')
+    hero_n[0] += 1
+    return re.sub(pat, lambda q: f'{new}{q.group(1) or ""}.{q.group(2)}', shot)
+
+
+page = re.sub(r'<a class="twoshot__shot[\s\S]*?</a>', hero_shot, page)
 open('index.html', 'w').write(page)
-print('home art: ' + ' | '.join(f'{c[0]}: ' + ', '.join(c[4]) for c in CHAPTERS))
+print('home art: ' + ' | '.join(f'{c[0]}: ' + ', '.join(c[4]) for c in CHAPTERS)
+      + (f'; hero: {hero_n[0]} still(s) now their tiles\'' if hero_n[0] else ''))

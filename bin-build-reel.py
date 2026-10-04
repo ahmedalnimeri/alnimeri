@@ -95,7 +95,12 @@ for m_ in TILES:
         'alt':      field(b, r'alt="([^"]+)"'),
         'w':        field(b, r'width="(\d+)"'),
         'h':        field(b, r'height="(\d+)"'),
+        # a vertical film: where a landscape frame sits in its 9:16 still
+        # (the tile's --focus; a reel shows it 16:9 on a phone)
+        'focus':    field(re.match(r'<article [^>]*>', b).group(0), r'--focus:\s*([\d.]+% [\d.]+%)'),
     })
+    if not (films[-1]['portrait'] and films[-1]['focus']):
+        films[-1].pop('focus')
     if not films[-1]['title'] or not films[-1]['poster']:
         sys.exit('tile missing title or poster')
 
