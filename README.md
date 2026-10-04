@@ -105,7 +105,11 @@ rows, one film per post, so the home band's number moves with them); a broken in
 `srcset` or `#fragment`; an `og:image` that is not a file here; `styles.css` and `main.js` on
 more than one `?v=`; a page without exactly one Cloudflare Web Analytics beacon; `/`, `/about`,
 `/work/` or a film page without exactly one inlined `design-transition.js` as the file now stands,
-or `styles.css` no longer turning page transitions off under reduced motion. It also runs `bin-check-claims.py`, which fails if "directed by", a
+or `styles.css` no longer turning page transitions off under reduced motion; or a stylesheet rule
+that dims a fixed or sticky bar whole (the masthead, the timeline, the tray, `/work/`'s tabs, a
+sticky year: an opacity between 0 and 1 on the bar itself clears its glass too, and a title
+scrolled under it reads through as double text; dim its children instead, as
+`.fp-lights-down .masthead > *` does). It also runs `bin-check-claims.py`, which fails if "directed by", a
 JSON-LD `"director"`, a title he does not hold ("film director", "Storyteller"), a "Director:"
 credit line, any other "director" that is not "creative director" (his title is "Associate
 Creative Director", the descriptor "creative director and editor"; he is not a film director,

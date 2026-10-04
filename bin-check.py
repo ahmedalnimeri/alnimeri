@@ -34,6 +34,12 @@ generated functions/_lib files. Checked:
      (bin-stamp-assets.py, bin-build-work-pages.py), above the first
      stylesheet, and reduced motion still turns page transitions off in
      styles.css.
+ 10. No fixed or sticky bar is ever dimmed whole: a rule that gives the
+     masthead (or the timeline, the tray, /work/'s tabs, a sticky year) an
+     opacity between 0 and 1 makes its glass clear too, and whatever scrolls
+     under it reads through its words as double text. Dim the bar's children
+     (design-filmpages.css, .fp-lights-down .masthead > *); hiding it outright
+     (opacity 0) is not dimming.
 
 Run from anywhere; it reads the repo it sits in. Needs node for the reel page.
 """
@@ -365,6 +371,22 @@ for url, (label, text) in PAGES.items():
 if not re.search(r'@media \(prefers-reduced-motion: reduce\)\s*\{\s*@view-transition\s*\{\s*navigation:\s*none;\s*\}', (ROOT / 'styles.css').read_text()):
     bad('styles.css', 'reduced motion no longer turns page transitions off (@view-transition { navigation: none; })')
 
+# ---- 10. no bar dimmed whole ----------------------------------------------
+# the bars that stay on screen while the page scrolls under them; a selector
+# that ends on one of them (no descendant after it) styles the bar itself
+BARS = r'\.(?:masthead|tl|bin|fp-tabs|sl-year__head|set__yr)'
+_bar_sel = re.compile(BARS + r'(?:[.:#\[][^\s>+~,]*)?$')
+for css in sorted(ROOT.glob('*.css')):
+    _src = re.sub(r'/\*[\s\S]*?\*/', lambda c: re.sub(r'[^\n]', ' ', c.group(0)), css.read_text())
+    for m in re.finditer(r'([^{}]+)\{([^{}]*)\}', _src):
+        _vals = [float(v) for v in re.findall(r'(?<![\w-])opacity\s*:\s*([\d.]+)', m.group(2))]
+        if not any(0 < v < 1 for v in _vals):
+            continue
+        for sel in (x.strip() for x in m.group(1).split(',')):
+            if '::' not in sel and _bar_sel.search(sel):   # a pseudo-element is not the bar
+                bad(css.name, f'line {_src.count(chr(10), 0, m.start()) + 1}: "{sel}" dims a bar whole (opacity '
+                    f'{min(v for v in _vals if 0 < v < 1)}); dim its children instead, so its glass stays')
+
 # ---------------------------------------------------------------------------
 if problems:
     print(f'bin-check: {len(problems)} problem(s) — do not deploy:', file=sys.stderr)
@@ -374,4 +396,4 @@ if problems:
     sys.exit(1)
 print(f'check: clean ({len(PAGES)} pages incl. one rendered reel; {N} films, {H} on the front page; '
       f'{len(defined)} JSON-LD @ids; one ?v= ({next(iter(vers))}); one beacon per page; the transition inlined where it belongs; '
-      f'{HALF} films past half a million, from the data)')
+      f'no bar dimmed whole; {HALF} films past half a million, from the data)')
