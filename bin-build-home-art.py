@@ -21,10 +21,11 @@ scope strip, not a 16:9 poster with black bars): CROP is the picture area in
 the 768x432 poster, measured from the bars.
 
 Writes between <!-- ART:CHAPTERS --> markers in index.html, and gives the
-hero's films (the .twoshot) the stills their tiles show. Run
-bin-stamp-assets.py afterwards to hash the poster URLs.
+hero's films (the .twoshot) the stills their tiles show and the loops they
+play (assets/loops/, design-loops.js). Run bin-stamp-assets.py afterwards to
+hash the poster URLs.
 """
-import ast, os, re, html
+import ast, glob, hashlib, os, re, html
 
 SRC = open('index.html').read()
 # the front page's own films: <template id="more-films"> is never rendered
@@ -37,6 +38,7 @@ for b in re.findall(r'<article class="tile[\s\S]+?</article>', SRC):
     films[title] = {
         'title': title,
         'base': g(r'\bsrc="(assets/posters/[^"?]+)\.jpg'),
+        'video': g(r'\bdata-video="([^"]+)"'),
         'href': g(r'tile__name"><a href="([^"]+)"'),
         'kind': html.unescape(g(r'tile__kind">([^<]*)<')),
         'stat': html.unescape(g(r'tile__stat"[^>]*>\s*([^<]+?)\s*<')),
@@ -192,6 +194,56 @@ def hero_shot(m):
 
 
 page = re.sub(r'<a class="twoshot__shot[\s\S]*?</a>', hero_shot, page)
+
+# Each hero film plays a few seconds of itself while it is the one shown
+# (design-loops.js): one shot, silent, looping, in two files cut from the film,
+# assets/loops/<data-video>-<md5[:8]>.webm (VP9) and .mp4 (H.264, which every
+# Safari plays). The name carries the bytes' own hash, because /assets/* is
+# cached for a year: a re-cut loop is a new file, and the one it replaces is
+# deleted (only the hero links a loop), so there is never a choice to make
+# here. The loop follows its film, not the slot: a film that leaves the hero
+# takes its loop with it, and a film with no loop keeps its still.
+LOOP_TYPES = ('webm', 'mp4')
+
+
+def loop_files(vid):
+    found = {}
+    for ext in LOOP_TYPES:
+        names = []
+        for p in sorted(glob.glob(f'assets/loops/{glob.escape(vid)}-*.{ext}')):
+            m = re.fullmatch(re.escape(vid) + r'-([0-9a-f]{8})\.' + ext, os.path.basename(p))
+            if not m:
+                continue
+            if hashlib.md5(open(p, 'rb').read()).hexdigest()[:8] != m.group(1):
+                raise SystemExit(f'{p}: the name says {m.group(1)}, the bytes say otherwise (name a loop by md5[:8])')
+            names.append(p)
+        if len(names) > 1:
+            raise SystemExit(f'film {vid} has {len(names)} .{ext} loops ({", ".join(names)}); delete the one it replaces')
+        if names:
+            found[ext] = names[0]
+    if found and len(found) < len(LOOP_TYPES):
+        raise SystemExit(f'film {vid}: a loop needs its WebM and its MP4; there is only {", ".join(found.values())}')
+    return found
+
+
+loop_n = [0]
+
+
+def hero_loop(m):
+    tag = m.group(0)
+    href = re.search(r'\bhref="([^"]+)"', tag).group(1)
+    f = by_href.get(href)
+    files = loop_files(f['video']) if f and f['video'] else {}
+    bare = re.sub(r'\s+data-loop-(?:webm|mp4)="[^"]*"', '', tag)
+    if files:
+        loop_n[0] += 1
+        attrs = ''.join(f' data-loop-{ext}="{files[ext]}"' for ext in LOOP_TYPES)
+        bare = re.sub(r'\s+href="', lambda q: attrs + q.group(0), bare, count=1)
+    return bare
+
+
+page = re.sub(r'<a class="twoshot__shot[^>]*>', hero_loop, page)
 open('index.html', 'w').write(page)
 print('home art: ' + ' | '.join(f'{c[0]}: ' + ', '.join(c[4]) for c in CHAPTERS)
-      + (f'; hero: {hero_n[0]} still(s) now their tiles\'' if hero_n[0] else ''))
+      + (f'; hero: {hero_n[0]} still(s) now their tiles\'' if hero_n[0] else '')
+      + f'; hero loops: {loop_n[0]} of {len(re.findall(r"<a class=.twoshot__shot", page))} films')

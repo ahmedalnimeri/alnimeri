@@ -28,7 +28,10 @@ generated functions/_lib files. Checked:
      "creative director", no film director or storyteller, no credit line, in
      the pages, data, scripts, share-card text and the CV PDF), run as it is.
   5. Internal links: every href, src, srcset and poster on a page reaches a file,
-     a pretty URL or a Function route, and every #fragment an id on its page.
+     a pretty URL or a Function route, and every #fragment an id on its page;
+     so do the ones a script puts on the wire later (the hero's lazy stills,
+     data-src / data-srcset, and its loops, data-loop-webm / data-loop-mp4),
+     and every loop in assets/loops/ is named by md5[:8] of its own bytes.
   6. Share images: every og:image and twitter:image is a file here.
   7. styles.css and main.js carry one and the same ?v= on every page.
   8. One Cloudflare Web Analytics beacon on every page, with one token.
@@ -269,7 +272,7 @@ if r.returncode:
 
 # ---- 5. internal links ----------------------------------------------------
 BLOCKED = re.compile(r'^/(reel\.tpl(\.html)?/?|wrangler\.(jsonc|toml|json)|package(-lock)?\.json|README\.md|bin-[^/]*\.py|schema\.sql|\.gitignore)$|^/(docs|\.claude|\.git)(/|$)', re.I)
-ATTR = re.compile(r'\s(href|src|srcset|poster)="([^"]*)"')
+ATTR = re.compile(r'\s(href|src|srcset|poster|data-src|data-srcset|data-poster|data-loop-webm|data-loop-mp4)="([^"]*)"')
 IDS = {u: set(re.findall(r'\s(?:id|name)="([^"]+)"', t)) for u, (_l, t) in PAGES.items()}
 # fragments that main.js answers without an element of that name
 JS_FRAGMENTS = {'brief'}
@@ -303,7 +306,7 @@ for url, (label, text) in PAGES.items():
     seen = set()
     for attr, val in ATTR.findall(body):
         val = html.unescape(val).strip()
-        cands = [c.strip().split()[0] for c in val.split(',') if c.strip()] if attr == 'srcset' else [val]
+        cands = [c.strip().split()[0] for c in val.split(',') if c.strip()] if attr.endswith('srcset') else [val]
         for c in cands:
             if not c or c in seen or re.match(r'(mailto|tel|sms|javascript|data|blob):', c, re.I) or c.startswith('//'):
                 continue
@@ -326,6 +329,15 @@ for url, (label, text) in PAGES.items():
                 frag = unquote(parts.fragment)
                 if frag not in IDS.get(t, set()) and frag not in JS_FRAGMENTS:
                     bad(label, f'{attr}="{c}": no id "{frag}" on {t}')
+
+# the loops are cached for a year under a name that must change with the bytes
+import hashlib
+for f in sorted((ROOT / 'assets/loops').glob('*')):
+    m = re.fullmatch(r'.+-([0-9a-f]{8})\.(webm|mp4)', f.name)
+    if not m:
+        bad(f'assets/loops/{f.name}', 'a loop is named <film>-<md5[:8]>.webm or .mp4')
+    elif hashlib.md5(f.read_bytes()).hexdigest()[:8] != m.group(1):
+        bad(f'assets/loops/{f.name}', 'its name is not the md5[:8] of its bytes: a changed loop takes a new name')
 
 # ---- 6. share images ------------------------------------------------------
 for url, (label, text) in PAGES.items():

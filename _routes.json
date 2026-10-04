@@ -1,5 +1,5 @@
 {
   "version": 1,
   "include": ["/*"],
-  "exclude": ["/assets/*", "/styles.css", "/main.js", "/motion.js", "/refinement.css", "/design-hover.css", "/design-hover.js", "/design-filmpages.css", "/design-filmpages.js", "/design-about.css", "/design-about.js", "/design-compositions.css", "/design-compositions.js", "/design-ending.css", "/design-ending.js", "/favicon.ico", "/robots.txt", "/sitemap.xml", "/llms.txt", "/f458b69ba17e628ce148d1d692c132a3.txt"]
+  "exclude": ["/assets/*", "/styles.css", "/main.js", "/motion.js", "/refinement.css", "/design-hover.css", "/design-hover.js", "/design-filmpages.css", "/design-filmpages.js", "/design-about.css", "/design-about.js", "/design-compositions.css", "/design-compositions.js", "/design-ending.css", "/design-ending.js", "/design-loops.css", "/design-loops.js", "/favicon.ico", "/robots.txt", "/sitemap.xml", "/llms.txt", "/f458b69ba17e628ce148d1d692c132a3.txt"]
 }

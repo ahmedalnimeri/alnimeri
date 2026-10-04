@@ -74,6 +74,14 @@
 /design-ending.js
   Cache-Control: public, max-age=31536000, immutable
 
+# The hero's moving films (the loops themselves are under /assets/), stamped
+# by bin-stamp-assets.py.
+/design-loops.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/design-loops.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # The visit log is private and must never be cached or indexed.
 /api/*
   Cache-Control: no-store
