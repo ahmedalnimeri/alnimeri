@@ -19,16 +19,18 @@ If the key is rotated in Cloudflare, update the Script property too.
 ## Installing v4 over v3 (the version in the sheet since 4 Oct 2026)
 
 0. Sign in as **ahmedalnimeri@gmail.com**, the sheet's owner, whose triggers
-   run v3 today. Use the account switcher, or put `/u/<n>/` in the URL: the
-   link above opens in the browser's first account (`/u/0`), which is
-   ahmedaminalnimeri@gmail.com, and that is the wrong one.
+   run v3 today. The surest way: open the sheet as that account and use
+   Extensions → Apps Script. (Which account `/u/0` means depends on the
+   browser; check the avatar before running anything.)
 1. Open the project and replace the contents of Code.gs with `Sync.gs`, then
    save. Copy it from a UTF-8 source. With pbcopy that means
    `LANG=en_US.UTF-8 pbcopy < Sync.gs`. Without it, characters such as →, —,
    “ ” and ü are garbled, and then the funnel line, the Country and Page name
    of new rows, and the Summary's title read wrong.
 2. Run `setUp` once, as that account.
-3. When it has run, check the Events tab's first row. It should read
+3. When it has run, check that it ended without an error (an error naming a
+   column means a visit tab's header row was edited by hand; restore it), and
+   check the Events tab's first row. It should read
    `Last 30 days: … visits → … plays → …`, arrows included.
 4. Open the project's Triggers page as ahmedaminalnimeri@gmail.com as well, and
    check that it lists no `sync` or `syncBriefs` trigger. Delete any you find.

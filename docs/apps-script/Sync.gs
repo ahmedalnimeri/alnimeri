@@ -655,6 +655,7 @@ function syncEvents(people, cutoff) {
   if (wrong) throw new Error(wrong + ' ' + NOT_ADDED + ' Or delete the Events tab: the next run makes it again.');
   var fresh = sh.getLastRow() < 3 && unlike(sh, 2, EVENT_HEAD) > 0;
   if (fresh) {
+    props.deleteProperty('EVENTS_UP_TO');   // a run that fails before refilling leaves the next to start from 0
     sh.clear();
     sh.getRange(1, tsCol, sh.getMaxRows(), 1).setNumberFormat('@');   // the stamp stays the API's string
     sh.getRange(1, 1).setValue('Last 30 days: …');                       // the funnel line, filled below
