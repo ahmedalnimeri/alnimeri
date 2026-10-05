@@ -14,11 +14,15 @@
    moving and the board is near the screen. Reduced motion: no loop, no
    drift, no arrival; pointing or tabbing still racks the focus, at once.
 
-   The stills themselves wait in data-* (bin-build-work-pages.py) and are
-   fetched one by one as each comes within a quarter of a screen of the
-   viewport: the board hangs inside the browser's own lazy-load distance,
-   which fetched all of them at page open. Their boxes keep their shape
-   (--ar) while they wait. Without JS the <noscript> copies stand in. */
+   The stills themselves wait in data-* (bin-build-work-pages.py): the
+   board hangs inside the browser's own lazy-load distance, which fetched
+   all of them at page open. At page open only those on the screen or
+   within a quarter of a screen of it are fetched; from the reader's first
+   scroll, those within a whole screen of it, so a still is on its way
+   well before it is on show (a quarter of a screen is a sixth of a second
+   at a brisk scroll, too little for a still on a slow phone link). Their
+   boxes keep their shape (--ar) while they wait. Without JS the <noscript>
+   copies stand in. */
 (function () {
   'use strict';
   var root = document.querySelector('.frm');
@@ -26,6 +30,7 @@
 
   var waiting = [].slice.call(root.querySelectorAll('.frm__frame img[data-src]'));
   var hydrate = function (img) {
+    if (!img.hasAttribute('data-src')) return;
     [].slice.call(img.parentNode.querySelectorAll('source[data-srcset]')).forEach(function (s) {
       s.srcset = s.getAttribute('data-srcset'); s.removeAttribute('data-srcset');
     });
@@ -33,10 +38,23 @@
     img.src = img.getAttribute('data-src'); img.removeAttribute('data-src');
   };
   if ('IntersectionObserver' in window) {
-    var hio = new IntersectionObserver(function (es) {
-      es.forEach(function (e) { if (e.isIntersecting) { hio.unobserve(e.target); hydrate(e.target); } });
-    }, { rootMargin: '25% 0px' });
-    waiting.forEach(function (img) { hio.observe(img); });
+    var watch = function (margin) {
+      var o = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { o.unobserve(e.target); hydrate(e.target); } });
+      }, { rootMargin: margin });
+      waiting.forEach(function (img) { if (img.hasAttribute('data-src')) o.observe(img); });
+      return o;
+    };
+    var hio = watch('25% 0px');
+    // the reader is moving: look a screen ahead. A reader who never scrolls
+    // fetches nothing more, nor does one who only presses play.
+    var ahead = function () {
+      removeEventListener('scroll', ahead); removeEventListener('wheel', ahead);
+      hio.disconnect();
+      watch('100% 0px');
+    };
+    addEventListener('scroll', ahead, { passive: true });
+    addEventListener('wheel', ahead, { passive: true });
   } else {
     waiting.forEach(hydrate);
   }

@@ -645,9 +645,10 @@ def frames_of(f):
             # lazy-load distance (1250px and more), which put every still on
             # the wire at page open. So the stills wait in data-* until
             # design-frames.js sees each one a quarter of a screen away (as
-            # the On Set prints on /about do); the box keeps its shape meanwhile
-            # (--ar), so nothing moves when one arrives. Without JS the
-            # <noscript> copy is the picture.
+            # the On Set prints on /about do), a whole screen once the reader
+            # scrolls; the box keeps its shape meanwhile (--ar), so nothing
+            # moves when one arrives. Without JS the <noscript> copy is the
+            # picture.
             wait = (pic.replace(' srcset="', ' data-srcset="').replace(' src="', ' data-src="', 1))
             cells.append(
                 f'<a class="{cls}" href="{at_url(rec, s)}" data-from="{s}" data-depth="{fr["depth"]:g}"'
