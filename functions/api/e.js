@@ -3,9 +3,13 @@
  * which lead to a brief.
  *
  *   POST /api/e     a page's navigator.sendBeacon('/api/e', JSON.stringify({ t, film, path, via }))
- *   GET  /api/e?key=<VISITS_TOKEN>&format=json   the log, newest first (the sheet's Events tab)
+ *   GET  /api/e?key=<VISITS_TOKEN>&format=json   the log, newest first
  *   GET  /api/e?key=<VISITS_TOKEN>               the same as a page, with the funnel on top
  *        &days=30  only the last N days      &limit=5000  rows (JSON up to 20000)
+ *        &after=<id>  JSON only: the events with a larger id, OLDEST first. The
+ *                 sheet's Events tab asks for what came after the last id it
+ *                 holds, and pages on by passing the last id of each page, so
+ *                 D1 reads the new rows on the primary key, not the whole table.
  *
  * t, one of:
  *   play             Play pressed on a film (via: lightbox, page; post = opened
@@ -104,11 +108,29 @@ export async function onRequestGet({ request, env }) {
   const asJson = url.searchParams.get('format') === 'json';
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '5000', 10) || 5000, asJson ? 20000 : 5000);
   const days = Math.max(0, Math.min(90, parseInt(url.searchParams.get('days') || '0', 10) || 0));
-  const where = days ? `WHERE ts >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-${days} days')` : '';
+  // ids only grow (AUTOINCREMENT never reuses one), so "after the last id I
+  // have" is exactly "what I have not got". Anything but a whole number is
+  // refused rather than read as 0, which would return the whole table.
+  const afterRaw = asJson ? url.searchParams.get('after') : null;
+  if (afterRaw !== null && !/^\d{1,15}$/.test(afterRaw)) {
+    return new Response('after must be an event id, a whole number such as 1234', { status: 400 });
+  }
 
   await env.DB.prepare(TABLE).run();
-  const { results } = await env.DB.prepare(
-    `SELECT id, ts, t, film, path, via, country FROM events ${where} ORDER BY id DESC LIMIT ?`).bind(limit).all();
+  let results;
+  if (afterRaw === null) {
+    const where = days ? `WHERE ts >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-${days} days')` : '';
+    ({ results } = await env.DB.prepare(
+      `SELECT id, ts, t, film, path, via, country FROM events ${where} ORDER BY id DESC LIMIT ?`).bind(limit).all());
+  } else {
+    // A range on the primary key, read in its own order and cut off by LIMIT:
+    // D1 reads only the rows after the id. With &days, the unary + keeps
+    // SQLite from walking idx_events_ts over the whole window instead.
+    const recent = days ? ` AND +ts >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-${days} days')` : '';
+    ({ results } = await env.DB.prepare(
+      `SELECT id, ts, t, film, path, via, country FROM events WHERE id > ?${recent} ORDER BY id ASC LIMIT ?`)
+      .bind(Number(afterRaw), limit).all());
+  }
   const rows = results.map((r) => ({ ...r, title: titleOf(r.film) }));
   if (asJson) {
     return new Response(JSON.stringify({ ok: true, events: rows }), {
