@@ -637,14 +637,23 @@ def frames_of(f):
             s = int(fr['t'])
             cls = ('frm__still' + (' is-lead' if fr['depth'] == 1 else '')
                    + (' is-' + phone[fr['still']] if phone[fr['still']] else ''))
+            pic = (f'<picture>'
+                   f'<source type="image/webp" srcset="{fl[(640, "webp")]} 640w, {fl[(1280, "webp")]} 1280w" sizes="{sizes}">'
+                   f'<img srcset="{fl[(640, "jpg")]} 640w, {fl[(1280, "jpg")]} 1280w" sizes="{sizes}" src="{fl[(640, "jpg")]}"'
+                   f' alt="" width="{w}" height="{h}" loading="lazy" decoding="async"></picture>')
+            # The board hangs just under the player, inside the browser's own
+            # lazy-load distance (1250px and more), which put every still on
+            # the wire at page open. So the stills wait in data-* until
+            # design-frames.js sees each one a quarter of a screen away (as
+            # the On Set prints on /about do); the box keeps its shape meanwhile
+            # (--ar), so nothing moves when one arrives. Without JS the
+            # <noscript> copy is the picture.
+            wait = (pic.replace(' srcset="', ' data-srcset="').replace(' src="', ' data-src="', 1))
             cells.append(
                 f'<a class="{cls}" href="{at_url(rec, s)}" data-from="{s}" data-depth="{fr["depth"]:g}"'
                 f' style="--x:{fr["size"]:g};--dy:{fr["dy"]:g}px;--ar:{w}/{h};--g:{w / h:.3f}"'
                 f' aria-label="Play {title} from {clock(s)}">'
-                f'<span class="frm__frame"><picture>'
-                f'<source type="image/webp" srcset="{fl[(640, "webp")]} 640w, {fl[(1280, "webp")]} 1280w" sizes="{sizes}">'
-                f'<img srcset="{fl[(640, "jpg")]} 640w, {fl[(1280, "jpg")]} 1280w" sizes="{sizes}" src="{fl[(640, "jpg")]}"'
-                f' alt="" width="{w}" height="{h}" loading="lazy" decoding="async"></picture></span>'
+                f'<span class="frm__frame">{wait}<noscript>{pic}</noscript></span>'
                 f'<span class="frm__chip" aria-hidden="true">{FRAME_PLAY}{clock(s)}<span>Play from here</span></span></a>')
         out.append(f'      <div class="frm__row" style="--pl:{pl:g}%;--pr:{pr:g}%">' + ''.join(cells) + '</div>\n')
     return ('\n  <!-- the Frames\' own styles, here rather than in the head so they never\n'

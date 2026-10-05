@@ -12,11 +12,35 @@
    second (data-from), and design-filmpages.js plays the page's film from
    there. One requestAnimationFrame loop, running only while something is
    moving and the board is near the screen. Reduced motion: no loop, no
-   drift, no arrival; pointing or tabbing still racks the focus, at once. */
+   drift, no arrival; pointing or tabbing still racks the focus, at once.
+
+   The stills themselves wait in data-* (bin-build-work-pages.py) and are
+   fetched one by one as each comes within a quarter of a screen of the
+   viewport: the board hangs inside the browser's own lazy-load distance,
+   which fetched all of them at page open. Their boxes keep their shape
+   (--ar) while they wait. Without JS the <noscript> copies stand in. */
 (function () {
   'use strict';
   var root = document.querySelector('.frm');
   if (!root) return;
+
+  var waiting = [].slice.call(root.querySelectorAll('.frm__frame img[data-src]'));
+  var hydrate = function (img) {
+    [].slice.call(img.parentNode.querySelectorAll('source[data-srcset]')).forEach(function (s) {
+      s.srcset = s.getAttribute('data-srcset'); s.removeAttribute('data-srcset');
+    });
+    img.srcset = img.getAttribute('data-srcset'); img.removeAttribute('data-srcset');
+    img.src = img.getAttribute('data-src'); img.removeAttribute('data-src');
+  };
+  if ('IntersectionObserver' in window) {
+    var hio = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { hio.unobserve(e.target); hydrate(e.target); } });
+    }, { rootMargin: '25% 0px' });
+    waiting.forEach(function (img) { hio.observe(img); });
+  } else {
+    waiting.forEach(hydrate);
+  }
+
   var mq = function (q) { return !!(window.matchMedia && matchMedia(q).matches); };
   var reduce = mq('(prefers-reduced-motion: reduce)');
   var fine = mq('(hover: hover) and (pointer: fine)');

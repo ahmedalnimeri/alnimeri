@@ -41,6 +41,9 @@
 .frm__frame { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; background: #000; box-shadow: 0 30px 70px -32px rgba(0, 0, 0, .9); }
 .frm__frame::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid rgba(255, 255, 255, .09); pointer-events: none; }
 .frm__frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+/* a still waits in data-* until design-frames.js sees it near the screen;
+   without JS its <noscript> copy stands in */
+.no-js .frm__frame img[data-src] { display: none; }
 
 /* the chip: where in the film this frame is, and what a press does */
 .frm__chip {
