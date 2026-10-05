@@ -17,27 +17,35 @@
 //      narrow humans filter → v3 → v4), and a v3 sheet already past 90 days.
 //   Then the prune boundary up close, hand edits, outages, paging, rebuild(),
 //   and v4 against e.js from before &after (the site not yet deployed).
+//  10. The review of 5 Oct 2026: the site unreachable for days (still
+//      deleting), a column inserted by hand, notes right of the last column,
+//      Event # and EVENTS_UP_TO typed over, a recreated events table, and
+//      sessions that span the cutoff after a 90-day stop or with runs ten
+//      minutes apart.
 //
 //   node mock-sync-test.mjs [Sync.gs] [--v3 <rev>] [--release <rev>] [--days 130]
 //
 // v3 is read from git b1d1c84, the commit on branch sync/v4 that records the
 // installed version; if that history is ever rewritten, pass --v3 <its rev>.
-// It takes about nine minutes.
+// It takes about a quarter of an hour.
 // No fetch is faked by hand: /api/visits and /api/e are the real handlers in
 // functions/api, over an in-memory SQLite built from schema.sql, so since /
 // after / humans / limit / offset behave as on the site, and each request is
 // charged the rows SQLite's own plan says it reads. The Apps Script services
 // are in-memory fakes (as in mock-test.mjs) that also do what a sheet does:
 // a written "2026-10-04" or "13:45" comes back as a date unless the column is
-// plain text, and the rows under the frozen ones can't all be deleted.
+// plain text, the rows under the frozen ones can't all be deleted, and a sort
+// moves only the range's own columns.
 //
 // UrlFetchApp is synchronous and the handlers are async, so a fetch the fake
 // has not served yet stops the run; the harness serves it, puts the sheets and
 // Script properties back as they were when the run began, and runs the
 // function again, so the run that completes is one uninterrupted run (v4 and
-// the release fetch events after writing the visit tabs). The events page a
-// run will ask for is served ahead, to save most of those re-runs. Exits 1 if
-// any check fails.
+// the release fetch events after writing the visit tabs). v4 catches a failed
+// fetch and carries on to delete what is past ninety days, so a fetch that was
+// not served sends the run round again however it ended. The first visit pages
+// and the events pages a run will ask for are served ahead, to save most of
+// those re-runs. Exits 1 if any check fails.
 import fs from 'node:fs'; import vm from 'node:vm'; import path from 'node:path'; import os from 'node:os';
 import { DatabaseSync } from 'node:sqlite';
 import { execFileSync } from 'node:child_process';
@@ -202,7 +210,15 @@ class Range { constructor(sh, r, c, nr, nc) {
       row.forEach((x, j) => { const col = this.c + j; dst[col - 1] = this.sh.text.has(col) ? x : asSheets(x); }); });
     return this; }
   setValue(v) { return this.setValues([[v]]); }
-  sort({ column, ascending }) { touch(); const rows = this.sh.cells.slice(this.r - 1, this.r - 1 + this.nr); rows.sort((a, b) => (ascending ? 1 : -1) * ((a[column - 1] > b[column - 1]) - (a[column - 1] < b[column - 1]))); this.sh.cells.splice(this.r - 1, this.nr, ...rows); return this; }
+  // As Sheets does: only the range's columns move; a cell to the right of
+  // the range stays where it is.
+  sort({ column, ascending }) {
+    touch();
+    const k = column - this.c, part = [];
+    for (let i = 0; i < this.nr; i++) { const row = this.sh.cells[this.r - 1 + i] || []; part.push(Array.from({ length: this.nc }, (_, j) => row[this.c - 1 + j])); }
+    part.sort((a, b) => (ascending ? 1 : -1) * ((a[k] > b[k]) - (a[k] < b[k])));
+    part.forEach((p, i) => { const row = this.sh.cells[this.r - 1 + i] = this.sh.cells[this.r - 1 + i] || []; p.forEach((v, j) => { row[this.c - 1 + j] = v; }); });
+    return this; }
   setNumberFormat(f) { touch(); if (f === '@') for (let j = 0; j < this.nc; j++) this.sh.text.add(this.c + j); return this; }
   setWrap() { return this; } setFontWeight() { return this; } }
 class Sheet { constructor(name) { this.name = name; this.cells = []; this.maxR = 1000; this.maxC = 26; this.text = new Set(); this.frozen = 0; }
@@ -222,10 +238,12 @@ const copySheet = (sh, into = new Sheet(sh.name)) => Object.assign(into, { cells
 // The state a run began with, taken at its first write; a re-run starts from it.
 let running = null;
 function touch() { if (running && !running.snap) running.snap = { sheets: Object.entries(running.sheets).map(([k, sh]) => [k, copySheet(sh)]), props: { ...running.props }, triggers: running.triggers.slice() }; }
+// In place: a sheet the caller holds stays the sheet the script writes to.
 function restore(g) {
   const s = g.snap; if (!s) return;
-  for (const k of Object.keys(g.sheets)) delete g.sheets[k];
-  for (const [k, sh] of s.sheets) g.sheets[k] = copySheet(sh);
+  const was = new Map(s.sheets);
+  for (const k of Object.keys(g.sheets)) if (!was.has(k)) delete g.sheets[k];
+  for (const [k, sh] of s.sheets) g.sheets[k] = copySheet(sh, g.sheets[k] || new Sheet(k));
   for (const k of Object.keys(g.props)) delete g.props[k];
   Object.assign(g.props, s.props);
   g.triggers.splice(0, g.triggers.length, ...s.triggers);
@@ -233,14 +251,39 @@ function restore(g) {
 
 class NeedFetch extends Error { constructor(url) { super('fetch ' + url); this.url = url; } }
 
+// The two visit pages a v3 or v4 run asks for first (since as Sync.gs works
+// it out from All traffic), served before it starts. A wrong guess costs a
+// re-run.
+function visitsAhead(g) {
+  if (!/OVERLAP_HOURS/.test(g.src)) return [];
+  const T = (g.sheets['All traffic'] || { cells: [] }).cells, at = (T[0] || []).map(String).indexOf('Timestamp (UTC)');
+  const STAMP = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/, from = Date.parse('2026-01-01T00:00:00Z');
+  let newest = '';
+  if (at >= 0) for (const r of T.slice(1)) {
+    const s = String((r || [])[at] ?? ''), t = Date.parse(s);
+    if (STAMP.test(s) && t >= from && t <= simNow + DAY && s > newest) newest = s;
+  }
+  let since = newest ? new Date(Date.parse(newest) - vm.runInContext('OVERLAP_HOURS', g.ctx) * HOUR).toISOString() : '';
+  if (/KEEP_DAYS/.test(g.src)) { const floor = new Date(simNow - vm.runInContext('KEEP_DAYS', g.ctx) * DAY - 1).toISOString(); if (since < floor) since = floor; }
+  const base = `https://alnimeri.com/api/visits?key=${encodeURIComponent(String(g.props.VISITS_TOKEN || '').trim())}&format=json&limit=${vm.runInContext('LIMIT', g.ctx)}`;
+  const sp = since ? '&since=' + encodeURIComponent(since) : '';
+  return [base + sp, base + '&humans=1' + sp];
+}
+
 // The events pages a run is going to ask for, served before it starts: the
 // release asks for the whole table; v4 for the ids above the highest its tab
 // (or EVENTS_UP_TO) has had, page after page. A wrong guess costs a re-run.
 async function eventsAhead(g) {
   if (/function pullEvents/.test(g.src)) {
     const T = (g.sheets.Events || { cells: [] }).cells, lim = vm.runInContext('LIMIT', g.ctx);
+    // as syncEvents: EVENTS_UP_TO once it holds an id, else the tab's highest
+    // whole Event #; 0 for a tab made afresh
+    const E = vm.runInContext('EVENT_HEAD', g.ctx), headed = E.every((h, i) => String((T[1] || [])[i] ?? '') === h);
+    const rows = T.slice(2).filter((r) => r && r.some((x) => x !== '' && x !== undefined));
+    const up = g.props.EVENTS_UP_TO;
     let after = 0;
-    if (T.length >= 2 && (T[1] || [])[0] === 'Date') after = T.slice(2).reduce((m, r) => Math.max(m, Number(r[8]) || 0), Number(g.props.EVENTS_UP_TO) || 0);
+    if (rows.length || headed) after = /^\d{1,15}$/.test(String(up)) ? Number(up)
+      : rows.reduce((m, r) => (typeof r[8] === 'number' && r[8] % 1 === 0 && r[8] > m ? r[8] : m), 0);
     const urls = [];
     for (;;) {
       const url = `https://alnimeri.com/api/e?key=${encodeURIComponent(KEY)}&format=json&limit=${lim}&after=${after}`;
@@ -265,7 +308,10 @@ function makeGas(name, src, d1, { limit, props: given } = {}) {
       setProperty: (k, v) => { touch(); props[k] = String(v); }, deleteProperty: (k) => { touch(); delete props[k]; } }) },
     UrlFetchApp: { fetch(url) {
       if (url.startsWith('https://alnimeri.com/api/brief')) return { getResponseCode: () => 200, getContentText: () => '{"ok":true,"briefs":[]}' };
-      const hit = gas.cache.get(url); if (!hit) throw new NeedFetch(url);
+      // A fetch not served yet stops the run. Sync.gs catches a failed fetch
+      // and carries on (to delete what is past ninety days), so the harness
+      // remembers it and runs the function again however the run ended.
+      const hit = gas.cache.get(url); if (!hit) { gas.need = gas.need || url; throw new NeedFetch(url); }
       gas.fetches.push({ url, read: hit.read });
       return { getResponseCode: () => hit.code, getContentText: () => hit.body };
     } },
@@ -284,16 +330,19 @@ function makeGas(name, src, d1, { limit, props: given } = {}) {
   gas.call = async (fn) => {
     const began = Date.now();
     gas.cache = new Map(); gas.snap = null;
-    for (const url of await eventsAhead(gas)) gas.cache.set(url, await serveOnce(gas.d1, url));
+    for (const url of (await eventsAhead(gas)).concat(visitsAhead(gas))) gas.cache.set(url, await serveOnce(gas.d1, url));
     for (;;) {
-      gas.fetches = [];
+      gas.fetches = []; gas.need = null;
       running = gas;
-      try { vm.runInContext(fn + '()', ctx); break; }
-      catch (e) {
-        if (!(e instanceof NeedFetch)) throw new Error(`${name}: ${fn}() threw at day ${((simNow - START) / DAY).toFixed(2)}: ${e.message}`);
+      let err = null;
+      try { vm.runInContext(fn + '()', ctx); } catch (e) { err = e; } finally { running = null; }
+      if (gas.need) {
         restore(gas); gas.reruns++;
-        gas.cache.set(e.url, await serveOnce(gas.d1, e.url));
-      } finally { running = null; }
+        gas.cache.set(gas.need, await serveOnce(gas.d1, gas.need));
+        continue;
+      }
+      if (err) throw new Error(`${name}: ${fn}() threw at day ${((simNow - START) / DAY).toFixed(2)}: ${err.message}`);
+      break;
     }
     const of = (re) => gas.fetches.filter((f) => re.test(f.url)).reduce((s, f) => s + f.read, 0);
     const run = { at: simNow, fetches: gas.fetches, read: gas.fetches.reduce((s, f) => s + f.read, 0), visits: of(/\/api\/visits\?/), events: of(/\/api\/e\?/) };
@@ -663,7 +712,12 @@ for (let k = 1; RUN_AT(k) <= END; k++) {
     sides.rebuild125 = { window: await window(g, clean), prop: g.props.SESSIONS_PRUNED, fetches: run.fetches.map((f) => f.url.replace(KEY, '…').replace(/^https:\/\/alnimeri\.com/, '')), summary: summaryVsTabs(g) };
     const h = clone(v4, 'v4 (day 125, Visitors emptied)', V4);
     h.sheets.Visitors.clear(); await h.call('sync');
-    sides.refill125 = { window: await window(h, clean), equal: bagDiff(tabBag(h, 'Visitors'), tabBag(v4, 'Visitors')), summary: summaryVsTabs(h) };
+    // v3 refilling its own Visitors the same day numbers the sessions as v4 does
+    const h3 = clone(v3, 'v3 (day 125, Visitors emptied)', V3);
+    h3.sheets.Visitors.clear(); await h3.call('sync');
+    const rr = rowByRow(h, h3, 'Visitors');
+    sides.refill125 = { window: await window(h, clean), equal: bagDiff(tabBag(h, 'Visitors'), tabBag(v4, 'Visitors')), summary: summaryVsTabs(h),
+      sessions: { compared: rr.compared, unmatched: rr.unmatched, differ: rr.diff.Session || 0, example: rr.examples.Session } };
   }
 
   if (k % 24 === 0) {
@@ -862,7 +916,7 @@ console.log('6. The cutoff up close (v3 and v4 side by side, hourly for 150 days
   console.log(`   rows compared with v3: ${r.compared}; differ in ${Object.entries(r.diff).map(([h, k]) => h + ' ' + k).join(', ') || 'nothing'} — Session never: ${verdict(!r.diff.Session && !r.unmatched, '6 sessions')}`);
   console.log(`   the uptime check, one unbroken session for 150 days: ${splitSessions(n, '34.1.1.1')} label in v4 (v3 ${splitSessions(o, '34.1.1.1')}) — ${verdict(splitSessions(n, '34.1.1.1') === 1, '6 uptime')}`);
   console.log(`   a session cut in two by the cutoff of the run on day 92 at 10:17 (9.9.9.2, hits from 09:57 to 10:37, back at 11:02 and 13:02), right after that run:`);
-  console.log('      v3: ' + atCut.rows[0]); console.log('      v4: ' + atCut.rows[1] + '  (09:57 and 10:07 deleted; the session counted once, not in SESSIONS_PRUNED)');
+  console.log('      v3: ' + atCut.rows[0]); console.log('      v4: ' + atCut.rows[1] + '  (09:57 and 10:07 deleted; the session keeps its number, counted ahead of the kept sessions, not in SESSIONS_PRUNED)');
   console.log(`   a visitor on days 0, 50, 100, 145 (9.9.9.1): v3 ${of(o, '9.9.9.1').map((x) => x.split(' ').slice(1).join(' ')).join(' · ')} | v4 ${of(n, '9.9.9.1').map((x) => x.split(' ').slice(1).join(' ')).join(' · ')}`);
   console.log(`   the deletion failing on day ${failDay} after the count was stored: the run threw "${threw}"; the next run: ${windowSay(recovered)} — ${verdict(threw && windowOk(recovered), '6 failed prune recovers')}, and the session numbers still equal v3's (above)`);
   console.log(`   SESSIONS_PRUNED ${n.props.SESSIONS_PRUNED}`);
@@ -1013,6 +1067,182 @@ console.log('9. rebuild() and a hand-emptied Visitors tab past 90 days');
   console.log(`   rebuild() on day 125: fetched ${x.fetches.join(', ')}; ${windowSay(x.window)}; SESSIONS_PRUNED ${x.prop === undefined ? 'cleared' : x.prop} — ${verdict(windowOk(x.window) && x.prop === undefined && !x.summary.length, '9 rebuild')}`);
   const y = sides.refill125;
   console.log(`   Visitors emptied on day 125, one sync: ${windowSay(y.window)}; the same rows as before it was emptied: ${verdict(!y.equal.more.length && !y.equal.less.length && windowOk(y.window) && !y.summary.length, '9 refill')}`);
+  console.log(`   and their Session numbers against v3 refilling its Visitors the same day: ${y.sessions.compared} rows, ${y.sessions.differ} differ${y.sessions.example ? ' (' + y.sessions.example + ')' : ''} — ${verdict(!y.sessions.differ && !y.sessions.unmatched, '9 refill sessions')}`);
+}
+console.log();
+
+/* --------------------------------------- the reviewers' cases, 5 Oct 2026 */
+
+console.log('10. When the site can\'t be reached, a column is inserted, Event # is typed over, or a session spans the cutoff');
+// A small log of its own: regulars, one-off visitors, scanners, and an uptime
+// check every 29 minutes (a session that never ends, so every cutoff cuts it).
+function smallLog(T0, days, seed) {
+  let s = seed; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const out = [], home = HOMES[0];
+  const add = (ms, ip, p, ua = BROWSERS[0]) => out.push({ ts: new Date(Math.floor(ms)).toISOString(), ip, country: home[0], region: home[1], city: home[2], asn: home[3], path: p, referrer: null, ua, is_bot: 0, land: Math.floor(ms) + 50 });
+  for (let i = 0; i < days * 6; i++) { const t = T0 + r() * days * DAY, ip = '10.9.' + Math.floor(r() * 25) + '.1'; for (let v = 0, n = 1 + Math.floor(r() * 3); v < n; v++) add(t + v * (r() < 0.8 ? 4 : 40) * MIN, ip, PAGES[Math.floor(r() * PAGES.length)]); }
+  for (let i = 0; i < days * 2; i++) { const t = T0 + r() * days * DAY, ip = '160.1.' + Math.floor(r() * 9) + '.9'; for (let v = 0; v < 4; v++) add(t + v * 1000, ip, PROBES[v], 'python-requests/2.31.0'); }
+  for (let t = T0 + 7 * MIN; t < T0 + days * DAY; t += 29 * MIN) add(t, '34.9.9.9', '/', 'Mozilla/5.0 (compatible; UptimeCheck/1.0)');
+  return out.sort((a, b) => a.land - b.land);
+}
+const events10 = (d, at, n) => { for (let i = 0; i < n; i++) d.insertEvent({ ts: new Date(at - i * MIN).toISOString(), t: pick2(['play', 'brief_open', 'cv_pdf']), film: 'al-doroub', path: '/', via: null, country: 'AE' }); };
+const olderThan = (g, cutoff) => ['All traffic', 'Visitors', 'Events'].reduce((n, name) => n + (g.sheets[name] ? rowsOf(g, name).filter((x) => { const s = stampOf(g, name)(x); return /Z$/.test(s) && Date.parse(s) < cutoff; }).length : 0), 0);
+const sessionDiff = (a, b) => { const r = rowByRow(a, b); return { compared: r.compared, unmatched: r.unmatched, session: r.diff.Session || 0, example: r.examples.Session }; };
+const threwWith = async (g, re) => { try { await g.call('sync'); return ''; } catch (x) { return re.test(x.message) ? x.message.replace(/^.*?threw at day [\d.]+: /, '') : 'UNEXPECTED: ' + x.message; } };
+
+// 10a. The site can't be reached for days across the cutoff: the key rotated in
+// Cloudflare but not in the Script property, then /api/e alone failing.
+{
+  const T0 = START + 900 * DAY, d = new FakeD1('unreachable'), log10 = smallLog(T0, 130, 4242);
+  const o = makeGas('v3/unreachable', V3, d), n = makeGas('v4/unreachable', V4, d);
+  let i = 0, fails = 0, msgs = new Set(), stale = 0, sumBad = [], eFails = 0, eStale = 0;
+  // every 6 hours, hourly from day 98 to day 114
+  for (let k = 1; T0 + k * HOUR <= T0 + 125 * DAY; k++) {
+    if (k % 6 && (k < 98 * 24 || k >= 114 * 24)) continue;
+    simNow = T0 + k * HOUR + 17 * MIN;
+    while (i < log10.length && log10[i].land <= simNow) d.insert(log10[i++]);
+    events10(d, simNow - 5 * MIN, 2);
+    const day = (simNow - T0) / DAY, keyOff = day >= 100 && day < 104, eOff = day >= 110 && day < 112;
+    for (const g of [o, n]) g.props.VISITS_TOKEN = keyOff ? 'an-old-key' : KEY;
+    d.eHandler = eOff ? async () => new Response('{}', { status: 500 }) : null; served.clear();
+    if (keyOff) {
+      const m = await threwWith(n, /Visit log returned 404/); fails++; msgs.add(m.slice(0, 60));
+      stale += olderThan(n, simNow - KEEP); sumBad.push(...summaryVsTabs(n));
+      try { await o.call('sync'); } catch (x) { /* v3 stops at the fetch, as it always did */ }
+    } else if (eOff) {
+      const m = await threwWith(n, /Event log returned 500/); eFails += m && !/UNEXPECTED/.test(m) ? 1 : 0;
+      eStale += olderThan(n, simNow - KEEP);
+      await o.call('sync');
+    } else { await n.call('sync'); await o.call('sync'); }
+  }
+  const w = await window(n, d), sd = sessionDiff(n, o);
+  console.log(`   the key rotated for 4 days (day 100-104, the 90-day cutoff moving on every hour): ${fails} runs, each threw "${[...msgs].join('" / "')}"; ` +
+    `rows older than the cutoff left after them: ${stale}; Summary against the tabs: ${sumBad.length ? sumBad[0] : 'what they hold'} — ${verdict(fails === 96 && msgs.size === 1 && !/UNEXPECTED/.test([...msgs][0]) && !stale && !sumBad.length, '10a deletes while the site is unreachable')}`);
+  console.log(`   /api/e answering 500 for 2 days: ${eFails} runs threw "Event log returned 500", events older than the cutoff left: ${eStale} — ${verdict(eFails === 48 && !eStale, '10a deletes events while /api/e fails')}`);
+  console.log(`   on day 125: ${windowSay(w)} — ${verdict(windowOk(w), '10a window after')}; Session against v3 on ${sd.compared} rows: ${sd.session} differ${sd.example ? ' (' + sd.example + ')' : ''} — ${verdict(!sd.session && !sd.unmatched, '10a sessions after')}; SESSIONS_PRUNED ${n.props.SESSIONS_PRUNED}`);
+}
+
+// 10b. A "Notes" column inserted after Visitor in both visit tabs on day 40 and
+// taken out again on day 95; and on another copy, notes to the right of the
+// last column.
+{
+  const T0 = START + 1100 * DAY, d = new FakeD1('columns'), log10 = smallLog(T0, 110, 777);
+  const o = makeGas('v3/columns', V3, d), n = makeGas('v4/columns', V4, d), r = makeGas('v4/notes on the right', V4, d);
+  let i = 0, threw = 0, runsIn = 0, asked = 0, msg = '', grew = 0, stale = 0, noteRows = new Map(), notesOk = true, notesBefore = 0;
+  const note = (g, name) => { const H = headOf(g, name), at = H.indexOf('Notes'), k = keyOf(g, name); return new Map(rowsOf(g, name).filter((x) => x[at]).map((x) => [k(x), x[at]])); };
+  for (let k = 3; T0 + k * HOUR <= T0 + 105 * DAY; k += 3) {        // every 3 hours
+    simNow = T0 + k * HOUR + 17 * MIN;
+    while (i < log10.length && log10[i].land <= simNow) d.insert(log10[i++]);
+    const day = (simNow - T0) / DAY;
+    if (k === 40 * 24) {
+      for (const name of ['All traffic', 'Visitors']) {
+        const sh = n.sheets[name]; sh.cells.forEach((x, j) => x.splice(6, 0, j === 0 ? 'Notes' : '')); sh.maxC += 1;
+        const sr = r.sheets[name]; sr.maxC = Math.max(sr.maxC, 29); sr.cells[0][28] = 'Notes';
+        for (let j = 1; j < sr.cells.length; j += 37) sr.cells[j][28] = 'note ' + j;
+      }
+      noteRows = note(r, 'All traffic'); notesBefore = noteRows.size;
+    }
+    if (k === 95 * 24) for (const name of ['All traffic', 'Visitors']) { const sh = n.sheets[name]; sh.cells.forEach((x) => x.splice(6, 1)); sh.maxC -= 1; }
+    const inserted = k >= 40 * 24 && k < 95 * 24;
+    const before = rowsOf(n, 'All traffic').length;
+    if (inserted) {
+      runsIn++;
+      const m = await threwWith(n, /column G is headed "Notes" where the script keeps "Visit #"/); if (m && !/UNEXPECTED/.test(m)) threw++; msg = msg || m;
+      if (rowsOf(n, 'All traffic').length > before) grew++;
+      asked += n.fetches.filter((f) => /\/api\/visits\?/.test(f.url)).length;
+      if (day > 90) stale += olderThan(n, simNow - KEEP);
+    } else await n.call('sync');
+    await o.call('sync'); await r.call('sync');
+    if (k >= 40 * 24) {                    // the notes are still on the rows they were typed on, or gone with them
+      const now = note(r, 'All traffic');
+      for (const [key, v] of now) if (noteRows.get(key) !== v) notesOk = false;
+      for (const [key] of noteRows) if (!now.has(key) && Date.parse(key.split('|')[0]) >= simNow - KEEP) notesOk = false;
+    }
+  }
+  const w = await window(n, d), sd = sessionDiff(n, o), wr = await window(r, d), rr = rowByRow(r, o);
+  const other = Object.keys(rr.diff).filter((h) => !['Notes', 'Visit #', 'Visitor'].includes(h));
+  console.log(`   a column inserted at G in both visit tabs (day 40-95): ${threw} runs threw "${msg.slice(0, 110)}…"; runs that added rows to the tab: ${grew}; visit fetches made: ${asked}; ` +
+    `rows older than the cutoff left (day 90-95, found by the header): ${stale} — ${verdict(threw === runsIn && runsIn === 55 * 8 && !grew && !asked && !stale, '10b inserted column')}`);
+  console.log(`   the column taken out on day 95, then to day 105: ${windowSay(w)} — ${verdict(windowOk(w), '10b window after')}; Session against v3 on ${sd.compared} rows: ${sd.session} differ — ${verdict(!sd.session && !sd.unmatched, '10b sessions after')}`);
+  console.log(`   notes typed to the right of the last column (${notesBefore} rows): no error, ${windowSay(wr)}; each note still on its row, or gone with it at 90 days: ${verdict(notesOk && windowOk(wr) && !other.length, '10b notes on the right')}${other.length ? ' differs in ' + other.join(', ') : ''}; notes left on day 105: ${note(r, 'All traffic').size}`);
+}
+
+// 10c. EVENTS_UP_TO against hand edits and a recreated events table.
+{
+  const T0 = START + 1300 * DAY;
+  const ids = (g) => rowsOf(g, 'Events').map((x) => x[8]).filter((x) => typeof x === 'number' && x % 1 === 0);
+  const afterOf = (run) => run.fetches.filter((f) => /\/api\/e\?/.test(f.url)).map((f) => new URL(f.url).searchParams.get('after')).join(',');
+  const tick = async (g) => { simNow += HOUR; return g.call('sync'); };
+  simNow = T0;
+  const d = new FakeD1('upto'), g = makeGas('v4/upto', V4, d);
+  events10(d, simNow, 5); await tick(g);
+  // a total typed under the events, then a non-integer
+  g.sheets.Events.cells.push(['', '', 'total', '', '', '', '', '', 50000]);
+  events10(d, simNow, 1); const a1 = await tick(g);
+  g.sheets.Events.cells.push(['', '', 'typo', '', '', '', '', '', 1.5]);
+  events10(d, simNow, 1); let a2err = ''; try { await tick(g); } catch (x) { a2err = x.message; }
+  const a2 = g.runs.at(-1);
+  console.log(`   50000 typed in Event #: next run asked after=${afterOf(a1)}; 1.5 typed: after=${afterOf(a2)}${a2err ? ' THREW ' + a2err : ''}; the tab holds ids ${ids(g).filter((x) => x < 100).join(',')} — ` +
+    verdict(afterOf(a1) === '5' && afterOf(a2) === '6' && !a2err && ids(g).filter((x) => x < 100).join(',') === '7,6,5,4,3,2,1', '10c typed Event #'));
+  // EVENTS_UP_TO typed over: falls back to the tab's highest whole id
+  g.props.EVENTS_UP_TO = 'seven'; events10(d, simNow, 1); const a3 = await tick(g);
+  console.log(`   EVENTS_UP_TO typed over ("seven"): asked after=${afterOf(a3)} (the tab's highest whole Event #), read ${a3.events}; EVENTS_UP_TO now ${g.props.EVENTS_UP_TO} — ${verdict(afterOf(a3) === '50000', '10c property typed over')}`);
+  // ... which here is the typed total, so nothing arrives; deleting the tab recovers
+  events10(d, simNow, 1); await tick(g);
+  delete g.sheets.Events; const a4 = await tick(g);
+  events10(d, simNow, 2); const a5 = await tick(g);
+  console.log(`   then the Events tab deleted: after=${afterOf(a4)}, the tab refilled with ${ids(g).length} events; two more: after=${afterOf(a5)}, ${ids(g).length} on the tab, EVENTS_UP_TO ${g.props.EVENTS_UP_TO} — ` +
+    verdict(afterOf(a4) === '0' && ids(g).join(',') === '11,10,9,8,7,6,5,4,3,2,1' && g.props.EVENTS_UP_TO === '11', '10c tab deleted recovers'));
+  // the events table dropped and made again: ids restart at 1
+  d.db.exec('DROP TABLE events'); served.clear();
+  d.db.exec("CREATE TABLE events (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, t TEXT NOT NULL, film TEXT, path TEXT, via TEXT, country TEXT)");
+  d.insE = d.db.prepare('INSERT INTO events (ts, t, film, path, via, country) VALUES (?,?,?,?,?,?)');
+  events10(d, simNow, 3); const b1 = await tick(g);
+  delete g.sheets.Events; const b2 = await tick(g);
+  events10(d, simNow, 2); const b3 = await tick(g);
+  console.log(`   the events table made again (ids from 1): after=${afterOf(b1)} finds nothing (README: delete the tab); tab deleted: after=${afterOf(b2)}, ids ${ids(g).join(',')}; two more: after=${afterOf(b3)}, ids ${ids(g).join(',')} — ` +
+    verdict(ids(g).join(',') === '5,4,3,2,1' && afterOf(b2) === '0' && afterOf(b3) === '3' && g.props.EVENTS_UP_TO === '5', '10c table recreated'));
+  // a tab from an earlier version (no EVENTS_UP_TO): starts after its highest id
+  const h = clone(g, 'v4/upto, no property', V4); delete h.props.EVENTS_UP_TO;
+  events10(d, simNow, 1); const c1 = await tick(h);
+  console.log(`   a tab with no EVENTS_UP_TO (as the release left it): after=${afterOf(c1)}, read ${c1.events}, EVENTS_UP_TO ${h.props.EVENTS_UP_TO} — ${verdict(afterOf(c1) === '5' && c1.events === 1 && h.props.EVENTS_UP_TO === '6', '10c no property')}`);
+}
+
+// 10d. Sessions at the cutoff, against v3 (which never deletes).
+{
+  const home = HOMES[0];
+  const row = (ms, ip, p = '/') => ({ ts: new Date(ms).toISOString(), ip, country: home[0], region: home[1], city: home[2], asn: home[3], path: p, referrer: null, ua: BROWSERS[0], is_bot: 0 });
+  const labels = (g, from, to) => rowsOf(g, 'All traffic').filter((x) => { const t = Date.parse(stampOf(g, 'All traffic')(x)); return t >= from && t <= to; })
+    .map((x) => { const H = headOf(g, 'All traffic'); return `${x[H.indexOf('IP')]} ${x[H.indexOf('Session')]}`; }).reverse().join(', ');
+  // (1) the sheet stopped 5 minutes before what is now the cutoff: A's session
+  // runs across it, B starts a minute after it, C two hours later
+  {
+    const T0 = START + 1500 * DAY, d = new FakeD1('across'), o = makeGas('v3/across', V3, d), n = makeGas('v4/across', V4, d);
+    for (let j = 0; j < 5; j++) d.insert(row(T0 - 5 * HOUR + j * HOUR, '1.1.1.' + j));
+    d.insert(row(T0 - 10 * MIN, '2.2.2.2'));
+    simNow = T0 - 5 * MIN; await o.call('sync'); await n.call('sync');
+    d.insert(row(T0 + MIN, '3.3.3.3')); d.insert(row(T0 + 5 * MIN, '2.2.2.2', '/about')); d.insert(row(T0 + 2 * HOUR, '4.4.4.4'));
+    simNow = T0 + KEEP; await o.call('sync'); await n.call('sync');
+    const sd = sessionDiff(n, o);
+    console.log(`   no run from the cutoff for 90 days: v3 ${labels(o, T0, T0 + 3 * HOUR)} | v4 ${labels(n, T0, T0 + 3 * HOUR)} — ${verdict(!sd.session && sd.compared === 3, '10d outage at the cutoff')}`);
+  }
+  // (2) the same with runs ten minutes apart while the cutoff crosses a session
+  {
+    const T0 = START + 1700 * DAY, d = new FakeD1('close runs'), o = makeGas('v3/close', V3, d), n = makeGas('v4/close', V4, d);
+    const rows = [];
+    for (let t = T0; t < T0 + 2 * HOUR; t += 12 * MIN) rows.push(row(t, '5.5.5.5'));          // one session, 2 h
+    for (let j = 0; j < 30; j++) rows.push(row(T0 - 3 * HOUR + j * 9 * MIN, '6.6.' + (j % 4) + '.1'));
+    for (let t = T0 + 3 * HOUR; t < T0 + 5 * DAY; t += 50 * MIN) rows.push(row(t, '7.7.' + Math.floor(t / DAY) % 5 + '.1'));
+    rows.sort((a, b) => (a.ts < b.ts ? -1 : 1));
+    let j = 0;
+    const step = async (t) => { simNow = t; while (j < rows.length && Date.parse(rows[j].ts) + 50 <= t) d.insert(rows[j++]); await o.call('sync'); await n.call('sync'); };
+    for (let t = T0 - 4 * HOUR; t < T0 + 5 * DAY; t += HOUR) await step(t + 17 * MIN);
+    for (let t = T0 + KEEP - HOUR; t < T0 + KEEP + 3 * HOUR; t += 10 * MIN) await step(t);   // runs 10 minutes apart
+    for (let t = T0 + KEEP + 3 * HOUR; t < T0 + KEEP + 2 * DAY; t += HOUR) await step(t);
+    d.insert(row(simNow + MIN, '8.8.8.8')); await step(simNow + 30 * MIN);
+    const sd = sessionDiff(n, o);
+    console.log(`   runs 10 minutes apart while the cutoff crosses a 2-hour session: Session against v3 on ${sd.compared} rows: ${sd.session} differ${sd.example ? ' (' + sd.example + ')' : ''}; SESSIONS_PRUNED ${n.props.SESSIONS_PRUNED} — ${verdict(!sd.session && !sd.unmatched, '10d close runs')}`);
+  }
 }
 console.log();
 
