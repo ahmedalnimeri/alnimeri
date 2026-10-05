@@ -12,13 +12,14 @@
   display: block; width: 100%; height: 100%;
   object-fit: cover; object-position: 50% 50%;
   pointer-events: none;
-  opacity: 0; transform: scale(1.07);
-  transition: opacity .8s var(--ease), transform 7s linear;
+  /* unseen, it rests small: a <video> is a Largest Contentful Paint candidate
+     at its first decoded frame, even at opacity 0, measured at that moment;
+     once shown, design-loops.js gives it the still's own push */
+  opacity: 0; transform: scale(.5);
+  transition: opacity .8s var(--ease);
 }
-.twoshot__shot.is-on .loop { transform: scale(1); }
 .twoshot__shot .loop.is-on { opacity: 1; }
-/* a loop that comes in with its film, or rests once it has gone: no fade of its own */
-.twoshot__shot .loop.is-instant { transition: transform 7s linear; }
+.twoshot__shot .loop.is-instant { transition: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .twoshot__shot .loop { display: none; }

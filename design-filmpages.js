@@ -48,6 +48,7 @@
     f.title = play.getAttribute('data-title') || 'Film';
     f.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
     f.setAttribute('allowfullscreen', '');
+    f.addEventListener('load', function () { f.setAttribute('data-up', ''); });
     return f;
   };
 
@@ -141,13 +142,16 @@
       var old = [].slice.call(own.querySelectorAll('iframe')), f = player(play, t);
       f.classList.add('is-next');
       var drop = function () {
+        // (an old one that went before it loaded never let the still step aside: this one does, as start() would)
+        if (f.parentNode === own) own.classList.add('is-loaded');
         f.classList.remove('is-next');   // fades in over the old one, which then goes
         setTimeout(function () { old.forEach(function (o) { if (o.parentNode) o.parentNode.removeChild(o); }); }, 900);
       };
       f.addEventListener('load', drop);
       setTimeout(drop, 2600);
       // the old player stops talking while the new one loads
-      old.forEach(function (o) { try { o.contentWindow.postMessage('{"method":"pause"}', 'https://player.vimeo.com'); } catch (x) {} });
+      // (one still loading has nothing to show yet, and would start on its own once loaded: it goes now)
+      old.forEach(function (o) { if (!o.hasAttribute('data-up')) { o.parentNode.removeChild(o); return; } try { o.contentWindow.postMessage('{"method":"pause"}', 'https://player.vimeo.com'); } catch (x) {} });
       own.appendChild(f);
       clearTimeout(upTimer); lights(true);
     } else {

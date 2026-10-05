@@ -95,6 +95,10 @@
   transition: color .35s var(--ease);
 }
 .fp-row__reach span { color: var(--fg-faint); transition: color .35s var(--ease); }
+/* a figure in two parts ("4.2K reactions · 2.4K shares") stays on one line:
+   a separator never ends a line (a phone gives it a line of its own) */
+@media (min-width: 701px) { .fp-row__reach { white-space: nowrap; } }
+.fp-row__reach .fp-row__sep { color: inherit; }
 a.fp-row__reach:hover, a.fp-row__reach:hover span { color: var(--fg); }
 .fp-row__reach:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; border-radius: 3px; }
 
@@ -120,8 +124,10 @@ a.fp-row__reach:hover, a.fp-row__reach:hover span { color: var(--fg); }
 .fp-index:has(.fp-wall:not([data-filter]) #music:target) .fp-row:not([data-cat="music"]),
 .fp-index:has(.fp-wall:not([data-filter]) #motion:target) .fp-row:not([data-cat="motion"]) { display: none; }
 
-/* ---- narrower: the kind goes under the client ---------------------------- */
-@media (max-width: 1000px) {
+/* ---- narrower: the kind goes under the client ----------------------------
+   from a small laptop down: below 1280px the five columns would break a
+   kind ("Animation · Motion graphics") or a client over two lines */
+@media (max-width: 1279px) {
   .fp-list { --still: 76px; }
   .fp-list__head, .fp-row { grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 46px minmax(13.5em, 1.3fr); }
   .fp-list__head > :nth-child(3) { display: none; }
@@ -162,6 +168,11 @@ a.fp-row__reach:hover, a.fp-row__reach:hover span { color: var(--fg); }
   .fp-row__meta > ::before { content: "\00b7"; display: inline-block; width: var(--sep); text-align: center; }
   .fp-row__kind { font-size: inherit; color: inherit; }
   .fp-row__reach { display: block; justify-self: auto; text-align: left; margin-top: 1px; }
+}
+/* the narrowest phones: a two-part figure needs 177px, so its parts take a
+   line each and the "·" between them goes */
+@media (max-width: 339px) {
+  .fp-row__reach .fp-row__sep { display: block; height: 0; overflow: hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) {

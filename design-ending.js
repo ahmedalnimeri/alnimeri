@@ -46,6 +46,12 @@
       // file (currentSrc: the WebP its <picture> chose), so the roll costs no
       // new bytes; otherwise pick from the same sets, WebP first, as the tile does
       var holder = pic;
+      // (/work/ in List view: the wall is hidden and its stills never load,
+      // but the list's row has fetched the same film's still)
+      if (wall && !src.currentSrc) {
+        var row = document.querySelector('.fp-row__film[href="' + link.getAttribute('href') + '"] .fp-row__still img');
+        if (row && row.currentSrc) src = row;
+      }
       if (src.currentSrc) img.src = src.currentSrc;
       else {
         var sizes = '(max-width: 999px) 46vw, 21vw';

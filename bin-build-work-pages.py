@@ -106,6 +106,9 @@ for m_ in re.finditer(r'<article class="tile[\s\S]+?</article>', SRC):
     credit = field(b, r'data-credit="([^"]*)"') or None
     if credit not in (None, 'contributor', 'none'):
         sys.exit(f'{title}: data-credit="{credit}" (contributor or none)')
+    play_at = field(b, r'data-play="([^"]*)"')
+    if play_at not in ('', 'low'):
+        sys.exit(f'{title}: data-play="{play_at}" (low, or none)')
     part_of = field(b, r'data-part-of="([^"]+)"')
     (parts if part_of else films).append({
         'home':    m_.start() < MORE_AT[0],
@@ -133,6 +136,9 @@ for m_ in re.finditer(r'<article class="tile[\s\S]+?</article>', SRC):
         'webp':    upto1280(field(b, r'<source type="image/webp" srcset="([^"]+)"')),
         'alt':     field(b, r'alt="([^"]+)"'),
         'portrait': field(b, r'data-portrait="(\w+)"') == 'true',
+        # data-play="low": a face at the centre of the still; on the film's
+        # page the play control rests low in the picture, clear of it
+        'play_low': play_at == 'low',
     })
 
 for f in films + parts:
@@ -697,7 +703,7 @@ for i, f in enumerate(films):
     # throws on the page costs no second download
     _light = still(f['main'], _sizes, eager=True, webp=True).replace(' alt="Still from ' + _t + '"', ' alt=""')
     play = play_of(f)
-    shape = ' fp-film--portrait' if f['portrait'] else ''
+    shape = (' fp-film--portrait' if f['portrait'] else '') + (' fp-film--play-low' if f['play_low'] else '')
     player = (f'<div class="fp-stage">'
               f'<div class="fp-light" aria-hidden="true">{_light}</div>'
               f'<div class="fp-frame">{_still}{play}</div></div>')
@@ -927,7 +933,7 @@ def client_of(f):
     m = re.match(r'https?://(?:www\.)?(x\.com|facebook\.com)/([^/?#]+)/', html.unescape(f['statref'] or ''))
     return ACCOUNTS.get(f'{m.group(1)}/{m.group(2)}', '') if m else ''
 
-LIST_SIZES = '(max-width: 700px) 96px, (max-width: 1000px) 76px, 88px'
+LIST_SIZES = '(max-width: 700px) 96px, (max-width: 1279px) 76px, 88px'   # design-worklist.css's --still
 
 def row_still(f):
     """The film's still at the list's size: the wall's own still (a vertical
@@ -950,9 +956,13 @@ def list_row(f):
     client, yr = client_of(f), year_of(f)
     if not kind:
         sys.exit(f"{f['title']}: no kind for the list")
+    # a figure in two parts ("4.2K reactions · 2.4K shares"): the "·" between
+    # them is its own span, so the narrowest phones can put the parts on two
+    # lines with no dot at the end of the first (design-worklist.css)
+    stat = nowrap_last(f['stat']).replace(' · ', '<span class="fp-row__sep"> · </span>')
     reach = ('<a class="fp-row__reach" href="' + f['statref'] + '" target="_blank" rel="noopener">'
-             + nowrap_last(f['stat']) + '&nbsp;<span aria-hidden="true">&#8599;</span></a>' if f['stat'] and f['statref'] else
-             '<span class="fp-row__reach">' + nowrap_last(f['stat']) + '</span>' if f['stat'] else
+             + stat + '&nbsp;<span aria-hidden="true">&#8599;</span></a>' if f['stat'] and f['statref'] else
+             '<span class="fp-row__reach">' + stat + '</span>' if f['stat'] else
              NONE.format(cls='fp-row__reach'))
     return ('<li class="fp-row" data-cat="' + f['cat'] + '">'
             '<a class="fp-row__film" href="/work/' + f['slug'] + '">'

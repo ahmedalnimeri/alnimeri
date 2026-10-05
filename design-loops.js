@@ -14,9 +14,11 @@
    dissolves in only once a frame of it has really been presented, so a loop
    that is blocked, slow or broken leaves the still exactly as it was; one
    that is already waiting comes in with its film, in the same dissolve, and
-   the film going out keeps moving until it has gone. Off screen, or in a
-   hidden tab, nothing plays. Under reduced motion, Save-Data or a slow
-   connection (2g/3g) there are no loops at all, only the stills.
+   the film going out keeps moving until it has gone. Off screen, in a
+   hidden tab, or under the lightbox, the bin or the brief, nothing plays
+   and nothing more is fetched. A browser that refuses to play them
+   (autoplay blocked, Low Power Mode) gets no loops at all, as do reduced
+   motion, Save-Data and a slow connection (2g/3g): only the stills.
 
    WebM (VP9) where the browser plays it, else MP4 (H.264); Apple's browsers
    take the MP4 first, which their hardware decodes. */
@@ -67,11 +69,29 @@
   };
   var play = function (L) {
     var p = L.v.play();
-    if (p && p.catch) p.catch(function () {});
+    if (p && p.catch) p.catch(function (e) { if (e && e.name === 'NotAllowedError') halt(); });
   };
+  // seen, a loop moves exactly as the still under it: the same transform,
+  // and the rest of the still's own push (refinement.css), wherever it is
+  var follow = function (L) {
+    var img = L.v.parentNode.querySelector('img');
+    if (!img || !L.v.animate) return;
+    if (L.anim) L.anim.cancel();
+    var now = getComputedStyle(img).transform, to = now, left = 0;
+    var a = img.getAnimations ? img.getAnimations().filter(function (x) { return x.transitionProperty === 'transform' && x.playState === 'running'; })[0] : null;
+    if (a) {
+      var k = a.effect.getKeyframes();
+      to = k[k.length - 1].transform;
+      left = Math.max(0, a.effect.getComputedTiming().endTime - a.currentTime);
+    }
+    L.anim = L.v.animate([{ transform: now }, { transform: to }], { duration: left, easing: 'linear', fill: 'forwards' });
+  };
+  // unseen, it rests small (design-loops.css)
+  var rest = function (L) { if (L.anim) { L.anim.cancel(); L.anim = null; } };
   var reveal = function (L) {
     if (!L.want || L.shown) return;
     L.shown = true;
+    follow(L);
     L.v.classList.add('is-on');
   };
   // the still gives way only to a frame that is really on screen
@@ -92,6 +112,7 @@
       // dissolve, from its first frame
       try { L.v.currentTime = 0; } catch (e) {}
       L.shown = true;
+      follow(L);
       L.v.classList.add('is-instant', 'is-on');
       void L.v.offsetWidth;
       L.v.classList.remove('is-instant');
@@ -109,12 +130,14 @@
   var leave = function (L, wait) {
     L.want = false;
     clearTimeout(L.t);
+    if (L.shown) follow(L);
     L.t = setTimeout(function () {
       if (L.want) return;
       L.v.pause();
       L.shown = false;
       L.v.classList.add('is-instant');
       L.v.classList.remove('is-on');
+      rest(L);
     }, wait);
   };
 
@@ -126,7 +149,7 @@
     if (off) return;
     var k = -1;
     shots.forEach(function (sh, i) { if (sh.classList.contains('is-on')) k = i; });
-    var live = ready && inView && !document.hidden;
+    var live = ready && inView && !document.hidden && !document.body.classList.contains('is-locked') && !document.querySelector('dialog[open]');
     var cut = k !== on && live;
     if (k !== on) {
       if (on >= 0 && Ls[on]) leave(Ls[on], live ? OUT : 0);
@@ -152,10 +175,12 @@
   var halt = function () {
     off = true;
     clearTimeout(ahead);
-    Ls.forEach(function (L) { if (!L) return; L.want = false; clearTimeout(L.t); L.v.pause(); L.v.classList.remove('is-on'); });
+    Ls.forEach(function (L) { if (!L) return; L.want = false; clearTimeout(L.t); L.v.pause(); L.v.classList.remove('is-on'); rest(L); });
   };
 
   shots.forEach(function (sh) { new MutationObserver(sync).observe(sh, { attributes: true, attributeFilter: ['class'] }); });
+  new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  new MutationObserver(sync).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   document.addEventListener('visibilitychange', sync);
   addEventListener('pageshow', function (e) { if (e.persisted) sync(); });
   if (calm) {

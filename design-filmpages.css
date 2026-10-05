@@ -108,6 +108,10 @@
 /* a vertical film carries its title in the middle of the picture; the
    control waits below it instead of covering it */
 .fp-film--portrait .fp-play { top: 86%; }
+/* a still with a face at its centre (the tile's data-play="low"): the
+   control rests low in the picture, its foot a short way above the frame's
+   (26px is half the control's height), so it never sits on the face */
+.fp-film--play-low .fp-play { top: calc(100% - 26px - clamp(14px, 6%, 44px)); }
 .fp-frame:focus-visible { outline: 2px solid var(--fg); outline-offset: 4px; }
 
 /* the frame is set down like a window, once, as the page opens */

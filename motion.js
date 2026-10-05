@@ -83,6 +83,9 @@
     });
     document.addEventListener('visibilitychange', function () { two.classList.toggle('is-away', document.hidden); });
     if (reduce) two.classList.add('is-still');
+    // reduced motion switched on mid-visit: the films stop cutting on their own (else the
+    // fill's 0.01ms animation ends at once and the slideshow spins)
+    if (window.matchMedia) { var rq = matchMedia('(prefers-reduced-motion: reduce)'), calm = function () { if (rq.matches) two.classList.add('is-still'); }; if (rq.addEventListener) rq.addEventListener('change', calm); else if (rq.addListener) rq.addListener(calm); }
     show(0);
     var rest = function () { shots.forEach(function (sh, k) { hydrate(k); }); };
     var idle = function () { if ('requestIdleCallback' in window) requestIdleCallback(rest, { timeout: 3000 }); else setTimeout(rest, 2000); };
