@@ -42,7 +42,16 @@ FRAMES = [
     ('d09-01', 'Day 9 · Sayed Khalifa, «إزيكم كيفنكم»', 'An embrace in white jalabiyas'),
 ]
 
-LINE = ('A personal series on Instagram, one part of Sudan each day. '
+# Each day's post on Instagram, by day number; a frame links to its own slide.
+POSTS = {1: 'Db6d5k3DNxn', 2: 'Db8uokyDN4n', 3: 'Db_NVBWDHsP', 4: 'DcBq7qVjCKb',
+         5: 'DcGVIsfDEy8', 6: 'DcJpegHDOjb', 7: 'DcO9pmNjBeG', 8: 'DcVuDwOjM-6',
+         9: 'DdyY0fvsvg4'}
+
+def post_url(code):
+    day, slide = int(code[1:3]), int(code[4:6])
+    return f'https://www.instagram.com/p/{POSTS[day]}/?img_index={slide}'
+
+LINE = ('A personal series on Instagram on Instagram, one part of Sudan each day. '
         'Made with Midjourney and ChatGPT and posted labelled as AI.')
 # six to a row up to 168px each on a wide screen, four across a phone
 SIZES = '(max-width: 700px) calc(25vw - 12px), 168px'
@@ -95,10 +104,11 @@ def render():
         webp = ', '.join(f'{fl[(w, "webp")]} {w}w' for w in WIDTHS)
         jpg = ', '.join(f'{fl[(w, "jpg")]} {w}w' for w in WIDTHS)
         items.append(
-            f'      <li class="sudan__fr"><picture><source type="image/webp" srcset="{webp}" sizes="{SIZES}">'
+            f'      <li class="sudan__fr"><a href="{post_url(code)}" target="_blank" rel="noopener" '
+            f'aria-label="{esc(label)}, on Instagram"><picture><source type="image/webp" srcset="{webp}" sizes="{SIZES}">'
             f'<img src="{fl[(320, "jpg")]}" srcset="{jpg}" sizes="{SIZES}" '
             f'alt="{esc(what + " (AI-generated)")}" title="{esc(label)}" width="640" height="640" '
-            f'loading="lazy" decoding="async"></picture></li>')
+            f'loading="lazy" decoding="async"></picture></a></li>')
     return f'''{START}
   <section class="sudan" id="sudan" aria-labelledby="sudan-title">
     <div class="sudan__head">

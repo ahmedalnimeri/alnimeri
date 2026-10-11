@@ -324,7 +324,11 @@
   display: grid; grid-template-columns: repeat(6, minmax(0, 168px)); gap: 10px;
 }
 .sudan__fr { margin: 0; min-width: 0; }
+.sudan__fr a { display: block; border-radius: 6px; }
+.sudan__fr a:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
 .sudan__fr picture { display: block; }
+.sudan__fr img { transition: opacity .3s ease; }
+.sudan__fr a:hover img { opacity: .82; }
 .sudan__fr img {
   display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover;
   border-radius: 6px; background: #000;
