@@ -295,6 +295,46 @@
 }
 
 /* =========================================================================
+   Sixteen Days of Sudan — small, between the set and the comments
+   ========================================================================= */
+/* Twelve frames of his AI series as small squares (bin-build-about-sudan.py):
+   kept small on purpose (Ahmed: "they shouldn't be a big section"). A quiet
+   heading on a hairline, one line saying what they are, then six to a row on
+   a wide screen and four on a phone. No motion of its own. */
+.sudan {
+  position: relative; z-index: 1;
+  max-width: 1320px; margin: 0 auto; box-sizing: content-box;
+  padding: 0 var(--gut);
+}
+.sudan__head { padding-top: 0.85rem; border-top: 1px solid var(--line); }
+.sudan__title {
+  margin: 0; font-size: 1.05rem; font-weight: 600; line-height: 1.3;
+  letter-spacing: -0.02em; color: var(--fg);
+}
+.sudan__sub { margin: 0.35rem 0 0; max-width: 62ch; font-size: 0.85rem; line-height: 1.55; color: var(--fg-faint); }
+.sudan__sub a {
+  color: var(--fg-dim); white-space: nowrap;
+  text-decoration: underline; text-decoration-thickness: 1px;
+  text-decoration-color: var(--line); text-underline-offset: 4px;
+  transition: color 0.35s var(--ease), text-decoration-color 0.35s var(--ease);
+}
+.sudan__sub a:hover { color: var(--fg); text-decoration-color: currentColor; }
+.sudan__grid {
+  list-style: none; margin: 1.25rem 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 168px)); gap: 10px;
+}
+.sudan__fr { margin: 0; min-width: 0; }
+.sudan__fr picture { display: block; }
+.sudan__fr img {
+  display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover;
+  border-radius: 6px; background: #000;
+}
+@media (max-width: 700px) {
+  .sudan__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 1rem; }
+  .sudan__fr img { border-radius: 4px; }
+}
+
+/* =========================================================================
    4. What people say
    ========================================================================= */
 /* The crowd: two lines of voices drifting past, set as type, not chips. */

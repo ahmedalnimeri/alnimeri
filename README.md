@@ -92,7 +92,7 @@ After touching the tiles in `index.html`, regenerate everything that derives fro
 ```sh
 python3 bin-build-cv-pdf.py && python3 bin-build-home-art.py && python3 bin-stamp-assets.py && python3 bin-build-work-pages.py \
   && python3 bin-build-solana.py && python3 bin-build-about-strip.py \
-  && python3 bin-build-onset.py && python3 bin-build-about-said.py \
+  && python3 bin-build-onset.py && python3 bin-build-about-sudan.py && python3 bin-build-about-said.py \
   && python3 bin-build-schema.py && python3 bin-build-sitemap.py && python3 bin-build-llms.py \
   && python3 bin-build-reel.py && python3 bin-stamp-assets.py && python3 bin-check.py
 ```
@@ -183,6 +183,16 @@ is that page's own node in the list's JSON-LD (`/work/<slug>#film`), the rest `C
 
 `bin-build-onset.py` renders About's On Set from `assets/onset.json`: the prints grouped by year, each laid
 out by its `shape`. `grade SRC NAME [GRAVITY]` makes the 1200 and 700 frames.
+
+`bin-build-about-sudan.py` renders About's Sixteen Days of Sudan (`#sudan`, between On Set and the
+comments): twelve frames Ahmed chose from his AI series on Instagram, small on purpose (six to a
+row up to 168px, four across a phone), a short heading, one line saying they were made with
+Midjourney and ChatGPT and posted labelled as AI, and a link to the series. Every alt ends
+"(AI-generated)" and every frame's tooltip is its day. The frames and their order are the
+builder's `FRAMES`; the files are `assets/sudan/<code>-320|640-<md5[:8]>.jpg|.webp` (square, JPEG
+q86 progressive, WebP q82), made by `encode RAW_DIR`; a changed frame takes a new name and the old
+one is deleted (the builder refuses a frame with two files, a name not its bytes' md5, or a file no
+frame names, and `bin-check.py` checks the names). The /cv card of the same name links here.
 
 `bin-build-work-pages.py` also writes /work/'s list, the other view of the wall: a Grid | List switch at
 the end of the kinds of film, and one row per film in the wall's order (every film on the wall,

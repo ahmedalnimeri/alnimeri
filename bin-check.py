@@ -31,8 +31,8 @@ generated functions/_lib files. Checked:
      a pretty URL or a Function route, and every #fragment an id on its page;
      so do the ones a script puts on the wire later (the hero's lazy stills,
      data-src / data-srcset, and its loops, data-loop-webm / data-loop-mp4),
-     and every loop in assets/loops/ and every still in assets/frames/ is
-     named by md5[:8] of its own bytes. Fonts: every @font-face src in a
+     and every loop in assets/loops/, every still in assets/frames/ and every
+     frame in assets/sudan/ is named by md5[:8] of its own bytes. Fonts: every @font-face src in a
      stylesheet is a file here, a font named <name>-<md5[:8]>.woff2 (Readex
      Pro) is named by its bytes and has its licence beside it, and every font
      preload names a styles.css @font-face src exactly, with crossorigin.
@@ -356,6 +356,13 @@ for f in sorted((ROOT / 'assets/frames').glob('*/*')):
         bad(f'assets/frames/{f.parent.name}/{f.name}', 'a frame is named <still>-<width>-<md5[:8]>.jpg or .webp')
     elif hashlib.md5(f.read_bytes()).hexdigest()[:8] != m.group(1):
         bad(f'assets/frames/{f.parent.name}/{f.name}', 'its name is not the md5[:8] of its bytes: a changed still takes a new name')
+# and so are About's Sixteen Days of Sudan frames (bin-build-about-sudan.py): <code>-<width>-<md5[:8]>
+for f in sorted((ROOT / 'assets/sudan').glob('*')):
+    m = re.fullmatch(r'd\d\d-\d\d-\d+-([0-9a-f]{8})\.(jpg|webp)', f.name)
+    if not m:
+        bad(f'assets/sudan/{f.name}', 'a frame is named <code>-<width>-<md5[:8]>.jpg or .webp')
+    elif hashlib.md5(f.read_bytes()).hexdigest()[:8] != m.group(1):
+        bad(f'assets/sudan/{f.name}', 'its name is not the md5[:8] of its bytes: a changed frame takes a new name')
 # the fonts: every @font-face src is a file here; a font named <name>-<md5[:8]>
 # (Readex Pro, the Arabic face) is named by its bytes, with its licence beside it;
 # and a font preload names exactly a src of styles.css, with crossorigin, or the
