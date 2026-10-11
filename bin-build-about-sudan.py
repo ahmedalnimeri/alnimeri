@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Render About's Sixteen Days of Sudan: twelve small frames from Ahmed's
+"""Render About's Sixteen Days of Sudan: small frames from Ahmed's
 personal AI image series on Instagram (@by_nimeri), between On Set and the
-comments. Ahmed chose the twelve and their order (11 Oct 2026) and asked for
-a small section, not a big one: a short heading, one line, a link to the
-series, and the frames as small squares (six to a row on a wide screen, four
-on a phone). No lightbox, no motion of its own. The line says what they are
+comments. Ahmed chose twelve from days 1-9 and their order (11 Oct 2026),
+then asked for days 10-16 too (one frame each), and for a small section, not
+a big one: a short heading, one line, a link to the series, and the frames
+as small squares in one row that scrolls sideways. Each frame links to its
+own slide of its post. No lightbox, no motion of its own. The line says what they are
 (made with Midjourney and ChatGPT, posted labelled as AI), and so does every
 alt, so they never read as photographs beside On Set's.
 
@@ -40,21 +41,29 @@ FRAMES = [
     ('d07-17', 'Day 7 · The Farewell', 'A departure stamp, مغادرة 03 JUN 2019'),
     ('d08-01', 'Day 8 · The Uni', 'The University of Khartoum clock tower'),
     ('d09-01', 'Day 9 · Sayed Khalifa, «إزيكم كيفنكم»', 'An embrace in white jalabiyas'),
+    ('d10-01', 'Day 10 · Abdel Karim al-Kabli, «زمان الناس»', 'A face in black and white, an old building in it'),
+    ('d11-01', 'Day 11 · Kamal Tarbas, «جاي تفتش الماضي»', 'Hands drawing a photograph from an envelope'),
+    ('d12-01', 'Day 12 · Mahmoud Abdelaziz, «الوداع»', 'A man with a bag boarding at night'),
+    ('d13-01', 'Day 13 · Mustafa Sid Ahmed, «في الأسى ضاعت سنيني»', 'A face in black and white, blurred and repeated'),
+    ('d14-01', 'Day 14 · Zaidan Ibrahim, «في الليلة ديك»', 'A man in a grey suit as a red toub sweeps past'),
+    ('d15-01', 'Day 15 · Mustafa Sid Ahmed, «الحزن النبيل»', 'A man at a rail over the water at night'),
+    ('d16-01', 'Day 16 · Ahmed Al-Mustafa, «سفري السبب لي اذايا»', 'A man at a train window'),
 ]
 
 # Each day's post on Instagram, by day number; a frame links to its own slide.
 POSTS = {1: 'Db6d5k3DNxn', 2: 'Db8uokyDN4n', 3: 'Db_NVBWDHsP', 4: 'DcBq7qVjCKb',
          5: 'DcGVIsfDEy8', 6: 'DcJpegHDOjb', 7: 'DcO9pmNjBeG', 8: 'DcVuDwOjM-6',
-         9: 'DdyY0fvsvg4'}
+         9: 'DdyY0fvsvg4', 10: 'Dd1OMxUsCzd', 11: 'Dd3_oYwoa0P', 12: 'Dd6uUgwMhSs',
+         13: 'Dd9MRYmMVjd', 14: 'Dd_5zDZs53V', 15: 'DeFAdmWMx3G', 16: 'DeH42nVM1YN'}
 
 def post_url(code):
     day, slide = int(code[1:3]), int(code[4:6])
     return f'https://www.instagram.com/p/{POSTS[day]}/?img_index={slide}'
 
-LINE = ('A personal series on Instagram on Instagram, one part of Sudan each day. '
+LINE = ('A personal series on Instagram, one part of Sudan each day. '
         'Made with Midjourney and ChatGPT and posted labelled as AI.')
-# six to a row up to 168px each on a wide screen, four across a phone
-SIZES = '(max-width: 700px) calc(25vw - 12px), 168px'
+# one row that scrolls sideways: 168px squares, 120px on a phone
+SIZES = '(max-width: 700px) 120px, 168px'
 
 def md5(path):
     return hashlib.md5(open(path, 'rb').read()).hexdigest()[:8]

@@ -297,10 +297,10 @@
 /* =========================================================================
    Sixteen Days of Sudan — small, between the set and the comments
    ========================================================================= */
-/* Twelve frames of his AI series as small squares (bin-build-about-sudan.py):
-   kept small on purpose (Ahmed: "they shouldn't be a big section"). A quiet
-   heading on a hairline, one line saying what they are, then six to a row on
-   a wide screen and four on a phone. No motion of its own. */
+/* Frames of his AI series as small squares (bin-build-about-sudan.py), kept
+   small on purpose (Ahmed: "they shouldn't be a big section"). A quiet heading
+   on a hairline, one line saying what they are, then one row of squares that
+   scrolls sideways. No motion of its own. */
 .sudan {
   position: relative; z-index: 1;
   max-width: 1320px; margin: 0 auto; box-sizing: content-box;
@@ -321,8 +321,11 @@
 .sudan__sub a:hover { color: var(--fg); text-decoration-color: currentColor; }
 .sudan__grid {
   list-style: none; margin: 1.25rem 0 0; padding: 0;
-  display: grid; grid-template-columns: repeat(6, minmax(0, 168px)); gap: 10px;
+  display: grid; grid-auto-flow: column; grid-auto-columns: 168px; gap: 10px;
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity;
+  padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: var(--line) transparent;
 }
+.sudan__fr { scroll-snap-align: start; }
 .sudan__fr { margin: 0; min-width: 0; }
 .sudan__fr a { display: block; border-radius: 6px; }
 .sudan__fr a:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
@@ -334,7 +337,7 @@
   border-radius: 6px; background: #000;
 }
 @media (max-width: 700px) {
-  .sudan__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 1rem; }
+  .sudan__grid { grid-auto-columns: 120px; gap: 6px; margin-top: 1rem; }
   .sudan__fr img { border-radius: 4px; }
 }
 
