@@ -23,6 +23,13 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# The CV PDF is linked with a ?h= stamp that changes with every rebuild, and
+# a PDF has no <link rel="canonical"> of its own, so Google counted each stamp
+# as a duplicate of the others (Search Console, 12 Oct 2026). The header names
+# the address without the stamp as the one to index.
+/assets/*.pdf
+  Link: <https://alnimeri.com/assets/:splat.pdf>; rel="canonical"
+
 /styles.css
   Cache-Control: public, max-age=604800, must-revalidate
 
