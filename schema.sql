@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS visits (
   path     TEXT,
   referrer TEXT,
   ua       TEXT,
-  is_bot   INTEGER DEFAULT 0       -- crawlers flagged so they can be filtered out
+  is_bot   INTEGER DEFAULT 0,      -- crawlers flagged so they can be filtered out
+  tag      TEXT                    -- ?r=<label> of a link he sent (added 2026-11-04:
+                                   -- ALTER TABLE visits ADD COLUMN tag TEXT)
 );
 
 CREATE INDEX IF NOT EXISTS idx_visits_ts     ON visits(ts DESC);

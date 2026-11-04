@@ -22,7 +22,7 @@ const BLOCKED = /^\/(reel\.tpl(\.html)?\/?|wrangler\.(jsonc|toml|json)|package(-
 
 // Not page views: files, including video (a Range request per chunk) and data.
 const ASSET = /\.(css|js|mjs|jpg|jpeg|png|svg|ico|webp|avif|gif|woff2?|pdf|xml|txt|map|mp4|webm|m4v|json|webmanifest|md|sql)$/i;
-const BOT   = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|curl|wget|python-requests|monitor|preview/i;
+const BOT   = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|lighthouse|curl|wget|python-requests|monitor|preview|dataprovider/i;
 
 
 // ---- Local time ------------------------------------------------------------
@@ -110,6 +110,8 @@ function secured(res) {
   return out;
 }
 
+const TAG = /^[a-z0-9][a-z0-9-]{0,39}$/;
+
 export async function onRequest(context) {
   const u = new URL(context.request.url);
   if (u.hostname === 'www.alnimeri.com') {
@@ -138,6 +140,9 @@ async function serve(context) {
     if (!ASSET.test(url.pathname) && !url.pathname.startsWith('/api/')) {
       const cf = request.cf || {};
       const ua = request.headers.get('User-Agent') || '';
+      // ?r=<label> marks a link he sent one person or school (alnimeri.com/?r=unsw),
+      // so a visit can be told apart from a mail scanner checking the same link.
+      const r = (url.searchParams.get('r') || '').toLowerCase();
       const row = [
         new Date().toISOString(),
         request.headers.get('CF-Connecting-IP'),
@@ -149,13 +154,14 @@ async function serve(context) {
         request.headers.get('Referer') || null,
         ua,
         BOT.test(ua) ? 1 : 0,
+        TAG.test(r) ? r : null,
       ];
 
       if (env.DB) {
         waitUntil(
           env.DB.prepare(
-            `INSERT INTO visits (ts, ip, country, region, city, asn, path, referrer, ua, is_bot)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            `INSERT INTO visits (ts, ip, country, region, city, asn, path, referrer, ua, is_bot, tag)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
           ).bind(...row).run().catch((e) => console.log('d1-insert-failed: ' + e.message))
         );
       } else {

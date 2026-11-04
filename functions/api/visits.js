@@ -43,7 +43,7 @@ const PAGES = ['/', '/index.html', '/about', '/about.html', '/cv', '/cv.html',
 
 // Substrings of the network name that mean "machine". Matched case-insensitively.
 const DATACENTER = [
-  'tencent', 'collyer quay', 'amazon', 'google llc', 'digitalocean', 'linode',
+  'dataprovider', 'tencent', 'collyer quay', 'amazon', 'google llc', 'digitalocean', 'linode',
   'ovh', 'hetzner', 'alibaba', 'microsoft', 'oracle', 'vultr', 'scaleway',
   'contabo', 'leaseweb', 'm247', 'hostinger', 'hostpapa', 'techoff', 'estoxy',
   'dedik', 'aceville', 'freedomtech', 'oculus networks', 'code200', 'wiit',
@@ -114,7 +114,7 @@ export async function onRequestGet({ request, env }) {
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
   const { results } = await env.DB.prepare(
-    `SELECT ts, ip, country, region, city, asn, path, referrer, ua, is_bot
+    `SELECT ts, ip, country, region, city, asn, path, referrer, ua, is_bot, tag
        FROM visits ${clause}
       ORDER BY ts DESC LIMIT ? OFFSET ?`
   ).bind(...binds, limit, offset).all();
