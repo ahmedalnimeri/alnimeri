@@ -484,3 +484,8 @@
   .fp-light, .fp-play, .fp-tabs, .fp-close .btn { display: none !important; }
   .fp-wall { columns: 3; }
 }
+
+/* Nothing to press under 24px tall (the figures on /work/solana were 20, the
+   crumbs 21, "All films" under a film 18). */
+.sl-views, .fp-crumbs a, .fp-more__head a, .fp-nav__all, .reception__more summary { min-height: 24px; display: inline-flex; align-items: center; }
+.sl-views { justify-content: flex-end; gap: 0.3em; }

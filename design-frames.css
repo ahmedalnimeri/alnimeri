@@ -74,7 +74,7 @@
   .frm__still.is-drop { margin-top: 54px; }
   /* a small screen reads blur as a picture still loading: keep it lighter */
   .frm__still, .frm.is-racked .frm__still.is-lead { filter: brightness(.5) blur(.6px) saturate(.8); }
-  .frm__chip { left: 8px; bottom: 8px; padding: 5px 10px 5px 6px; font-size: 11.5px; }
+  .frm__chip { left: 8px; bottom: 8px; padding: 5px 10px 5px 6px; font-size: 12px; }
   .frm__chip span { display: none; }
 }
 

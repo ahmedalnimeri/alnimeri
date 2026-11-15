@@ -214,7 +214,7 @@
   .ending__col--a { --t: 34svh; }
   .ending__col--b { --t: 16svh; }
   /* the credit's size follows the frame, so the longest title still fits */
-  .ending__cap { font-size: min(12px, calc(var(--cw) / 14.6)); line-height: 16px; height: 16px; gap: 8px; margin-top: 9px; }
+  .ending__cap { font-size: 12px; line-height: 16px; height: 16px; gap: 8px; margin-top: 9px; }
   .contact.ending .ending__card { flex: none; margin-top: 0; }
   .contact.ending .lockup { height: 52px; margin-bottom: 16px; }
   .contact.ending .contact__links { margin-top: 20px; }

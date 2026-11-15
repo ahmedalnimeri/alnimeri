@@ -15,7 +15,7 @@
  */
 import { SLUGS } from '../_lib/films.js';
 
-const KINDS = new Set(['brand', 'events', 'documentary', 'post']);
+const KINDS = new Set(['brand', 'events', 'documentary', 'post', 'role']);
 const VIA = new Set(['ig', 'li', 'wa', 'x', 'sig', 'ai', 'qr']);
 const FILMS = new Set(SLUGS);
 

@@ -908,6 +908,20 @@ a { color: inherit; }
   line-height: 1.06; letter-spacing: -0.035em; font-weight: 600;
 }
 .pagehead__title em { font-style: normal; color: var(--fg-dim); }
+/* /cv opens on the CV: who, where, how to write, the PDF, and Experience
+   already on the first screen (the title card it had took the whole of it). */
+.pagehead--cv { text-align: left; max-width: calc(1320px + 2 * var(--gut)); padding: clamp(6.5rem, 14vh, 8.5rem) var(--gut) 1.25rem; }
+.cvhead { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 2rem 4rem; align-items: end; }
+.pagehead--cv .pagehead__title { margin: 0; max-width: none; font-size: clamp(2.1rem, 4.2vw, 3.4rem); }
+.pagehead--cv .pagehead__lede { margin: 1rem 0 0; max-width: 44ch; }
+.cvhead__facts { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem 2rem; align-items: end; font-size: 0.92rem; }
+.cvhead__facts dt { margin-bottom: 0.25rem; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint); }
+.cvhead__facts dd { margin: 0; overflow-wrap: anywhere; }
+.cvhead__facts a:not(.btn) { color: inherit; text-decoration: none; }
+.cvhead__facts a:not(.btn):hover { text-decoration: underline; text-underline-offset: 4px; }
+.pagehead--cv + .section { padding-top: 2.5rem; }
+@media (max-width: 760px) { .cvhead { grid-template-columns: 1fr; gap: 1.5rem; } }
+@media print { .cvhead__act { display: none; } }
 .pagehead__act { margin: clamp(1.75rem, 4vh, 2.5rem) 0 0; }
 /* The one Arabic line on the site. His voice, not chrome — Poppins falls
    through to Readex Pro, the site's Arabic face, at the line's own size (the
@@ -2196,3 +2210,18 @@ body { background: var(--bg); color: var(--fg); }
 .brief__actions { margin-top: 28px; }
 .brief__close { top: 14px; right: 14px; width: 36px; height: 36px; font-size: 20px; }
 @media (max-width: 560px) { .brief__sentence { font-size: 18px; } }
+
+/* ---- small print floor ---------------------------------------------------
+   No words under 12px and nothing to press under 24px tall. The labels this
+   raises were 9 to 11px on a phone (the edge's city and time line, the tags
+   and years on /cv, "+ Select", the tray). Last in the sheet so it wins on
+   order; the design layers carry their own. */
+.screening, .pagehead .screening, .hero .screening { font-size: 0.75rem; }
+.tile__mark, .tag, .card__year, .copied, .facts dt, .marquee__label { font-size: 0.75rem; }
+.bin, .bin__clear { font-size: 0.75rem; }
+.tile__mark, .bin__clear, .slate__run { min-height: 24px; }
+.masthead__nav a:not(.btn) { padding-block: 6px; }
+@media (max-width: 760px) {
+  .cvhead__facts { grid-template-columns: 1fr 1fr; }
+  .cvhead__act, .cvhead__facts div:nth-child(3) { grid-column: 1 / -1; }
+}

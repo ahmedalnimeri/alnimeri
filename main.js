@@ -1288,6 +1288,7 @@
     ['events', 'an event or conference film'],
     ['documentary', 'a documentary'],
     ['post', 'creative direction or post-production', 'post-production'],
+    ['role', 'a role on your team', 'a role'],
     ['other', 'something else']
   ];
   var d = document.createElement('dialog');
@@ -1308,8 +1309,8 @@
             return '<option value="' + k[0] + '" data-full="' + k[1] + '">' + (narrow ? k[2] : k[1]) + '</option>';
           }).join('') +
         '</select> ' +
-        'for <span class="brief__tie"><input name="for" maxlength="300" placeholder="who it’s for" aria-label="Who it is for, or where it will run">.</span> ' +
-        'We’re hoping to have it by <span class="brief__tie"><input name="when" maxlength="120" placeholder="a date or a month" aria-label="Timing">.</span> ' +
+        '<span data-say="for">for</span> <span class="brief__tie"><input name="for" maxlength="300" placeholder="who it’s for" aria-label="Who it is for, or where it will run">.</span> ' +
+        '<span data-say="when">We’re hoping to have it by</span> <span class="brief__tie"><input name="when" maxlength="120" placeholder="a date or a month" aria-label="Timing">.</span> ' +
         'You can reach me at <input name="email" type="email" maxlength="200" placeholder="your email" aria-label="Your email" autocomplete="email"> ' +
         'or <span class="brief__tie"><input name="whatsapp" type="tel" maxlength="40" placeholder="your WhatsApp" aria-label="Your WhatsApp number" autocomplete="tel">.</span>' +
       '</p>' +
@@ -1374,6 +1375,21 @@
     el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', function () { fit(el); err.hidden = true; });
   });
 
+  // someone hiring is not commissioning a film: with "a role" chosen, the two
+  // blanks after it ask what the role is and when it starts
+  var SAY = {
+    film: { 'for': 'for', forHint: 'who it’s for', when: 'We’re hoping to have it by' },
+    role: { 'for': 'The role is', forHint: 'the role', when: 'We’d like someone to start by' }
+  };
+  var say = function () { return SAY[field('kind').value === 'role' ? 'role' : 'film']; };
+  var resay = function () {
+    var w = say();
+    f.querySelector('[data-say="for"]').textContent = w['for'];
+    f.querySelector('[data-say="when"]').textContent = w.when;
+    field('for').placeholder = w.forHint;
+    fit(field('for'));
+  };
+  field('kind').addEventListener('change', resay);
   var kindLabel = function () { var o = field('kind').options[field('kind').selectedIndex]; return o.getAttribute('data-full') || o.text; };
   var reach = function (email, wa) {
     if (email && wa) return 'You can reach me at ' + email + ', or on WhatsApp at ' + wa + '.';
@@ -1384,8 +1400,10 @@
     var s = 'Hi Ahmed, I’m ' + field('name').value.trim() +
       (field('org').value.trim() ? ' from ' + field('org').value.trim() : '') + '. ' +
       'I’d like to talk about ' + kindLabel() + (about ? ' (I saw ' + about + ')' : '') +
-      (field('for').value.trim() ? ' for ' + field('for').value.trim() : '') + '. ' +
-      (field('when').value.trim() ? 'We’re hoping to have it by ' + field('when').value.trim() + '. ' : '') +
+      (field('kind').value === 'role'
+        ? '. ' + (field('for').value.trim() ? 'The role is ' + field('for').value.trim() + '. ' : '')
+        : (field('for').value.trim() ? ' for ' + field('for').value.trim() : '') + '. ') +
+      (field('when').value.trim() ? say().when + ' ' + field('when').value.trim() + '. ' : '') +
       reach(field('email').value.trim(), field('whatsapp').value.trim());
     return s;
   };
@@ -1417,6 +1435,7 @@
     // the same words in it. One still travelling keeps its "Sent" until it lands.
     if (f.classList.contains('is-sent') && f.dataset.delivered === 'yes') reset();   // a failed one keeps its Try again
     if (kind && field('kind')) field('kind').value = kind;
+    resay();
     about = film || '';
     films.textContent = about ? ' · ' + about : '';
     films.hidden = !about;
