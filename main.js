@@ -602,27 +602,44 @@
       setTimeout(function () { if (host !== active) host.innerHTML = ''; }, 700);
     };
 
+    // A film sliding under a still cursor is not a hover. Scrolling the grid
+    // used to start a Vimeo player in every tile that passed under the pointer
+    // (a whole player document each, seven in one scroll of the page), which
+    // is what made the page drag. A preview now needs the pointer itself to
+    // move over the film, and the page to have been still for a moment.
+    var lastScroll = 0;
+    window.addEventListener('scroll', function () {
+      lastScroll = Date.now();
+      clearTimeout(timer); timer = null;
+    }, { passive: true });
+
     document.querySelectorAll('.tile__link').forEach(function (link) {
       var host = link.querySelector('.tile__preview');
       var id = link.dataset.video;
       // the silent loop is Vimeo's background mode; a YouTube film has none
       if (!host || !id || (link.dataset.provider && link.dataset.provider !== 'vimeo')) return;
 
-      link.addEventListener('mouseenter', function () {
-        clearTimeout(timer);
+      var arm = function () {
+        if (active === host || timer) return;
         // Hover intent: a cursor crossing the grid shouldn't spawn a player
         // in every tile it passes over.
         timer = setTimeout(function () {
-          if (active === host) return;
+          timer = null;
+          if (active === host || Date.now() - lastScroll < 400) return;
           stop();
           active = host;
           host.innerHTML = '';
           mountLoop(host, id);
-        }, 200);
+        }, 300);
+      };
+      // only a real move counts: the move a browser makes up after a scroll
+      // carries no movement
+      link.addEventListener('mousemove', function (e) {
+        if (e.movementX || e.movementY) arm();
       });
 
       link.addEventListener('mouseleave', function () {
-        clearTimeout(timer);
+        clearTimeout(timer); timer = null;
         if (active === host) stop();
       });
     });
